@@ -1,0 +1,33 @@
+[
+  {
+    "id": "sandbox_training",
+    "name": "训练场",
+    "description": "自由的实验场所。没有任何奖励。",
+    "unlockRequirementId": null,
+    "teamSize": 1,
+    "unlocksPackId": null,
+    "goldRewardMin": 0,
+    "goldRewardMax": 0,
+    "stages": [
+      { "type": "mob", "enemyPoolId": "training_mob" }
+    ]
+  },
+  {
+    "id": "training_ground",
+    "name": "初心剑馆",
+    "description": "新手的试炼之地。",
+    "unlockRequirementId": null,
+    "teamSize": 1,
+    "unlocksPackId": "basic_swordsmanship",
+    "goldRewardMin": 10,
+    "goldRewardMax": 10,
+    "stages": [
+      { "type": "mob", "enemyPoolId": "training_mob" },
+      { "type": "mob", "enemyPoolId": "training_mob" },
+      { "type": "elite", "enemyPoolId": "training_elite" },
+      { "type": "mob", "enemyPoolId": "training_mob" },
+      { "type": "mob", "enemyPoolId": "training_mob" },
+      { "type": "boss", "enemyPoolId": "training_boss" }
+    ]
+  }
+]

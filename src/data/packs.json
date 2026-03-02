@@ -1,0 +1,8 @@
+[
+  {
+    "id": "basic_swordsmanship",
+    "name": "基础剑术",
+    "description": "包含基础的物理攻击和防御手段。",
+    "price": 10
+  }
+]

@@ -1,0 +1,56 @@
+{
+  "pools": {
+    "training_mob": ["mob_1", "mob_2", "mob_3"],
+    "training_elite": ["elite_1"],
+    "training_boss": ["boss_1"]
+  },
+  "definitions": {
+    "mob_1": {
+      "id": "mob_1",
+      "name": "剑术学徒",
+      "hpMin": 8,
+      "hpMax": 12,
+      "deck": ["thrust", "thrust", "thrust", "charge"]
+    },
+    "mob_2": {
+      "id": "mob_2",
+      "name": "持盾步兵",
+      "hpMin": 16,
+      "hpMax": 20,
+      "deck": ["stab", "stab", "stab", "flick"]
+    },
+    "mob_3": {
+      "id": "mob_3",
+      "name": "游荡剑客",
+      "hpMin": 16,
+      "hpMax": 20,
+      "deck": ["slash", "slash", "slash", "ambush"]
+    },
+    "elite_1": {
+      "id": "elite_1",
+      "name": "精英剑士",
+      "hpMin": 50,
+      "hpMax": 55,
+      "deck": ["thrust", "parry", "charge", "slash", "throw"],
+      "dropTable": {
+        "chance": 0.05,
+        "min": 1,
+        "max": 1,
+        "pool": ["breeze_orb", "iron_orb"]
+      }
+    },
+    "boss_1": {
+      "id": "boss_1",
+      "name": "剑术大师",
+      "hpMin": 98,
+      "hpMax": 102,
+      "deck": ["concentrate", "thrust", "stab", "stab", "stab", "ambush", "sweep"],
+      "dropTable": {
+        "chance": 0.2,
+        "min": 1,
+        "max": 3,
+        "pool": ["breeze_orb", "iron_orb"]
+      }
+    }
+  }
+}

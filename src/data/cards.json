@@ -1,0 +1,112 @@
+[
+  {
+    "id": "thrust",
+    "name": "突",
+    "description": "迅捷的一击",
+    "effectDescription": "对目标造成3点伤害。施加1层【迟缓】。",
+    "packId": "basic_swordsmanship",
+    "rarity": 3,
+    "speed": 2,
+    "scriptId": "thrust",
+    "tags": ["攻击", "物理"]
+  },
+  {
+    "id": "parry",
+    "name": "镇",
+    "description": "以静制动",
+    "effectDescription": "获得4点护甲。",
+    "packId": "basic_swordsmanship",
+    "rarity": 6,
+    "speed": 3,
+    "scriptId": "parry",
+    "tags": ["防御"]
+  },
+  {
+    "id": "charge",
+    "name": "蓄",
+    "description": "沉住气",
+    "effectDescription": "获得【蓄力】。",
+    "packId": "basic_swordsmanship",
+    "rarity": 1,
+    "speed": 4,
+    "scriptId": "charge",
+    "tags": ["辅助"]
+  },
+  {
+    "id": "stab",
+    "name": "刺",
+    "description": "进步，直刺。最快的招式之一。",
+    "effectDescription": "对目标造成3点伤害。施加1层【流血】。",
+    "packId": "basic_swordsmanship",
+    "rarity": 6,
+    "speed": 5,
+    "scriptId": "stab",
+    "tags": ["攻击", "物理"]
+  },
+  {
+    "id": "slash",
+    "name": "斩",
+    "description": "朴实无华，但是好用。",
+    "effectDescription": "对目标造成6点伤害。",
+    "packId": "basic_swordsmanship",
+    "rarity": 6,
+    "speed": 6,
+    "scriptId": "slash",
+    "tags": ["攻击", "物理"]
+  },
+  {
+    "id": "flick",
+    "name": "撩",
+    "description": "四两拨千斤",
+    "effectDescription": "对目标造成2点伤害。施加3层【迟缓】。",
+    "packId": "basic_swordsmanship",
+    "rarity": 3,
+    "speed": 7,
+    "scriptId": "flick",
+    "tags": ["攻击", "物理"]
+  },
+  {
+    "id": "ambush",
+    "name": "伏",
+    "description": "嘘……",
+    "effectDescription": "获得12点护甲。",
+    "packId": "basic_swordsmanship",
+    "rarity": 6,
+    "speed": 8,
+    "scriptId": "ambush",
+    "tags": ["防御"]
+  },
+  {
+    "id": "sweep",
+    "name": "扫",
+    "description": "动作如潮！",
+    "effectDescription": "对目标造成3次3点伤害。",
+    "packId": "basic_swordsmanship",
+    "rarity": 6,
+    "speed": 9,
+    "scriptId": "sweep",
+    "tags": ["攻击", "物理"]
+  },
+  {
+    "id": "throw",
+    "name": "摔",
+    "description": "借力打力",
+    "effectDescription": "对目标造成5点伤害。施加2级【眩晕】。",
+    "packId": "basic_swordsmanship",
+    "rarity": 3,
+    "speed": 10,
+    "scriptId": "throw",
+    "tags": ["攻击", "物理"]
+  },
+  {
+    "id": "concentrate",
+    "name": "凝",
+    "description": "屏气凝神",
+    "effectDescription": "获得【专注】。",
+    "packId": "enemy",
+    "rarity": 0,
+    "speed": 1,
+    "scriptId": "concentrate",
+    "tags": []
+  }
+]

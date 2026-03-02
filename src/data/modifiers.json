@@ -1,0 +1,23 @@
+[
+    {
+        "id": "breeze_orb",
+        "name": "微风珠",
+        "description": "速度 -0.5 (不会减到0以下)",
+        "effectId": "speed_mod",
+        "value": -0.5
+    },
+    {
+        "id": "iron_orb",
+        "name": "黑铁珠",
+        "description": "速度 +3",
+        "effectId": "speed_mod",
+        "value": 3
+    },
+    {
+        "id": "fire_spirit_orb",
+        "name": "火灵珠",
+        "description": "攻击附加【魔法/火】属性",
+        "effectId": "attr_add",
+        "value": "fire"
+    }
+]
