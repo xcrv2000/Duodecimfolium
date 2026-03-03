@@ -54,11 +54,12 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   const isInstance = (c: any): c is CardInstance => 'instanceId' in c;
   
   // Determine Speed
-  const baseSpeed = isInstance(card) ? card.originalSpeed : card.speed;
-  const currentSpeed = isInstance(card) ? card.currentSpeed : card.speed;
+  const baseSpeed = isInstance(card) ? (card.baseSpeed10 !== null ? card.baseSpeed10 / 10 : null) : card.speed;
+  const currentSpeed = isInstance(card) ? (card.currentSpeed10 !== null ? card.currentSpeed10 / 10 : null) : card.speed;
   
   // Round for display
-  const displaySpeed = currentSpeed !== null && currentSpeed !== undefined ? Math.round(currentSpeed) : '-';
+  // Use toFixed(1) for float speeds
+  const displaySpeed = currentSpeed !== null && currentSpeed !== undefined ? Number(currentSpeed).toFixed(1).replace(/\.0$/, '') : '-';
   
   // Tooltip content
   let speedTooltip = `Speed: ${currentSpeed}`;

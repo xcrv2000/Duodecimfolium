@@ -40,7 +40,7 @@ export const CardScripts: Record<string, CardScript> = {
           stackRule: 'nonStackable',
           level: 1,
           type: 'buff',
-          onAttack: (unit, t, damage, battle) => {
+          onAttack: (unit, _t, damage, _battle) => {
               // Double damage
               // Remove buff manually (consume)
               const idx = unit.buffs.findIndex(b => b.id === 'charge');
@@ -135,7 +135,7 @@ export const CardScripts: Record<string, CardScript> = {
           stackRule: 'nonStackable',
           level: 1,
           type: 'buff',
-          onAttack: (unit, t, dmg) => {
+          onAttack: (unit, _t, dmg) => {
               // +50%
               // Remove self
               const idx = unit.buffs.findIndex(b => b.id === 'focus');

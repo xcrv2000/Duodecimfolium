@@ -143,7 +143,7 @@ const UnitFrame: React.FC<{ unit?: BattleUnit, isEnemy?: boolean, onCardHover?: 
       <div className="flex gap-1 flex-wrap mb-4 min-h-[2rem]">
         {unit.buffs.map((buff, i) => (
           <div key={i} className="bg-slate-700 px-2 py-1 rounded text-xs" title={buff.description}>
-            {buff.name} {(buff.value || 0) > 1 ? `x${buff.value || 0}` : ''} {buff.duration < 10 ? `(${buff.duration})` : ''}
+            {buff.name} {buff.level > 1 ? `Lv.${buff.level}` : ''} {buff.duration < 10 ? `(${buff.duration})` : ''}
           </div>
         ))}
       </div>
@@ -187,7 +187,7 @@ const CardMini: React.FC<{ card: CardInstance, onMouseEnter?: (rect: DOMRect) =>
             onMouseLeave={onMouseLeave}
         >
             <span className="font-bold">{card.name[0]}</span>
-            <span className="absolute bottom-0 right-1 text-[10px] text-yellow-400">{card.currentSpeed !== null ? Math.round(card.currentSpeed) : '-'}</span>
+            <span className="absolute bottom-0 right-1 text-[10px] text-yellow-400">{card.currentSpeed10 !== null ? (card.currentSpeed10 / 10).toFixed(1) : '-'}</span>
         </div>
     )
 }
@@ -225,8 +225,8 @@ const CardHoverOverlay: React.FC<{ card: CardInstance, unit: BattleUnit, rect: D
                 <div className="text-2xl font-bold text-center border-b border-slate-600 pb-2">{card.name}</div>
                 
                 <div className="flex justify-between text-lg">
-                    <span className="text-yellow-400">Speed: {card.currentSpeed !== null ? Math.round(card.currentSpeed) : '-'}</span>
-                    <span className="text-slate-400">Base: {card.originalSpeed}</span>
+                    <span className="text-yellow-400">Speed: {card.currentSpeed10 !== null ? (card.currentSpeed10 / 10).toFixed(1) : '-'}</span>
+                    <span className="text-slate-400">Base: {card.baseSpeed10 !== null ? (card.baseSpeed10 / 10).toFixed(1) : '-'}</span>
                 </div>
                 
                 <div className="flex-1 bg-slate-900/50 p-4 rounded text-slate-200 leading-relaxed">
