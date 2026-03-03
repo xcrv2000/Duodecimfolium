@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { BattleState, BattleUnit } from '../core/domain/Battle';
 import { BattleLoop } from '../core/systems/BattleLoop';
 import { usePlayerStore } from './playerStore';
+import { useReplayStore } from './replayStore';
+import { RNG } from '../utils/rng';
 import dungeonsData from '../data/dungeons.json';
 import enemiesData from '../data/enemies.json';
 import cardsData from '../data/cards.json';
@@ -23,8 +25,11 @@ interface BattleStore {
   isBossStage: boolean;
   speedMultiplier: number; // 1x, 2x, 12x
   collectedLoot: { gold: number, modifiers: string[] };
+  activeDeck: any | null;
+  isReplayMode: boolean;
 
-  startDungeon: (dungeonId: string) => void;
+  startDungeon: (dungeonId: string, deckIndex: number) => void;
+  startReplay: (initialState: BattleState, seed: number) => void;
   startCustomBattle: (playerTeams: CustomUnitConfig[], enemyTeams: CustomUnitConfig[]) => void;
   nextStage: () => void;
   tick: () => void;
@@ -53,9 +58,39 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   speedMultiplier: 1,
   collectedLoot: { gold: 0, modifiers: [] },
 
-  startDungeon: (dungeonId) => {
+  activeDeck: null,
+  isReplayMode: false,
+
+  startReplay: (initialState, seed) => {
+    // Deep clone to avoid mutating the original replay record
+    const stateClone = JSON.parse(JSON.stringify(initialState));
+    const loop = new BattleLoop(stateClone, new RNG(seed));
+    loop.executeStartOfBattleEffects();
+    
+    set({
+      state: stateClone,
+      loop: loop,
+      currentDungeonId: null,
+      currentStageIndex: 0,
+      isPaused: true,
+      isLooping: false,
+      isBossStage: false,
+      speedMultiplier: 1,
+      collectedLoot: { gold: 0, modifiers: [] },
+      isReplayMode: true,
+      activeDeck: null
+    });
+  },
+
+  startDungeon: (dungeonId, deckIndex) => {
     const dungeon = dungeons.find(d => d.id === dungeonId);
     if (!dungeon) return;
+
+    // Snapshot deck
+    const playerStore = usePlayerStore.getState();
+    const deck = playerStore.decks[deckIndex];
+    if (!deck) return;
+    const deckSnapshot = JSON.parse(JSON.stringify(deck));
 
     set({
       currentDungeonId: dungeonId,
@@ -64,7 +99,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       isLooping: false,
       isBossStage: false,
       speedMultiplier: 1,
-      collectedLoot: { gold: 0, modifiers: [] }
+      collectedLoot: { gold: 0, modifiers: [] },
+      isReplayMode: false,
+      activeDeck: deckSnapshot
     });
     
     get().nextStage();
@@ -127,6 +164,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       const playerUnits = playerTeams.map((c, i) => createUnit(c, i));
       const enemyUnits = enemyTeams.map((c, i) => createUnit(c, i));
       
+      const seed = Date.now();
       const initialState: BattleState = {
           tick: 0,
           turn: 1,
@@ -134,10 +172,21 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
           log: [],
           isOver: false,
           winner: null,
-          rngSeed: Date.now()
+          rngSeed: seed
       };
       
-      const loop = new BattleLoop(initialState);
+      // Save Replay for Custom Battle
+      const replayState = JSON.parse(JSON.stringify(initialState));
+      useReplayStore.getState().addReplay({
+          timestamp: Date.now(),
+          dungeonId: 'custom',
+          stageIndex: 0,
+          seed: seed,
+          initialState: replayState,
+          enemyName: enemyTeams[0]?.name || 'Unknown'
+      });
+
+      const loop = new BattleLoop(initialState, new RNG(seed));
       loop.executeStartOfBattleEffects();
       
       set({
@@ -187,7 +236,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
           get().nextStage();
       } else {
           // Exit
-          set({ state: null, loop: null, currentDungeonId: null });
+          set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false });
       }
       return;
     }
@@ -200,8 +249,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     const isBossStage = stage.type === 'boss';
 
     // Create Player Unit
-    const playerStore = usePlayerStore.getState();
-    const playerDeck = playerStore.decks[0]; // Default deck
+    const { activeDeck } = get();
+    if (!activeDeck) return;
+    const playerCardIds = activeDeck.cardIds;
     
     // Check if player unit already exists from previous stage?
     // If so, preserve HP.
@@ -221,7 +271,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
     // Count duplicates for penalty
     const playerCardCounts: Record<string, number> = {};
-    const playerCardIds = playerDeck.cardIds;
+    // const playerCardIds = playerDeck.cardIds; // Removed
 
     const playerUnit: BattleUnit = {
       id: 'player',
@@ -246,7 +296,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
 
         // Modifiers
-        const modId = playerDeck.modifierSlots?.[idx];
+        const modId = activeDeck.modifierSlots?.[idx];
         const cardModifiers = [];
         if (modId) {
             const modDef = modifiers.find(m => m.id === modId);
@@ -313,6 +363,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     };
 
     // Initial Battle State
+    const seed = Date.now();
     const initialState: BattleState = {
       tick: 0,
       turn: 1,
@@ -320,10 +371,21 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       log: [],
       isOver: false,
       winner: null,
-      rngSeed: Date.now()
+      rngSeed: seed
     };
     
-    const loop = new BattleLoop(initialState);
+    // Save Replay
+    const replayState = JSON.parse(JSON.stringify(initialState));
+    useReplayStore.getState().addReplay({
+        timestamp: Date.now(),
+        dungeonId: currentDungeonId || 'unknown',
+        stageIndex: currentStageIndex,
+        seed: seed,
+        initialState: replayState,
+        enemyName: enemyDef.name
+    });
+
+    const loop = new BattleLoop(initialState, new RNG(seed));
     // Execute Start of Battle Effects
     loop.executeStartOfBattleEffects();
 
@@ -378,7 +440,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         }
         
         // Auto Advance to Next Stage
-        const { isLooping, isBossStage } = get();
+        const { isLooping, isBossStage, isReplayMode } = get();
+        if (isReplayMode) return;
+
         let delay = 1000;
         
         if (isLooping) {
@@ -410,6 +474,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       const playerStore = usePlayerStore.getState();
       collectedLoot.modifiers.forEach(modId => playerStore.addModifier(modId));
       
-      set({ state: null, loop: null, currentDungeonId: null });
+      set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false });
   }
 }));

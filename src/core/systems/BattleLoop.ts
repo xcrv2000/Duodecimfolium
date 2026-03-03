@@ -2,12 +2,16 @@ import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff } f
 import { CardInstance } from '../domain/Card';
 import { CardScripts } from './CardScripts';
 
+import { RNG } from '../../utils/rng';
+
 export class BattleLoop {
   private state: BattleState;
   private currentCard: CardInstance | null = null;
+  private rng: RNG;
 
-  constructor(state: BattleState) {
+  constructor(state: BattleState, rng: RNG) {
     this.state = state;
+    this.rng = rng;
   }
 
   public spawnCard(source: BattleUnit, cardId: string, baseSpeed10: number): void {
@@ -45,7 +49,7 @@ export class BattleLoop {
           speed: baseSpeed10 / 10,
           scriptId: cardId,
           tags: tags,
-          instanceId: `${source.id}_token_${Date.now()}_${Math.random()}`,
+          instanceId: `${source.id}_token_${Date.now()}_${this.rng.next()}`,
           baseSpeed10: baseSpeed10,
           currentSpeed10: baseSpeed10,
           deckSpeedPenalty: 0,
@@ -243,7 +247,7 @@ export class BattleLoop {
                 return a.unit.initialDeckSize - b.unit.initialDeckSize;
             }
             // Random
-            return Math.random() - 0.5;
+            return this.rng.next() - 0.5;
         });
         
         // 3. Execute ONE (the first)
@@ -294,7 +298,7 @@ export class BattleLoop {
     const enemies = this.state.units.filter(u => u.team !== source.team && !u.isDead);
     if (enemies.length === 0) return [];
     
-    const target = enemies[Math.floor(Math.random() * enemies.length)];
+    const target = enemies[Math.floor(this.rng.next() * enemies.length)];
     return [target];
   }
 

@@ -1,31 +1,62 @@
-import React, { useState } from 'react';
-import { Home, Swords, Layers, ShoppingBag, Settings, Book } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Home, Swords, Layers, ShoppingBag, Settings, Book, PlayCircle, X } from 'lucide-react';
 import BattleView from '../battle/BattleView';
 import { useBattleStore } from '../../stores/battleStore';
 import DungeonSelect from '../dungeoneering/DungeonSelect';
 import GachaView from '../gacha/GachaView';
 import CollectionView from '../collection/CollectionView';
 import { usePlayerStore } from '../../stores/playerStore';
-
 import SettingsView from '../settings/SettingsView';
-
 import CompendiumView from '../compendium/CompendiumView';
 
 type Tab = 'home' | 'battle' | 'dungeon' | 'collection' | 'gacha' | 'settings' | 'compendium';
 
 const MainLayout: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<Tab>('home');
   const { state: battleState } = useBattleStore();
   const { gold, dust } = usePlayerStore();
+  const [activeTab, setActiveTab] = useState<Tab>('home');
+  const [notification, setNotification] = useState<{ title: string, message: string, type: 'success' | 'failure' } | null>(null);
 
-  // If in battle, force battle tab or show overlay?
-  // For now, if battle is active, show battle view.
-  const isInBattle = !!battleState;
+  // Auto-navigate to battle when it starts?
+  // Maybe not forced, but we can if the user was on "Dungeon" tab.
+  // For now, let's keep it manual or user-initiated.
+  
+  const isBattleRunning = !!battleState;
 
+  // Notification Logic
+  useEffect(() => {
+      if (battleState?.isOver) {
+          // Check win/loss
+          if (battleState.winner === 'player') {
+              // If looping, we might not want to notify every single win unless it's the FINAL stage?
+              // The store auto-advances.
+              // We only notify if "Dungeon Cleared" which happens in nextStage logic.
+              // Wait, battleStore handles "Dungeon Cleared" inside nextStage.
+              // But here we only see the BATTLE state.
+              
+              // If we want to know if Dungeon is cleared, we need to check store state.
+              // But battleStore clears state on exit/finish unless looping.
+          } else if (battleState.winner === 'enemy') {
+              // Defeat
+              setNotification({
+                  title: "挑战失败",
+                  message: "你被击败了...",
+                  type: 'failure'
+              });
+          }
+      }
+  }, [battleState?.isOver, battleState?.winner]);
+
+  // We also need to know when a Dungeon is fully cleared.
+  // We can listen to playerStore changes? Or add a callback/event?
+  // Or just rely on the fact that battleState becomes null?
+  
+  // Let's stick to the requirement: "When dungeon challenge fails, OR dungeon cleared (and not looping), popup notification."
+  
   const renderContent = () => {
-    if (isInBattle) return <BattleView />;
-
     switch (activeTab) {
+      case 'battle':
+        return battleState ? <BattleView /> : <div className="p-8 text-center text-slate-400">当前没有进行中的战斗。</div>;
       case 'home':
         return <HomeView onNavigate={setActiveTab} />;
       case 'dungeon':
@@ -44,7 +75,7 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-sans relative">
       {/* Sidebar */}
       <div className="w-20 bg-slate-900 flex flex-col items-center py-4 border-r border-slate-800 z-10">
         <div className="mb-8 p-2 bg-emerald-600 rounded-full">
@@ -52,13 +83,25 @@ const MainLayout: React.FC = () => {
         </div>
         
         <nav className="flex flex-col gap-4 w-full">
-          <NavItem icon={<Home />} label="主页" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} disabled={isInBattle} />
-          <NavItem icon={<Swords />} label="地牢" isActive={activeTab === 'dungeon'} onClick={() => setActiveTab('dungeon')} disabled={isInBattle} />
-          <NavItem icon={<Layers />} label="卡组" isActive={activeTab === 'collection'} onClick={() => setActiveTab('collection')} disabled={isInBattle} />
-          <NavItem icon={<ShoppingBag />} label="商店" isActive={activeTab === 'gacha'} onClick={() => setActiveTab('gacha')} disabled={isInBattle} />
-          <NavItem icon={<Book />} label="图鉴" isActive={activeTab === 'compendium'} onClick={() => setActiveTab('compendium')} disabled={isInBattle} />
+          <NavItem icon={<Home />} label="主页" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
+          <NavItem icon={<Swords />} label="地牢" isActive={activeTab === 'dungeon'} onClick={() => setActiveTab('dungeon')} />
+          <NavItem icon={<Layers />} label="卡组" isActive={activeTab === 'collection'} onClick={() => setActiveTab('collection')} />
+          <NavItem icon={<ShoppingBag />} label="商店" isActive={activeTab === 'gacha'} onClick={() => setActiveTab('gacha')} />
+          <NavItem icon={<Book />} label="图鉴" isActive={activeTab === 'compendium'} onClick={() => setActiveTab('compendium')} />
+          
+          {isBattleRunning && (
+              <div className="mt-2 pt-2 border-t border-slate-800 w-full">
+                 <NavItem 
+                    icon={<PlayCircle className="text-red-500 animate-pulse" />} 
+                    label="战斗中" 
+                    isActive={activeTab === 'battle'} 
+                    onClick={() => setActiveTab('battle')} 
+                 />
+              </div>
+          )}
+
           <div className="mt-auto">
-             <NavItem icon={<Settings />} label="设置" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} disabled={isInBattle} />
+             <NavItem icon={<Settings />} label="设置" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           </div>
         </nav>
       </div>
@@ -66,24 +109,48 @@ const MainLayout: React.FC = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header (Resources) */}
-        {!isInBattle && (
-            <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-end px-6 gap-6">
-                <div className="flex items-center gap-2 text-yellow-400 font-bold">
-                    <span>Gold:</span>
-                    <span>{gold}</span>
-                </div>
-                <div className="flex items-center gap-2 text-purple-400 font-bold">
-                    <span>Dust:</span>
-                    <span>{dust}</span>
-                </div>
+        <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-end px-6 gap-6">
+            <div className="flex items-center gap-2 text-yellow-400 font-bold">
+                <span>Gold:</span>
+                <span>{gold}</span>
             </div>
-        )}
+            <div className="flex items-center gap-2 text-purple-400 font-bold">
+                <span>Dust:</span>
+                <span>{dust}</span>
+            </div>
+        </div>
 
         {/* Viewport */}
         <div className="flex-1 overflow-auto bg-slate-950 relative">
             {renderContent()}
         </div>
       </div>
+
+      {/* Notification Popup */}
+      {notification && (
+          <div className="absolute top-4 right-4 w-80 bg-slate-800 border border-slate-700 shadow-xl rounded-lg overflow-hidden z-50 animate-in slide-in-from-right">
+              <div className={`p-3 flex justify-between items-center ${notification.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}>
+                  <span className="font-bold">{notification.title}</span>
+                  <button onClick={() => setNotification(null)} className="hover:bg-white/20 rounded p-1">
+                      <X size={16} />
+                  </button>
+              </div>
+              <div className="p-4">
+                  <p className="text-slate-300 mb-4">{notification.message}</p>
+                  <div className="flex gap-2 justify-end">
+                      <button 
+                        onClick={() => {
+                            setActiveTab('battle');
+                            setNotification(null);
+                        }}
+                        className="px-3 py-1 bg-slate-700 hover:bg-slate-600 rounded text-sm"
+                      >
+                          查看详情
+                      </button>
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 };

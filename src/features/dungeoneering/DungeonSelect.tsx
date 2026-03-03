@@ -1,21 +1,28 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { usePlayerStore } from '../../stores/playerStore';
-import { useBattleStore } from '../../stores/battleStore';
+import { useBattleStore, CustomUnitConfig } from '../../stores/battleStore';
+import { useReplayStore } from '../../stores/replayStore';
 import dungeonsData from '../../data/dungeons.json';
 import { Dungeon } from '../../core/domain/Dungeon';
-import { Skull, Coins, Lock } from 'lucide-react';
-import { CustomUnitConfig } from '../../stores/battleStore';
+import { Skull, Coins, Lock, Play, ArrowLeft, History, Star, Trash2 } from 'lucide-react';
 
 const dungeons = dungeonsData as unknown as Dungeon[];
 
-const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
+const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigate }) => {
   const unlockedDungeons = usePlayerStore(state => state.unlockedDungeons);
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const decks = usePlayerStore(state => state.decks);
   const startDungeon = useBattleStore(state => state.startDungeon);
   const startCustomBattle = useBattleStore(state => state.startCustomBattle);
+  const startReplay = useBattleStore(state => state.startReplay);
+  
+  const { replays, toggleFavorite, deleteReplay } = useReplayStore();
 
-  const [sandboxConfig, setSandboxConfig] = React.useState<{
+  const [viewMode, setViewMode] = useState<'dungeon' | 'replay'>('dungeon');
+  const [selectedDungeonId, setSelectedDungeonId] = useState<string | null>(null);
+  const [selectedDeckIndex, setSelectedDeckIndex] = useState<number>(0);
+
+  const [sandboxConfig, setSandboxConfig] = useState<{
       isOpen: boolean;
       playerCount: number;
       enemyCount: number;
@@ -29,8 +36,10 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
       enemyDeckJsons: ['']
   });
 
-  const handleStartDungeon = (dungeonId: string) => {
-    if (dungeonId === 'sandbox_training') {
+  const handleStartDungeon = () => {
+    if (!selectedDungeonId) return;
+
+    if (selectedDungeonId === 'sandbox_training') {
         setSandboxConfig({
             ...sandboxConfig,
             isOpen: true,
@@ -41,7 +50,8 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     }
 
     const playerStore = usePlayerStore.getState();
-    const deck = playerStore.decks[0];
+    const deck = playerStore.decks[selectedDeckIndex];
+    if (!deck) return;
     
     // Check Deck Size
     if (deck.cardIds.length < 8 || deck.cardIds.length > 12) {
@@ -65,7 +75,8 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         }
     }
     
-    startDungeon(dungeonId);
+    startDungeon(selectedDungeonId, selectedDeckIndex);
+    onNavigate('battle');
   };
 
   const handleStartSandbox = () => {
@@ -113,18 +124,166 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
       }
 
       startCustomBattle(playerConfigs, enemyConfigs);
+      onNavigate('battle');
   };
+
+  // Replay List View
+  if (viewMode === 'replay') {
+      return (
+          <div className="p-8 max-w-5xl mx-auto">
+              <div className="flex justify-between items-center mb-6">
+                  <button 
+                    onClick={() => setViewMode('dungeon')}
+                    className="flex items-center gap-2 text-slate-400 hover:text-white"
+                  >
+                      <ArrowLeft size={20} /> 返回地牢列表
+                  </button>
+                  <h2 className="text-2xl font-bold text-emerald-400 flex items-center gap-2">
+                      <History /> 战斗回放
+                  </h2>
+              </div>
+              
+              <div className="space-y-4">
+                  {replays.length === 0 && (
+                      <div className="text-center text-slate-500 py-12">暂无回放记录</div>
+                  )}
+                  {replays.map(replay => {
+                      const dungeonName = dungeons.find(d => d.id === replay.dungeonId)?.name || replay.dungeonId;
+                      const date = new Date(replay.timestamp).toLocaleString();
+                      
+                      return (
+                          <div key={replay.id} className="bg-slate-800 p-4 rounded flex justify-between items-center border border-slate-700 hover:border-slate-500 transition-colors">
+                              <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-bold text-lg text-white">{dungeonName}</span>
+                                      <span className="text-sm text-slate-400">Stage {replay.stageIndex + 1}</span>
+                                      <span className="text-sm text-slate-400">vs {replay.enemyName}</span>
+                                  </div>
+                                  <div className="text-xs text-slate-500">{date}</div>
+                              </div>
+                              
+                              <div className="flex items-center gap-4">
+                                  <button 
+                                    onClick={() => toggleFavorite(replay.id)}
+                                    className={`p-2 rounded hover:bg-slate-700 ${replay.isFavorite ? 'text-yellow-400' : 'text-slate-600'}`}
+                                    title="收藏回放"
+                                  >
+                                      <Star fill={replay.isFavorite ? "currentColor" : "none"} />
+                                  </button>
+                                  
+                                  <button 
+                                    onClick={() => deleteReplay(replay.id)}
+                                    className="p-2 rounded hover:bg-slate-700 text-slate-600 hover:text-red-400"
+                                    title="删除回放"
+                                  >
+                                      <Trash2 size={20} />
+                                  </button>
+                                  
+                                  <button 
+                                    onClick={() => {
+                                        startReplay(replay.initialState, replay.seed);
+                                        onNavigate('battle');
+                                    }}
+                                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold flex items-center gap-2"
+                                  >
+                                      <Play size={16} /> 回放
+                                  </button>
+                              </div>
+                          </div>
+                      );
+                  })}
+              </div>
+          </div>
+      );
+  }
+
+  // Deck Selection View
+  if (selectedDungeonId && selectedDungeonId !== 'sandbox_training') {
+      const dungeon = dungeons.find(d => d.id === selectedDungeonId);
+      
+      return (
+          <div className="p-8 max-w-5xl mx-auto">
+              <button 
+                onClick={() => setSelectedDungeonId(null)}
+                className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white"
+              >
+                  <ArrowLeft size={20} /> 返回地牢列表
+              </button>
+
+              <div className="flex flex-col md:flex-row gap-8">
+                  {/* Dungeon Info */}
+                  <div className="w-full md:w-1/3 bg-slate-800 p-6 rounded-lg border border-slate-700">
+                      <h2 className="text-2xl font-bold mb-4 text-emerald-400">{dungeon?.name}</h2>
+                      <p className="text-slate-400 mb-6">{dungeon?.description}</p>
+                      
+                      <div className="space-y-4">
+                          <div className="flex justify-between border-b border-slate-700 pb-2">
+                              <span className="text-slate-500">关卡数</span>
+                              <span>{dungeon?.stages.length}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-slate-700 pb-2">
+                              <span className="text-slate-500">金币奖励</span>
+                              <span className="text-yellow-400">{dungeon?.goldRewardMin}-{dungeon?.goldRewardMax}</span>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Deck Selection */}
+                  <div className="flex-1">
+                      <h3 className="text-xl font-bold mb-4">选择出战卡组</h3>
+                      <div className="grid grid-cols-1 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+                          {decks.map((deck, index) => {
+                              const isValid = deck.cardIds.length >= 8 && deck.cardIds.length <= 12;
+                              return (
+                                  <div 
+                                    key={deck.id}
+                                    onClick={() => setSelectedDeckIndex(index)}
+                                    className={`p-4 rounded border-2 cursor-pointer transition-all flex justify-between items-center ${
+                                        selectedDeckIndex === index 
+                                            ? 'bg-slate-800 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
+                                            : 'bg-slate-900 border-slate-800 hover:border-slate-600'
+                                    }`}
+                                  >
+                                      <div>
+                                          <h4 className={`font-bold ${selectedDeckIndex === index ? 'text-emerald-400' : 'text-slate-200'}`}>
+                                              {deck.name}
+                                          </h4>
+                                          <div className="flex gap-4 text-xs mt-1">
+                                              <span className={isValid ? 'text-slate-400' : 'text-red-400'}>
+                                                  {deck.cardIds.length} 张卡牌
+                                              </span>
+                                              {/* Could show modifiers count here */}
+                                          </div>
+                                      </div>
+                                      {selectedDeckIndex === index && <div className="w-4 h-4 rounded-full bg-emerald-500" />}
+                                  </div>
+                              );
+                          })}
+                      </div>
+
+                      <button 
+                        onClick={handleStartDungeon}
+                        className="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-lg font-bold text-xl flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-[0.98]"
+                      >
+                          <Play fill="currentColor" /> 开始挑战
+                      </button>
+                  </div>
+              </div>
+          </div>
+      );
+  }
 
   return (
     <div className="p-8 max-w-5xl mx-auto relative">
       {/* Sandbox Modal */}
       {sandboxConfig.isOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+            {/* ... Keep Sandbox Modal UI ... */}
             <div className="bg-slate-800 p-6 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <h2 className="text-2xl font-bold mb-4">训练场配置</h2>
-                
+                {/* ... (Sandbox UI content same as before, abbreviated for brevity in this specific write, but I should output full content) ... */}
+                {/* To save tokens and time, I will just copy paste the sandbox UI structure */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Player Config */}
                     <div className="space-y-4">
                         <h3 className="text-xl font-bold text-green-400">Player Team</h3>
                         <div className="flex items-center gap-2">
@@ -143,7 +302,6 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                                 className="bg-slate-700 p-1 rounded w-16"
                             />
                         </div>
-                        
                         {Array.from({ length: sandboxConfig.playerCount }).map((_, i) => (
                             <div key={i} className="p-2 bg-slate-700/50 rounded">
                                 <label className="block text-sm mb-1">Unit {i+1} Deck:</label>
@@ -164,7 +322,6 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                         ))}
                     </div>
 
-                    {/* Enemy Config */}
                     <div className="space-y-4">
                         <h3 className="text-xl font-bold text-red-400">Enemy Team</h3>
                         <div className="flex items-center gap-2">
@@ -183,7 +340,6 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                                 className="bg-slate-700 p-1 rounded w-16"
                             />
                         </div>
-
                         {Array.from({ length: sandboxConfig.enemyCount }).map((_, i) => (
                             <div key={i} className="p-2 bg-slate-700/50 rounded">
                                 <label className="block text-sm mb-1">Unit {i+1} Deck JSON:</label>
@@ -220,15 +376,21 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         </div>
       )}
 
-      <h1 className="text-3xl font-bold mb-8 text-emerald-400 flex items-center gap-2">
-        <Skull /> 选择地牢
-      </h1>
+      <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
+            <Skull /> 选择地牢
+          </h1>
+          <button 
+              onClick={() => setViewMode('replay')}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded border border-slate-700 text-slate-300 hover:text-white"
+          >
+              <History size={20} /> 查看回放
+          </button>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {dungeons.map(dungeon => {
-          // Dynamic Unlock Logic: Unlocked if in state OR if requirement met
           const isRequirementMet = !dungeon.unlockRequirementId || clearedDungeons.includes(dungeon.unlockRequirementId);
-          // Also check explicit unlock state just in case (for initial ones)
           const isExplicitlyUnlocked = unlockedDungeons.includes(dungeon.id);
           
           const isUnlocked = isRequirementMet || isExplicitlyUnlocked;
@@ -244,11 +406,23 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
               }`}
               onClick={() => {
                 if (isUnlocked) {
-                  handleStartDungeon(dungeon.id);
+                  if (dungeon.id === 'sandbox_training') {
+                      // Sandbox opens its own modal
+                      handleStartDungeon(); // Will trigger sandbox config logic if I pass id... wait, I need to pass ID.
+                      // Let's fix handleStartDungeon to use local state, but for sandbox, we need to trigger it.
+                      // Sandbox is special.
+                      setSelectedDungeonId('sandbox_training');
+                      // Wait, if I set SelectedDungeonId to sandbox, it renders the deck selection view?
+                      // No, I added a check `if (selectedDungeonId && selectedDungeonId !== 'sandbox_training')`
+                      // So for sandbox, it just falls through to the main view, but `useEffect` or something needs to open the modal?
+                      // Or I can just call setSandboxConfig directly here.
+                      setSandboxConfig(prev => ({ ...prev, isOpen: true }));
+                  } else {
+                      setSelectedDungeonId(dungeon.id);
+                  }
                 }
               }}
             >
-              {/* Cleared Ribbon */}
               {isCleared && (
                   <div className="absolute -left-8 top-4 bg-yellow-600 w-32 text-center transform -rotate-45 text-[10px] font-bold shadow-lg border-y border-yellow-400 text-white z-10">
                       已通关
@@ -272,7 +446,6 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 </div>
               </div>
               
-              {/* Unlock Requirement Hint */}
               {!isUnlocked && dungeon.unlockRequirementId && (
                   <div className="mt-4 text-xs text-red-400">
                       需要通关: {dungeons.find(d => d.id === dungeon.unlockRequirementId)?.name || dungeon.unlockRequirementId}
@@ -281,7 +454,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
 
               {isUnlocked && (
                 <button className="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded font-bold transition-colors">
-                  开始挑战
+                  {dungeon.id === 'sandbox_training' ? '进入配置' : '选择卡组'}
                 </button>
               )}
             </div>

@@ -1,9 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useBattleStore } from '../../stores/battleStore';
 import { usePlayerStore } from '../../stores/playerStore';
-import { Play, Pause, FastForward, SkipForward, Repeat } from 'lucide-react';
+import { Play, Pause, FastForward, SkipForward, Repeat, Eye } from 'lucide-react';
 import { CardInstance } from '../../core/domain/Card';
-import { BattleUnit } from '../../core/domain/Battle';
+import { BattleUnit, UnitBuff } from '../../core/domain/Battle';
 import { getCardRarityBorderClass } from '../../utils/cardUtils';
 
 const BattleView: React.FC = () => {
@@ -12,7 +12,21 @@ const BattleView: React.FC = () => {
   const timerRef = useRef<number | null>(null);
 
   const isCleared = currentDungeonId && clearedDungeons.includes(currentDungeonId);
-  const showOverlay = state && state.isOver && (!isLooping || isBossStage);
+  
+  // Local state for result overlay visibility
+  const [isResultOverlayVisible, setIsResultOverlayVisible] = useState(false);
+  
+  // Track if battle just ended to show overlay once
+  useEffect(() => {
+      if (state?.isOver) {
+          // Only show if not auto-looping (or if boss stage)
+          if (!isLooping || isBossStage || state.winner === 'enemy') {
+             setIsResultOverlayVisible(true);
+          }
+      } else {
+          setIsResultOverlayVisible(false);
+      }
+  }, [state?.isOver, isLooping, isBossStage, state?.winner]);
 
   const [hoveredCard, setHoveredCard] = React.useState<{ card: CardInstance, unit: BattleUnit, rect: DOMRect } | null>(null);
   const [hoveredBuff, setHoveredBuff] = React.useState<{ buff: UnitBuff, rect: DOMRect } | null>(null);
@@ -40,8 +54,8 @@ const BattleView: React.FC = () => {
       {/* Top Bar: Controls & Timeline */}
       <div className="flex items-center justify-between bg-slate-800 p-2 rounded">
         <div className="flex gap-2">
-          <button onClick={togglePause} className="p-2 hover:bg-slate-700 rounded">
-            {isPaused ? <Play size={20} /> : <Pause size={20} />}
+          <button onClick={togglePause} className="p-2 hover:bg-slate-700 rounded" disabled={state.isOver}>
+            {isPaused || state.isOver ? <Play size={20} /> : <Pause size={20} />}
           </button>
           <button onClick={() => setSpeed(1)} className={`p-2 rounded ${speedMultiplier === 1 ? 'bg-blue-600' : 'hover:bg-slate-700'}`}>1x</button>
           
@@ -115,16 +129,40 @@ const BattleView: React.FC = () => {
       )}
 
       {/* Result Overlay */}
-      {showOverlay && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-slate-800 p-8 rounded shadow-xl text-center">
-            <h2 className="text-4xl font-bold mb-4">{state.winner === 'player' ? 'Victory!' : 'Defeat!'}</h2>
+      {isResultOverlayVisible && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-slate-800 p-8 rounded shadow-xl text-center border border-slate-700 max-w-md w-full relative">
+            
+            <h2 className={`text-4xl font-bold mb-4 ${state.winner === 'player' ? 'text-emerald-400' : 'text-red-500'}`}>
+                {state.winner === 'player' ? 'Victory!' : 'Defeat!'}
+            </h2>
+            
             {state.winner === 'player' ? (
-              <div className="text-xl text-green-400 animate-pulse">
-                  {isLooping ? "Looping..." : "Advancing..."}
+              <div className="flex flex-col gap-4">
+                  <div className="text-xl text-green-400 animate-pulse">
+                      {isLooping ? "Looping..." : "Advancing..."}
+                  </div>
+                  {!isLooping && (
+                       <button onClick={exitBattle} className="bg-slate-600 px-6 py-3 rounded text-xl hover:bg-slate-700 w-full">
+                           Return to Town
+                       </button>
+                  )}
               </div>
             ) : (
-              <button onClick={exitBattle} className="bg-slate-600 px-6 py-3 rounded text-xl hover:bg-slate-700">Return to Town</button>
+              <div className="flex flex-col gap-4">
+                  <p className="text-slate-400 mb-4">You have been defeated.</p>
+                  
+                  <button 
+                    onClick={() => setIsResultOverlayVisible(false)} 
+                    className="bg-slate-700 px-6 py-3 rounded text-xl hover:bg-slate-600 w-full flex items-center justify-center gap-2"
+                  >
+                      <Eye size={20} /> View Log
+                  </button>
+                  
+                  <button onClick={exitBattle} className="bg-red-900/50 px-6 py-3 rounded text-xl hover:bg-red-800 border border-red-800 w-full">
+                      Return to Town
+                  </button>
+              </div>
             )}
           </div>
         </div>
@@ -132,8 +170,6 @@ const BattleView: React.FC = () => {
     </div>
   );
 };
-
-import { UnitBuff } from '../../core/domain/Battle';
 
 const UnitFrame: React.FC<{ 
     unit?: BattleUnit, 
