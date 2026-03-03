@@ -116,7 +116,7 @@
     "effectDescription": "对随机敌方单位造成6点魔法火焰伤害，并对其他敌方单位造成3点伤害。",
     "packId": "sword_and_magic",
     "rarity": 12,
-    "speed": 12,
+    "speed": 8,
     "scriptId": "fireball",
     "tags": ["攻击", "魔法", "火"]
   },
@@ -127,7 +127,7 @@
     "effectDescription": "造成6点伤害（物理+魔法/冰）。使目标本回合后续所有攻击卡速度-1。",
     "packId": "sword_and_magic",
     "rarity": 12,
-    "speed": 6,
+    "speed": 7,
     "scriptId": "ice_orb",
     "tags": ["攻击", "魔法", "冰", "物理"]
   },
