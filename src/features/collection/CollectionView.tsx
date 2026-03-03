@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePlayerStore } from '../../stores/playerStore';
 import cardsData from '../../data/cards.json';
 import modifiersData from '../../data/modifiers.json';
-import { Layers, Plus, Minus, Trash2, Copy, Edit2, Download, Upload, Check, X, Gem } from 'lucide-react';
+import { Layers, Plus, Minus, Trash2, Edit2, Download, Upload, Check, X, Gem } from 'lucide-react';
 import { Card } from '../../core/domain/Card';
 import CardDisplay from '../common/CardDisplay';
 

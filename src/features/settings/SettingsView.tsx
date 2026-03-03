@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { Trash2, RefreshCw } from 'lucide-react';
 import { usePlayerStore } from '../../stores/playerStore';
-import { useBattleStore } from '../../stores/battleStore';
 
 const SettingsView: React.FC = () => {
-  const { reset: resetPlayer } = usePlayerStore();
   const [confirmText, setConfirmText] = useState('');
   
   // Hard reset should clear localStorage.

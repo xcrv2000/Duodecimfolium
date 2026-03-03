@@ -3,7 +3,7 @@ import { usePlayerStore } from '../../stores/playerStore';
 import cardsData from '../../data/cards.json';
 import packsData from '../../data/packs.json';
 import modifiersData from '../../data/modifiers.json';
-import { Book, Filter, Search, Hammer, Gem } from 'lucide-react';
+import { Book, Search, Hammer, Gem } from 'lucide-react';
 import { Card } from '../../core/domain/Card';
 import CardDisplay from '../common/CardDisplay';
 

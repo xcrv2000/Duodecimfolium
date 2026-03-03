@@ -12,7 +12,7 @@ export type CardScript = (source: BattleUnit, targets: BattleUnit[], battle: Bat
 const getBuffDef = (id: string) => {
     const def = buffDefs.get(id);
     if (!def) throw new Error(`Buff definition not found: ${id}`);
-    return def;
+    return def as any;
 };
 
 export const CardScripts: Record<string, (loop: BattleLoop, source: BattleUnit, targets: BattleUnit[]) => void> = {
@@ -27,26 +27,24 @@ export const CardScripts: Record<string, (loop: BattleLoop, source: BattleUnit, 
         loop.addBuff(target, {
             ...def,
             value: 1,
-            duration: 99,
-            trigger: 'on_card_play'
+            duration: 99
         });
     });
   },
 
   // Parry (镇)
-  "parry": (loop, source, targets) => {
+  "parry": (loop, source, _targets) => {
     loop.addArmor(source, 4);
   },
 
   // Charge (蓄)
-  "charge": (loop, source, targets) => {
+  "charge": (loop, source, _targets) => {
     if (source.buffs.some(b => b.id === 'charge')) return;
     const def = getBuffDef('charge');
     loop.addBuff(source, {
       ...def,
       value: 2,
-      duration: 99,
-      trigger: 'on_attack'
+      duration: 99
     });
   },
 
@@ -77,19 +75,16 @@ export const CardScripts: Record<string, (loop: BattleLoop, source: BattleUnit, 
       
       const def = getBuffDef('slow');
       // Add 3 stacks
-      for (let i=0; i<3; i++) {
           loop.addBuff(target, {
             ...def,
-            value: 1,
-            duration: 99,
-            trigger: 'on_card_play'
+            value: 3,
+            duration: 99
           });
-      }
     });
   },
 
   // Ambush (伏)
-  "ambush": (loop, source, targets) => {
+  "ambush": (loop, source, _targets) => {
     loop.addArmor(source, 12);
   },
 
@@ -116,13 +111,12 @@ export const CardScripts: Record<string, (loop: BattleLoop, source: BattleUnit, 
   },
 
   // Concentrate (凝)
-  "concentrate": (loop, source, targets) => {
+  "concentrate": (loop, source, _targets) => {
      const def = getBuffDef('focus');
      loop.addBuff(source, {
        ...def,
        value: 1.5,
-       duration: 99,
-       trigger: 'on_attack'
+       duration: 99
      });
   }
 };

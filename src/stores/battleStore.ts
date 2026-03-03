@@ -1,7 +1,6 @@
 import { create } from 'zustand';
-import { BattleState, BattleUnit, BattleLogEntry } from '../core/domain/Battle';
+import { BattleState, BattleUnit } from '../core/domain/Battle';
 import { BattleLoop } from '../core/systems/BattleLoop';
-import { CardScripts } from '../core/systems/CardScripts';
 import { usePlayerStore } from './playerStore';
 import dungeonsData from '../data/dungeons.json';
 import enemiesData from '../data/enemies.json';
@@ -358,7 +357,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         }
         
         // Auto Advance to Next Stage
-        const { state, isLooping, isBossStage } = get();
+        const { isLooping, isBossStage } = get();
         let delay = 1000;
         
         if (isLooping) {

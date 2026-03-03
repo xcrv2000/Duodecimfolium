@@ -1,9 +1,6 @@
 import { BattleState, BattleUnit, BattleLogEntry, Buff } from '../domain/Battle';
 import { CardInstance } from '../domain/Card';
 import { CardScripts } from './CardScripts';
-import buffsData from '../../data/buffs.json';
-
-const buffsMap = new Map(buffsData.map(b => [b.id, b]));
 
 export class BattleLoop {
   private state: BattleState;
@@ -74,7 +71,7 @@ export class BattleLoop {
         // Apply Item Modifiers (Beads)
         card.modifiers.forEach(mod => {
             if (mod.effectId === 'speed_mod') {
-                speed += Number(mod.value);
+                speed = (speed || 0) + Number(mod.value);
             }
         });
 
@@ -195,8 +192,8 @@ export class BattleLoop {
         if (buff) {
             if (buff.stackable) {
                 // Decrement value by amount used
-                buff.value -= used.value;
-                if (buff.value <= 0) {
+                buff.value = (buff.value || 0) - used.value;
+                if ((buff.value || 0) <= 0) {
                     this.removeBuff(unit, buff.id);
                 }
             } else {
@@ -213,7 +210,6 @@ export class BattleLoop {
     // Check for Self-Targeting tags
     const isSupport = card.tags?.includes('辅助');
     const isDefense = card.tags?.includes('防御');
-    const isAttack = card.tags?.includes('攻击');
     
     // If it's explicitly support or defense, default to self
     if (isSupport || isDefense || card.scriptId === 'concentrate') {
@@ -274,7 +270,7 @@ export class BattleLoop {
     // Check for Charge (Damage x2)
     const chargeBuff = source.buffs.find(b => b.id === 'charge');
     if (chargeBuff) {
-        damage *= chargeBuff.value;
+        damage *= (chargeBuff.value || 1);
         this.log(source, source, `Charge doubles damage!`, 'buff');
         // Consume charge
         this.removeBuff(source, 'charge');
@@ -283,7 +279,7 @@ export class BattleLoop {
     // Check for Focus (+50%)
     const focusBuff = source.buffs.find(b => b.id === 'focus');
     if (focusBuff) {
-        damage *= focusBuff.value;
+        damage *= (focusBuff.value || 1);
         this.log(source, source, `Focus increases damage!`, 'buff');
         // Consume focus if intended (usually single use)
         // Design says "Next attack", so consume.
@@ -312,7 +308,7 @@ export class BattleLoop {
     if (type === 'physical' && unmitigated && damage > 0) {
         const bleedBuffs = target.buffs.filter(b => b.id === 'bleed');
         if (bleedBuffs.length > 0) {
-            const bleedDmg = bleedBuffs.reduce((acc, b) => acc + b.value, 0);
+            const bleedDmg = bleedBuffs.reduce((acc, b) => acc + (b.value || 0), 0);
             damage += bleedDmg;
             this.log(source, target, `Bleed adds ${bleedDmg} damage!`, 'buff');
         }
@@ -337,7 +333,7 @@ export class BattleLoop {
     if (buff.stackable) {
         const existing = unit.buffs.find(b => b.id === buff.id);
         if (existing) {
-            existing.value += buff.value;
+            existing.value = (existing.value || 0) + (buff.value || 0);
             // Refresh duration? Usually yes.
             if (buff.duration > existing.duration) existing.duration = buff.duration;
             this.log(unit, unit, `Stacked buff: ${buff.name} (Value: ${existing.value})`, 'buff');
@@ -347,7 +343,7 @@ export class BattleLoop {
         // Non-stackable: Higher level (value) overwrites lower level
         const existing = unit.buffs.find(b => b.id === buff.id);
         if (existing) {
-            if (buff.value > existing.value) {
+            if ((buff.value || 0) > (existing.value || 0)) {
                 // Overwrite
                 existing.value = buff.value;
                 existing.duration = buff.duration;

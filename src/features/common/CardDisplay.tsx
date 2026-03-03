@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Card, CardInstance } from '../../core/domain/Card';
 import { getCardRarityBorderClass } from '../../utils/cardUtils';

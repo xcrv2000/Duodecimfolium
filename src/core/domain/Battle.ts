@@ -20,6 +20,7 @@ export interface Buff {
   description: string;
   duration: number; // 剩余回合数
   type: 'buff' | 'debuff';
+  stackable?: boolean;
   value?: number; // 数值 (e.g., speed +1, damage +2)
   sourceCardId?: string;
   onTurnStart?: (unit: BattleUnit, battle: BattleState) => void;

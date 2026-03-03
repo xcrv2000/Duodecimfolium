@@ -3,7 +3,7 @@ import { usePlayerStore } from '../../stores/playerStore';
 import { useBattleStore } from '../../stores/battleStore';
 import dungeonsData from '../../data/dungeons.json';
 import { Dungeon } from '../../core/domain/Dungeon';
-import { Skull, Coins, Lock, Settings } from 'lucide-react';
+import { Skull, Coins, Lock } from 'lucide-react';
 import { CustomUnitConfig } from '../../stores/battleStore';
 
 const dungeons = dungeonsData as unknown as Dungeon[];

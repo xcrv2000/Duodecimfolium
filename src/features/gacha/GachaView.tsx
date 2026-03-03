@@ -10,7 +10,7 @@ const packs = packsData as any[];
 const cards = cardsData as Card[];
 
 const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
-  const { gold, unlockedPacks, addGold, addCard, dust } = usePlayerStore();
+  const { gold, unlockedPacks, addGold, addCard } = usePlayerStore();
   const [openingPack, setOpeningPack] = useState<any[] | null>(null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
   const [isAutoRevealing, setIsAutoRevealing] = useState(false);

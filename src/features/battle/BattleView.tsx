@@ -7,12 +7,12 @@ import { BattleUnit } from '../../core/domain/Battle';
 import { getCardRarityBorderClass } from '../../utils/cardUtils';
 
 const BattleView: React.FC = () => {
-  const { state, tick, isPaused, togglePause, speedMultiplier, setSpeed, exitBattle, nextStage, isLooping, toggleLoop, currentDungeonId, isBossStage } = useBattleStore();
+  const { state, tick, isPaused, togglePause, speedMultiplier, setSpeed, exitBattle, isLooping, toggleLoop, currentDungeonId, isBossStage } = useBattleStore();
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const timerRef = useRef<number | null>(null);
 
   const isCleared = currentDungeonId && clearedDungeons.includes(currentDungeonId);
-  const showOverlay = state.isOver && (!isLooping || isBossStage);
+  const showOverlay = state && state.isOver && (!isLooping || isBossStage);
 
   const [hoveredCard, setHoveredCard] = React.useState<{ card: CardInstance, unit: BattleUnit, rect: DOMRect } | null>(null);
 
@@ -124,7 +124,7 @@ const BattleView: React.FC = () => {
   );
 };
 
-const UnitFrame: React.FC<{ unit?: BattleUnit, isEnemy?: boolean, onCardHover?: (data: { card: CardInstance, unit: BattleUnit, rect: DOMRect } | null) => void }> = ({ unit, isEnemy, onCardHover }) => {
+const UnitFrame: React.FC<{ unit?: BattleUnit, isEnemy?: boolean, onCardHover?: (data: { card: CardInstance, unit: BattleUnit, rect: DOMRect } | null) => void }> = ({ unit, onCardHover }) => {
   if (!unit) return <div className="w-64 h-96 bg-slate-800/50 rounded flex items-center justify-center">Empty</div>;
 
   return (
@@ -143,7 +143,7 @@ const UnitFrame: React.FC<{ unit?: BattleUnit, isEnemy?: boolean, onCardHover?: 
       <div className="flex gap-1 flex-wrap mb-4 min-h-[2rem]">
         {unit.buffs.map((buff, i) => (
           <div key={i} className="bg-slate-700 px-2 py-1 rounded text-xs" title={buff.description}>
-            {buff.name} {buff.value > 1 ? `x${buff.value}` : ''} {buff.duration < 10 ? `(${buff.duration})` : ''}
+            {buff.name} {(buff.value || 0) > 1 ? `x${buff.value || 0}` : ''} {buff.duration < 10 ? `(${buff.duration})` : ''}
           </div>
         ))}
       </div>
@@ -192,7 +192,7 @@ const CardMini: React.FC<{ card: CardInstance, onMouseEnter?: (rect: DOMRect) =>
     )
 }
 
-const CardHoverOverlay: React.FC<{ card: CardInstance, unit: BattleUnit, rect: DOMRect }> = ({ card, unit, rect }) => {
+const CardHoverOverlay: React.FC<{ card: CardInstance, unit: BattleUnit, rect: DOMRect }> = ({ card, unit }) => {
     const isPlayer = unit.team === 'player';
     
     // Positioning
