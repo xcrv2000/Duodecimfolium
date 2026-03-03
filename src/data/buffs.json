@@ -2,36 +2,41 @@
   {
     "id": "slow",
     "name": "迟缓",
-    "description": "下一张卡牌速度+{value}。",
+    "description": "速度+{level}。",
     "type": "debuff",
-    "stackable": true
+    "stackRule": "stackable",
+    "duration": 1
   },
   {
     "id": "charge",
-    "name": "蓄力",
+    "name": "蓄势",
     "description": "下一次攻击造成的伤害翻倍，且速度+1。",
     "type": "buff",
-    "stackable": false
+    "stackRule": "nonStackable",
+    "duration": 1
   },
   {
     "id": "bleed",
     "name": "流血",
-    "description": "直到回合结束时，受到的没被护甲抵抗的物理伤害增加{value}点。",
+    "description": "受到未被护甲抵消的物理伤害增加{level}点。",
     "type": "debuff",
-    "stackable": true
+    "stackRule": "stackable",
+    "duration": 1
   },
   {
     "id": "stun",
     "name": "眩晕",
-    "description": "下回合所有卡牌速度+{value}。",
+    "description": "下回合所有卡牌速度+{level}。",
     "type": "debuff",
-    "stackable": false
+    "stackRule": "nonStackable",
+    "duration": 2
   },
   {
     "id": "focus",
     "name": "专注",
-    "description": "下一次攻击造成的伤害增加50%。",
+    "description": "下一次攻击伤害增加50%。",
     "type": "buff",
-    "stackable": false
+    "stackRule": "nonStackable",
+    "duration": 1
   }
 ]

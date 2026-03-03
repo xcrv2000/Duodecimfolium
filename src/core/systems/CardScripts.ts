@@ -1,122 +1,148 @@
-import { BattleState, BattleUnit } from '../domain/Battle';
-import { CardInstance } from '../domain/Card';
 import { BattleLoop } from './BattleLoop';
-import buffsData from '../../data/buffs.json';
+import { BattleUnit, UnitBuff } from '../domain/Battle';
 
-// Create a map for quick lookup
-const buffDefs = new Map(buffsData.map(b => [b.id, b]));
+type CardScript = (loop: BattleLoop, source: BattleUnit, targets: BattleUnit[]) => void;
 
-export type CardScript = (source: BattleUnit, targets: BattleUnit[], battle: BattleState, card: CardInstance) => void;
-
-// Helper to get base buff data
-const getBuffDef = (id: string) => {
-    const def = buffDefs.get(id);
-    if (!def) throw new Error(`Buff definition not found: ${id}`);
-    return def as any;
-};
-
-export const CardScripts: Record<string, (loop: BattleLoop, source: BattleUnit, targets: BattleUnit[]) => void> = {
+export const CardScripts: Record<string, CardScript> = {
+  // 1. Thrust (突)
+  thrust: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    
+    // Deal 3 Damage
+    loop.dealDamage(source, target, 3, 'physical');
+    
+    // Find Next Card & Slow (+10)
+    // "若目标单位在本回合不存在后续卡实例，则该附加效果无效。"
+    const nextCard = loop.findNextCardOnTimeline(target);
+    if (nextCard) {
+        loop.modifyCardSpeed(nextCard, 10); // +1.0 Speed
+    }
+  },
   
-  // Thrust (突)
-  "thrust": (loop, source, targets) => {
-    targets.forEach(target => {
-        loop.dealDamage(source, target, 3, 'physical');
-    });
-    targets.forEach(target => {
-        const def = getBuffDef('slow');
-        loop.addBuff(target, {
-            ...def,
-            value: 1,
-            duration: 99
-        });
-    });
+  // 2. Parry (镇)
+  parry: (loop, source, targets) => {
+      // Default target logic might pick enemy if no defense tag logic (but I added it in BattleLoop)
+      // BattleLoop.findTargets handles '防御' -> [source].
+      const target = targets[0] || source;
+      loop.addArmor(target, 4);
   },
-
-  // Parry (镇)
-  "parry": (loop, source, _targets) => {
-    loop.addArmor(source, 4);
-  },
-
-  // Charge (蓄)
-  "charge": (loop, source, _targets) => {
-    if (source.buffs.some(b => b.id === 'charge')) return;
-    const def = getBuffDef('charge');
-    loop.addBuff(source, {
-      ...def,
-      value: 2,
-      duration: 99
-    });
-  },
-
-  // Stab (刺)
-  "stab": (loop, source, targets) => {
-    targets.forEach(target => {
-      loop.dealDamage(source, target, 3, 'physical');
-      const def = getBuffDef('bleed');
-      loop.addBuff(target, {
-        ...def,
-        value: 1,
-        duration: 1
-      });
-    });
-  },
-
-  // Slash (斩)
-  "slash": (loop, source, targets) => {
-    targets.forEach(target => {
-      loop.dealDamage(source, target, 6, 'physical');
-    });
-  },
-
-  // Flick (撩)
-  "flick": (loop, source, targets) => {
-    targets.forEach(target => {
-      loop.dealDamage(source, target, 2, 'physical');
+  
+  // 3. Charge (蓄)
+  charge: (loop, source, targets) => {
+      const target = targets[0] || source;
       
-      const def = getBuffDef('slow');
-      // Add 3 stacks
-          loop.addBuff(target, {
-            ...def,
-            value: 3,
-            duration: 99
-          });
-    });
+      const buff: UnitBuff = {
+          id: 'charge',
+          name: '蓄势',
+          description: '下一次攻击造成的伤害翻倍，且速度+1。',
+          duration: 1, // Until turn end
+          stackRule: 'nonStackable',
+          level: 1,
+          type: 'buff',
+          onAttack: (unit, t, damage, battle) => {
+              // Double damage
+              // Remove buff manually (consume)
+              const idx = unit.buffs.findIndex(b => b.id === 'charge');
+              if (idx !== -1) unit.buffs.splice(idx, 1);
+              return damage * 2;
+          }
+      };
+      loop.addUnitBuff(target, buff);
   },
-
-  // Ambush (伏)
-  "ambush": (loop, source, _targets) => {
-    loop.addArmor(source, 12);
+  
+  // 4. Stab (刺)
+  stab: (loop, source, targets) => {
+      const target = targets[0];
+      if (!target) return;
+      loop.dealDamage(source, target, 3, 'physical');
+      
+      // Bleed Logic is handled in BattleLoop.dealDamage, we just apply the buff.
+      const bleed: UnitBuff = {
+          id: 'bleed',
+          name: '流血',
+          description: '受到未被护甲抵消的物理伤害增加{level}点。',
+          duration: 1,
+          stackRule: 'stackable',
+          level: 1,
+          type: 'debuff'
+      };
+      loop.addUnitBuff(target, bleed);
   },
-
-  // Sweep (扫)
-  "sweep": (loop, source, targets) => {
-    targets.forEach(target => {
-        loop.dealDamage(source, target, 3, 'physical');
-        loop.dealDamage(source, target, 3, 'physical');
-        loop.dealDamage(source, target, 3, 'physical');
-    });
+  
+  // 5. Slash (斩)
+  slash: (loop, source, targets) => {
+      const target = targets[0];
+      if (!target) return;
+      loop.dealDamage(source, target, 6, 'physical');
   },
-
-  // Throw (摔)
-  "throw": (loop, source, targets) => {
-    targets.forEach(target => {
+  
+  // 6. Flick (撩)
+  flick: (loop, source, targets) => {
+      const target = targets[0];
+      if (!target) return;
+      loop.dealDamage(source, target, 2, 'physical');
+      const nextCard = loop.findNextCardOnTimeline(target);
+      if (nextCard) {
+          loop.modifyCardSpeed(nextCard, 30); // +3.0 Speed
+      }
+  },
+  
+  // 7. Ambush (伏)
+  ambush: (loop, source, targets) => {
+      const target = targets[0] || source;
+      loop.addArmor(target, 12);
+  },
+  
+  // 8. Sweep (扫)
+  sweep: (loop, source, targets) => {
+      const target = targets[0];
+      if (!target) return;
+      // 3 times 3 damage
+      loop.dealDamage(source, target, 3, 'physical');
+      if (target.isDead) return;
+      loop.dealDamage(source, target, 3, 'physical');
+      if (target.isDead) return;
+      loop.dealDamage(source, target, 3, 'physical');
+  },
+  
+  // 9. Throw (摔)
+  throw: (loop, source, targets) => {
+      const target = targets[0];
+      if (!target) return;
       loop.dealDamage(source, target, 5, 'physical');
-      const def = getBuffDef('stun'); // Changed from concussion to stun
-      loop.addBuff(target, {
-        ...def,
-        value: 2, // Stun level 2 (Speed +2)
-        duration: 2
-      });
-    });
+      
+      const stun: UnitBuff = {
+          id: 'stun',
+          name: '眩晕',
+          description: '下回合所有卡牌速度+{level}。',
+          duration: 2, // Current + Next
+          stackRule: 'nonStackable',
+          level: 20, // +2.0 Speed (x10)
+          type: 'debuff'
+      };
+      loop.addUnitBuff(target, stun);
   },
-
-  // Concentrate (凝)
-  "concentrate": (loop, source, _targets) => {
-     const def = getBuffDef('focus');
-     loop.addBuff(source, {
-       ...def,
-       value: 1.5,
-       duration: 99
-     });
+  
+  // 10. Concentrate (凝)
+  concentrate: (loop, source, targets) => {
+      const target = targets[0] || source;
+      const focus: UnitBuff = {
+          id: 'focus',
+          name: '专注',
+          description: '下一次攻击伤害增加50%。',
+          duration: 1,
+          stackRule: 'nonStackable',
+          level: 1,
+          type: 'buff',
+          onAttack: (unit, t, dmg) => {
+              // +50%
+              // Remove self
+              const idx = unit.buffs.findIndex(b => b.id === 'focus');
+              if (idx !== -1) unit.buffs.splice(idx, 1);
+              return Math.floor(dmg * 1.5);
+          }
+      };
+      loop.addUnitBuff(target, focus);
   }
 };

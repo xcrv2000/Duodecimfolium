@@ -1,9 +1,10 @@
-import { BattleState, BattleUnit, BattleLogEntry, Buff } from '../domain/Battle';
+import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff } from '../domain/Battle';
 import { CardInstance } from '../domain/Card';
 import { CardScripts } from './CardScripts';
 
 export class BattleLoop {
   private state: BattleState;
+  private currentCard: CardInstance | null = null;
 
   constructor(state: BattleState) {
     this.state = state;
@@ -26,10 +27,28 @@ export class BattleLoop {
 
   public executeStartOfBattleEffects(): void {
     this.log(null, null, "--- Battle Start ---", 'info');
+    
+    // 1. Initialize Speeds & Apply NPC Bonus
+    this.state.units.forEach(unit => {
+        // Apply NPC Speed Bonus (+0.1 -> +1 speed10)
+        if (unit.team === 'enemy') {
+            unit.cards.forEach(c => {
+                 if (c.baseSpeed10 !== null) {
+                     c.permanentSpeedModifier = (c.permanentSpeedModifier || 0) + 1;
+                 }
+            });
+        }
+        
+        // Initial Speed Calculation
+        unit.cards.forEach(card => {
+            this.recalculateCardSpeed(unit, card);
+        });
+    });
+
+    // 2. Execute passive effects (Start of Battle)
     this.state.units.forEach(unit => {
       unit.cards.forEach(card => {
-        if (card.originalSpeed === null) {
-          // Trigger passive/start-of-battle effects
+        if (card.baseSpeed10 === null) {
           this.executeCard(unit, card);
         }
       });
@@ -43,126 +62,128 @@ export class BattleLoop {
     // Clear armor, update buffs
     this.state.units.forEach(unit => {
       unit.armor = 0;
+      
+      // Update Unit Buffs
       unit.buffs.forEach(buff => {
         if (buff.onTurnEnd) buff.onTurnEnd(unit, this.state);
         buff.duration--;
       });
       unit.buffs = unit.buffs.filter(b => b.duration > 0);
+      
+      // Reset Card Instances (Clear Buffs, Recalculate Speed)
+      unit.cards.forEach(card => {
+          card.buffs = []; // Clear round-based buffs
+          this.recalculateCardSpeed(unit, card);
+      });
     });
 
     this.log(null, null, "--- Turn End ---", 'info');
   }
 
-  private processTick(tick: number): void {
-    // 1. Gather all valid actions for this tick
-    const actions: { unit: BattleUnit; card: CardInstance; usedBuffs: { id: string; value: number }[] }[] = [];
-
-    this.state.units.forEach(unit => {
-      if (unit.isDead) return;
-
-      unit.cards.forEach(card => {
-        // Calculate current speed
-        let speed = card.originalSpeed;
-        if (speed === null) return; // Passive card
-
-        // Apply permanent modifiers
-        speed += (card.permanentSpeedModifier || 0);
-
-        // Apply Item Modifiers (Beads)
+  private recalculateCardSpeed(unit: BattleUnit, card: CardInstance): void {
+      if (card.baseSpeed10 === null) {
+          card.currentSpeed10 = null;
+          return;
+      }
+      
+      let speed = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
+      
+      // Apply beads (modifiers)
+      // Assuming modifiers.value is numeric string or number.
+      // Need to convert to speed10 integer.
+      // Example: value "0.5" -> 5
+      if (card.modifiers) {
         card.modifiers.forEach(mod => {
             if (mod.effectId === 'speed_mod') {
-                speed = (speed || 0) + Number(mod.value);
+                const val = Number(mod.value);
+                if (!isNaN(val)) {
+                    speed += Math.round(val * 10);
+                }
             }
         });
-
-        // Apply speed modifiers from buffs
-        let speedModifier = 0;
-        const usedBuffs: { id: string; value: number }[] = [];
-        
-        unit.buffs.forEach(buff => {
-          if (buff.id === 'slow') {
-              const val = buff.value || 0;
-              speedModifier += val;
-              usedBuffs.push({ id: buff.id, value: val });
-          }
-          if (buff.id === 'haste') {
-              const val = buff.value || 0;
-              speedModifier -= val;
-              usedBuffs.push({ id: buff.id, value: val });
-          }
-          
-          // Handle 'stun' (formerly concussion) (next turn slow)
-          // Stun is not stackable, but higher level overwrites lower level.
-          // Stun effect is "Next Turn Speed +{value}".
-          // If we are IN the "next turn" (buff is active), apply modifier.
-          // Current implementation: Stun duration 2 (this turn + next turn).
-          // Assuming buff logic ticks duration at end of turn.
-          // So if duration > 0, it applies?
-          // Wait, "Next Turn" means it shouldn't affect THIS turn.
-          // CardScript adds duration 2.
-          // Turn 1: Duration 2. Apply? No.
-          // End Turn 1: Duration -> 1.
-          // Turn 2: Duration 1. Apply? Yes.
-          // End Turn 2: Duration -> 0. Removed.
-          
-          // We need a way to check if it's "active".
-          // Simple heuristic: If duration === 1 (it's the last turn of effect), apply it.
-          // OR: Use a specific field `applyOnTurn`?
-          // OR: Check `buff.initialDuration - buff.duration >= 1`?
-          // Let's assume Stun applies if duration === 1 (since it lasts 2 turns, 1st turn is setup).
-          
-          if (buff.id === 'stun' && buff.duration === 1) {
-              const val = buff.value || 0;
-              speedModifier += val;
-              // Stun is not "consumed" by next card, but by next turn. So don't add to usedBuffs for removal.
-          }
-        });
-        
-        // Apply deck duplicate penalty
-        const duplicatePenalty = card.deckSpeedPenalty || 0;
-        
-        let finalSpeed = Math.round(speed + speedModifier + duplicatePenalty);
-
-        // Global Speed Limit Check: If speed < 0 or > 13, card fizzles (cannot be played)
-        if (finalSpeed < 0 || finalSpeed >= 13) {
-            // Effectively disabled for this tick/turn.
-            // Since we check `finalSpeed === tick`, if finalSpeed is out of 0-12 range,
-            // it will naturally not match any valid tick (0-12).
-            // However, we need to ensure it doesn't trigger if it coincidentally matches a tick outside range?
-            // Ticks go 0..12.
-            // If finalSpeed is 13, it never matches tick <= 12.
-            // If finalSpeed is -1, it never matches tick >= 0.
-            // So the logic holds: strictly > 12 or < 0 means it won't play in standard ticks.
-            // BUT, the user said "If speed >= 13... attack will disappear".
-            // It just won't trigger. Correct.
-            return;
-        }
-
-        if (finalSpeed === tick) {
-          actions.push({ unit, card, usedBuffs });
-        }
-      });
-    });
-
-    // 2. Sort actions
-    // Priority: Smaller Deck Size -> Random
-    actions.sort((a, b) => {
-      if (a.unit.cards.length !== b.unit.cards.length) {
-        return a.unit.cards.length - b.unit.cards.length;
       }
-      return Math.random() - 0.5; // Simple random for MVP
-    });
 
-    // 3. Execute actions
-    actions.forEach(action => {
-      if (action.unit.isDead) return;
-      this.executeCard(action.unit, action.card, action.usedBuffs);
-    });
+      // Apply CardInstanceBuffs
+      if (card.buffs) {
+        card.buffs.forEach(buff => {
+            if (buff.speedModification) {
+                speed += buff.speedModification;
+            }
+        });
+      }
+
+      // Apply Unit Buffs that affect speed
+      // Charge: +10 speed (immediate)
+      // Stun: +Level speed (next turn only, i.e., duration === 1)
+      unit.buffs.forEach(buff => {
+          if (buff.id === 'charge') {
+              speed += 10; // +1.0 speed
+          }
+          if (buff.id === 'stun' && buff.duration === 1) {
+              speed += buff.level;
+          }
+      });
+      
+      // Apply Deck Speed Penalty
+      speed += (card.deckSpeedPenalty || 0);
+      
+      card.currentSpeed10 = speed;
   }
 
-  private currentCard: CardInstance | null = null;
+  private processTick(tick: number): void {
+    const tickStart = tick * 10;
+    const tickEnd = (tick + 1) * 10;
+    
+    // Track executed cards in this tick to avoid loops/duplicates
+    const executedCardIds = new Set<string>();
 
-  private executeCard(source: BattleUnit, card: CardInstance, usedBuffs: { id: string; value: number }[] = []): void {
+    // Dynamic Re-sorting Loop
+    while (true) {
+        // 1. Gather candidates
+        let candidates: { unit: BattleUnit, card: CardInstance }[] = [];
+        
+        this.state.units.forEach(unit => {
+            if (unit.isDead) return;
+            unit.cards.forEach(card => {
+                // Check range
+                if (card.currentSpeed10 !== null && 
+                    card.currentSpeed10 >= tickStart && 
+                    card.currentSpeed10 < tickEnd) {
+                    
+                    if (!executedCardIds.has(card.instanceId)) {
+                        candidates.push({ unit, card });
+                    }
+                }
+            });
+        });
+        
+        if (candidates.length === 0) break;
+        
+        // 2. Sort
+        candidates.sort((a, b) => {
+            // Speed asc
+            if (a.card.currentSpeed10 !== b.card.currentSpeed10) {
+                return (a.card.currentSpeed10!) - (b.card.currentSpeed10!);
+            }
+            // Deck size asc
+            if (a.unit.initialDeckSize !== b.unit.initialDeckSize) {
+                return a.unit.initialDeckSize - b.unit.initialDeckSize;
+            }
+            // Random
+            return Math.random() - 0.5;
+        });
+        
+        // 3. Execute ONE (the first)
+        const action = candidates[0];
+        executedCardIds.add(action.card.instanceId); 
+        
+        this.executeCard(action.unit, action.card);
+        
+        // 4. Loop continues to re-evaluate
+    }
+  }
+
+  private executeCard(source: BattleUnit, card: CardInstance): void {
     this.currentCard = card;
     this.log(source, null, `${source.name} uses ${card.name}!`, 'info', undefined, card.name);
 
@@ -172,7 +193,12 @@ export class BattleLoop {
     // Execute Script
     const script = CardScripts[card.scriptId];
     if (script) {
-      script(this, source, targets);
+      try {
+          script(this, source, targets);
+      } catch (e) {
+          console.error(`Error executing script ${card.scriptId}`, e);
+          this.log(source, null, `Error executing ${card.name}: ${e}`, 'info');
+      }
     } else {
       this.log(source, null, `Script ${card.scriptId} not found!`, 'info');
     }
@@ -181,51 +207,20 @@ export class BattleLoop {
 
     // Check Deaths
     this.checkDeaths();
-
-    // Consume "Next Card" buffs
-    this.consumeNextCardBuffs(source, usedBuffs);
-  }
-
-  private consumeNextCardBuffs(unit: BattleUnit, usedBuffs: { id: string; value: number }[]): void {
-    // Only remove buffs that are in nextCardBuffs AND were used (present in usedBuffs)
-    const consumableBuffs = ['slow', 'haste'];
-    
-    usedBuffs.forEach(used => {
-        if (!consumableBuffs.includes(used.id)) return;
-        
-        const buff = unit.buffs.find(b => b.id === used.id);
-        if (buff) {
-            if (buff.stackable) {
-                // Decrement value by amount used
-                buff.value = (buff.value || 0) - used.value;
-                if ((buff.value || 0) <= 0) {
-                    this.removeBuff(unit, buff.id);
-                }
-            } else {
-                // Non-stackable, just remove
-                this.removeBuff(unit, buff.id);
-            }
-        }
-    });
   }
 
   private findTargets(source: BattleUnit, card: CardInstance): BattleUnit[] {
-    // Targeting Logic Heuristic based on tags/intent
-    
-    // Check for Self-Targeting tags
+    // Targeting Logic
     const isSupport = card.tags?.includes('辅助');
     const isDefense = card.tags?.includes('防御');
     
-    // If it's explicitly support or defense, default to self
     if (isSupport || isDefense || card.scriptId === 'concentrate') {
         return [source];
     }
     
-    // Default logic: single target, enemy
     const enemies = this.state.units.filter(u => u.team !== source.team && !u.isDead);
     if (enemies.length === 0) return [];
     
-    // Random target
     const target = enemies[Math.floor(Math.random() * enemies.length)];
     return [target];
   }
@@ -266,83 +261,71 @@ export class BattleLoop {
     });
   }
 
-  // --- Helper Methods for Scripts ---
+  // --- API for Scripts ---
 
   public dealDamage(source: BattleUnit, target: BattleUnit, amount: number, type: 'physical' | 'magical'): void {
-    // 1. Apply Source Buffs (Damage Up, e.g. Focus/Charge)
+    // 1. Apply Source Buffs (onAttack)
     let damage = amount;
-    
-    // Check for Charge (Damage x2)
-    const chargeBuff = source.buffs.find(b => b.id === 'charge');
-    if (chargeBuff) {
-        damage *= (chargeBuff.value || 1);
-        this.log(source, source, `Charge doubles damage!`, 'buff');
-        // Consume charge
-        this.removeBuff(source, 'charge');
-    }
-    
-    // Check for Focus (+50%)
-    const focusBuff = source.buffs.find(b => b.id === 'focus');
-    if (focusBuff) {
-        damage *= (focusBuff.value || 1);
-        this.log(source, source, `Focus increases damage!`, 'buff');
-        // Consume focus if intended (usually single use)
-        // Design says "Next attack", so consume.
-        this.removeBuff(source, 'focus');
-    }
+    source.buffs.forEach(buff => {
+        if (buff.onAttack) {
+            damage = buff.onAttack(source, target, damage, this.state);
+        }
+    });
 
-    // 2. Apply Target Buffs (Defense Up / Vulnerable / Bleed)
-    // Bleed (as implemented): +1 damage taken from unmitigated physical
+    // 2. Apply Target Buffs (onReceiveDamage)
+    target.buffs.forEach(buff => {
+        if (buff.onReceiveDamage) {
+            damage = buff.onReceiveDamage(target, source, damage, this.state);
+        }
+    });
     
     // 3. Apply Armor (if physical)
-    let unmitigated = false;
-    
-    // Check for Magic Attribute (from Modifiers)
-    // If card has 'attr_add' -> 'fire' (or 'magic' implied), we treat it as magic damage?
-    // User Requirement: "Fire Spirit Orb: Attack adds [Magic/Fire] attribute".
-    // If 'Fire' implies magic damage (ignores armor), then we override type.
-    // Let's assume 'fire' modifier means Magic damage for now, or we check specifically for 'magic' tag if added.
-    // The modifier value is 'fire'.
-    // If the card has modifier 'attr_add' with value 'fire', does it become magical?
-    // Usually 'Fire' is magical in many RPGs. Let's assume yes.
+    // Assume Physical unless specified magical
     let effectiveType = type;
-    if (this.currentCard && this.currentCard.modifiers) {
-        if (this.currentCard.modifiers.some(m => m.effectId === 'attr_add' && m.value === 'fire')) {
-            effectiveType = 'magical';
-            this.log(source, target, `Fire attribute converts damage to Magical!`, 'buff');
-        }
+    // Check for Magic Attribute (fire, etc.) - Simplified
+    if (this.currentCard?.modifiers?.some(m => m.effectId === 'attr_add' && m.value === 'fire')) {
+        effectiveType = 'magical';
     }
 
+    let unmitigated = false;
     if (effectiveType === 'physical') {
       if (target.armor > 0) {
         const armorDamage = Math.min(target.armor, damage);
         target.armor -= armorDamage;
         damage -= armorDamage;
         this.log(source, target, `Armor absorbed ${armorDamage} damage.`, 'info');
-      } else {
-        unmitigated = true;
       }
-    } else {
-        unmitigated = true; // Magic ignores armor? Usually yes.
+      // If damage remains (or armor was 0), it pierced armor partially?
+      // Bleed usually means "if HP damage is taken" or "if armor didn't block ALL"?
+      // "unmitigated by armor" usually means if armor was 0 or bypassed.
+      // But here: "target received unmitigated physical damage" -> "受到未被护甲抵消的..."
+      // This usually means the PORTION of damage that went through.
+      // "Every time target takes physical damage NOT blocked by armor..."
+      // So if damage > 0 after armor, it triggers.
+      if (damage > 0) unmitigated = true;
     }
     
-    // Apply Bleed extra damage if unmitigated physical
-    if (effectiveType === 'physical' && unmitigated && damage > 0) {
-        const bleedBuffs = target.buffs.filter(b => b.id === 'bleed');
-        if (bleedBuffs.length > 0) {
-            const bleedDmg = bleedBuffs.reduce((acc, b) => acc + (b.value || 0), 0);
-            damage += bleedDmg;
-            this.log(source, target, `Bleed adds ${bleedDmg} damage!`, 'buff');
-        }
+    // 4. Apply Bleed (Hardcoded mechanic)
+    if (effectiveType === 'physical' && unmitigated) {
+         const bleed = target.buffs.find(b => b.id === 'bleed');
+         if (bleed) {
+             damage += bleed.level;
+             this.log(source, target, `Bleed adds ${bleed.level} damage!`, 'buff');
+         }
     }
-
-    // 4. Apply HP Damage
+    
+    // 5. Apply HP Damage
     if (damage > 0) {
       target.hp -= damage;
       this.log(source, target, `${target.name} takes ${damage} damage!`, 'attack', damage);
     } else {
       this.log(source, target, `${target.name} takes no damage.`, 'info');
     }
+    
+    // 6. Recalculate Source Speed (in case Charge/Focus was consumed)
+    // Optimization: only if source buffs changed? But we don't know easily.
+    // Just recalc.
+    source.cards.forEach(c => this.recalculateCardSpeed(source, c));
   }
 
   public addArmor(unit: BattleUnit, amount: number): void {
@@ -350,41 +333,82 @@ export class BattleLoop {
     this.log(unit, unit, `Gained ${amount} armor.`, 'buff', amount);
   }
 
-  public addBuff(unit: BattleUnit, buff: Buff): void {
-    // Check for stacking if stackable
-    if (buff.stackable) {
+  public addUnitBuff(unit: BattleUnit, buff: UnitBuff): void {
+    if (buff.stackRule === 'stackable') {
         const existing = unit.buffs.find(b => b.id === buff.id);
         if (existing) {
-            existing.value = (existing.value || 0) + (buff.value || 0);
-            // Refresh duration? Usually yes.
+            existing.level += buff.level;
+            // Refresh duration
             if (buff.duration > existing.duration) existing.duration = buff.duration;
-            this.log(unit, unit, `Stacked buff: ${buff.name} (Value: ${existing.value})`, 'buff');
+            this.log(unit, unit, `Stacked buff: ${buff.name} (Level ${existing.level})`, 'buff');
+            unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
             return;
         }
     } else {
-        // Non-stackable: Higher level (value) overwrites lower level
+        // nonStackable: keep higher level
         const existing = unit.buffs.find(b => b.id === buff.id);
         if (existing) {
-            if ((buff.value || 0) > (existing.value || 0)) {
-                // Overwrite
-                existing.value = buff.value;
+            if (buff.level > existing.level) {
+                existing.level = buff.level;
                 existing.duration = buff.duration;
-                this.log(unit, unit, `Upgraded buff: ${buff.name} (Level ${existing.value})`, 'buff');
-            } else {
-                this.log(unit, unit, `Buff ${buff.name} (Level ${buff.value}) ineffective against existing Level ${existing.value}`, 'info');
+                this.log(unit, unit, `Upgraded buff: ${buff.name} (Level ${existing.level})`, 'buff');
+                unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
             }
             return;
         }
     }
-    
     unit.buffs.push(buff);
-    this.log(unit, unit, `Applied buff: ${buff.name} (Level ${buff.value})`, 'buff');
+    this.log(unit, unit, `Applied buff: ${buff.name} (Level ${buff.level})`, 'buff');
+    
+    // Recalculate speeds (e.g. for Charge)
+    unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
   }
   
   public removeBuff(unit: BattleUnit, buffId: string): void {
       const idx = unit.buffs.findIndex(b => b.id === buffId);
       if (idx !== -1) {
           unit.buffs.splice(idx, 1);
+          // Recalculate speeds
+          unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
       }
+  }
+
+  // API: Modify Card Speed
+  public modifyCardSpeed(card: CardInstance, delta10: number): void {
+      const buff: CardInstanceBuff = {
+          id: 'speed_mod_dynamic',
+          name: 'Speed Mod',
+          description: '',
+          duration: 1, // This turn
+          stackRule: 'stackable',
+          level: delta10,
+          speedModification: delta10
+      };
+      this.addCardInstanceBuff(card, buff);
+  }
+  
+  public addCardInstanceBuff(card: CardInstance, buff: CardInstanceBuff): void {
+      if (!card.buffs) card.buffs = [];
+      card.buffs.push(buff);
+      
+      const unit = this.state.units.find(u => u.id === card.ownerId);
+      if (unit) {
+          this.recalculateCardSpeed(unit, card);
+      }
+  }
+
+  // API: Find Next Card
+  public findNextCardOnTimeline(unit: BattleUnit): CardInstance | null {
+      const currentSpeed = this.currentCard?.currentSpeed10 ?? (this.state.tick * 10);
+      
+      const candidates = unit.cards.filter(c => 
+          c.currentSpeed10 !== null && 
+          c.instanceId !== this.currentCard?.instanceId &&
+          c.currentSpeed10 > currentSpeed
+      );
+      
+      candidates.sort((a, b) => (a.currentSpeed10!) - (b.currentSpeed10!));
+      
+      return candidates.length > 0 ? candidates[0] : null;
   }
 }

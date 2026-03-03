@@ -74,6 +74,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       // Helper to create unit
       const createUnit = (config: CustomUnitConfig, index: number): BattleUnit => {
           const cardCounts: Record<string, number> = {};
+          const cardIds = config.cardIds;
           
           return {
               id: `${config.team}_${index}_${Date.now()}`,
@@ -81,22 +82,22 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
               hp: config.hp,
               maxHp: config.hp,
               armor: 0,
+              initialDeckSize: cardIds.length,
               team: config.team,
-              cards: config.cardIds.map((id, idx) => {
+              cards: cardIds.map((id, idx) => {
                   const cardDef = cards.find(c => c.id === id);
                   if (!cardDef) return null;
                   
                   const count = (cardCounts[id] || 0) + 1;
                   cardCounts[id] = count;
                   
+                  // Penalty in x10 integer
                   let penalty = 0;
-                  if (count === 2) penalty = 0.9;
-                  if (count >= 3) penalty = 2.8;
+                  if (count === 2) penalty = 9; // 0.9
+                  if (count >= 3) penalty = 28; // 2.8
                   
-                  const baseSpeed = cardDef.speed;
-                  // NPC Speed Mod if enemy
+                  const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
                   const npcSpeedMod = 0; // Training Mode: No speed mod
-                  const initialSpeed = baseSpeed !== null ? baseSpeed + penalty + npcSpeedMod : null;
                   
                   // Modifiers
                   const modId = config.modifierSlots?.[idx];
@@ -109,12 +110,13 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
                   return {
                       ...cardDef,
                       instanceId: `${config.team}_c_${index}_${idx}`,
-                      originalSpeed: baseSpeed,
-                      currentSpeed: initialSpeed,
+                      baseSpeed10: baseSpeed10,
+                      currentSpeed10: null, // Will be calc'd
                       deckSpeedPenalty: penalty,
                       permanentSpeedModifier: npcSpeedMod,
                       ownerId: `${config.team}_${index}`,
-                      modifiers: cardModifiers
+                      modifiers: cardModifiers,
+                      buffs: []
                   };
               }).filter((c: any) => c) as any[],
               buffs: [],
@@ -198,12 +200,12 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     const isBossStage = stage.type === 'boss';
 
     // Create Player Unit
-    // TODO: Load from player's selected deck
     const playerStore = usePlayerStore.getState();
     const playerDeck = playerStore.decks[0]; // Default deck
     
     // Count duplicates for penalty
     const playerCardCounts: Record<string, number> = {};
+    const playerCardIds = playerDeck.cardIds;
 
     const playerUnit: BattleUnit = {
       id: 'player',
@@ -211,8 +213,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       hp: 100, // Default HP
       maxHp: 100,
       armor: 0,
+      initialDeckSize: playerCardIds.length,
       team: 'player',
-      cards: playerDeck.cardIds.map((id: string, idx: number) => {
+      cards: playerCardIds.map((id: string, idx: number) => {
         const cardDef = cards.find(c => c.id === id);
         if (!cardDef) return null;
         
@@ -221,11 +224,10 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         playerCardCounts[id] = count;
         
         let penalty = 0;
-        if (count === 2) penalty = 0.9;
-        if (count >= 3) penalty = 2.8;
+        if (count === 2) penalty = 9; // 0.9 -> 9
+        if (count >= 3) penalty = 28; // 2.8 -> 28
 
-        const baseSpeed = cardDef.speed;
-        const initialSpeed = baseSpeed !== null ? baseSpeed + penalty : null;
+        const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
 
         // Modifiers
         const modId = playerDeck.modifierSlots?.[idx];
@@ -238,12 +240,13 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         return {
           ...cardDef,
           instanceId: `p_card_${idx}`,
-          originalSpeed: baseSpeed,
-          currentSpeed: initialSpeed, // Initial with penalty
+          baseSpeed10: baseSpeed10,
+          currentSpeed10: null, 
           deckSpeedPenalty: penalty,
           permanentSpeedModifier: 0,
           ownerId: 'player',
-          modifiers: cardModifiers
+          modifiers: cardModifiers,
+          buffs: []
         };
       }).filter((c: any) => c), // Filter undefined
       buffs: [],
@@ -253,6 +256,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     // Create Enemy Unit
     // Enemies also subject to penalty
     const enemyCardCounts: Record<string, number> = {};
+    const enemyCardIds = enemyDef.deck;
 
     const enemyUnit: BattleUnit = {
       id: enemyDef.id,
@@ -260,8 +264,9 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       hp: enemyDef.hpMax, // Start at max
       maxHp: enemyDef.hpMax,
       armor: 0,
+      initialDeckSize: enemyCardIds.length,
       team: 'enemy',
-      cards: enemyDef.deck.map((id: string, idx: number) => {
+      cards: enemyCardIds.map((id: string, idx: number) => {
         const cardDef = cards.find(c => c.id === id);
         if (!cardDef) return null;
 
@@ -269,22 +274,22 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         enemyCardCounts[id] = count;
         
         let penalty = 0;
-        if (count === 2) penalty = 0.9;
-        if (count >= 3) penalty = 2.8;
+        if (count === 2) penalty = 9;
+        if (count >= 3) penalty = 28;
 
-        const baseSpeed = cardDef.speed;
-        const npcSpeedMod = 0.1;
-        const initialSpeed = baseSpeed !== null ? baseSpeed + penalty + npcSpeedMod : null;
+        const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
+        const npcSpeedMod = 0; // Will be added in BattleLoop executeStartOfBattleEffects
 
         return {
           ...cardDef,
           instanceId: `e_card_${idx}`,
-          originalSpeed: baseSpeed,
-          currentSpeed: initialSpeed,
+          baseSpeed10: baseSpeed10,
+          currentSpeed10: null,
           deckSpeedPenalty: penalty,
           permanentSpeedModifier: npcSpeedMod,
           ownerId: enemyDef.id,
-          modifiers: []
+          modifiers: [],
+          buffs: []
         };
       }).filter((c: any) => c),
       buffs: [],
