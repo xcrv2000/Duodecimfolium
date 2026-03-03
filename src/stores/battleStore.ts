@@ -95,7 +95,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
                   
                   const baseSpeed = cardDef.speed;
                   // NPC Speed Mod if enemy
-                  const npcSpeedMod = config.team === 'enemy' ? 0.1 : 0;
+                  const npcSpeedMod = 0; // Training Mode: No speed mod
                   const initialSpeed = baseSpeed !== null ? baseSpeed + penalty + npcSpeedMod : null;
                   
                   // Modifiers

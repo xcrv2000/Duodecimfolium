@@ -43,14 +43,14 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     const ownedCount = collection[cardId] || 0;
     if (getDeckCardCount(cardId) >= ownedCount) return;
 
-    // Check deck size (max 30? No hard limit mentioned in prompt, prompt says "carry up to owned count")
-    // Let's keep a reasonable limit or unlimited?
+    // Check deck size (max 12)
     // Prompt: "对于每个卡组，都可以携带不超过某张卡持有张数那么多的卡。" (Each deck can carry cards up to the owned count.)
     // Prompt also says: "一个卡组中最多有三张同名卡。" (Max 3 copies of same card in a deck.)
-    // It doesn't mention total deck size limit.
-    // But UI might break if too many. Let's assume 30 or 40 for now, or just leave it.
-    // Previous code had 12. Let's increase to 30.
-    if (currentDeck.cardIds.length >= 30) return;
+    // New Requirement: Deck must be 8-12 cards.
+    if (currentDeck.cardIds.length >= 12) {
+        alert("卡组最多包含12张卡牌。");
+        return;
+    }
 
     // When adding a card, we just append ID. Modifiers are managed by index map.
     updateDeck(currentDeck.id, [...currentDeck.cardIds, cardId]);
@@ -113,6 +113,10 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   };
 
   const handleExport = () => {
+    if (currentDeck.cardIds.length < 8 || currentDeck.cardIds.length > 12) {
+        alert("无法导出：卡组必须包含8到12张卡牌。");
+        return;
+    }
     const data = JSON.stringify(currentDeck);
     navigator.clipboard.writeText(data).then(() => alert('Deck copied to clipboard!'));
   };
@@ -205,7 +209,15 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         <div className="mb-6 flex flex-col gap-2">
             <div className="flex items-center justify-between mb-2">
                 <label className="text-slate-400 text-xs font-bold">当前卡组 (CURRENT DECK)</label>
-                <div className="text-emerald-400 text-xs">{currentDeck.cardIds.length} 张</div>
+                <div className={`text-xs font-bold ${
+                    currentDeck.cardIds.length >= 8 && currentDeck.cardIds.length <= 12 
+                    ? 'text-emerald-400' 
+                    : 'text-red-400'
+                }`}>
+                    {currentDeck.cardIds.length} 张 {
+                        (currentDeck.cardIds.length < 8 || currentDeck.cardIds.length > 12) && '(不可用)'
+                    }
+                </div>
             </div>
             
             <div className="flex gap-2 mb-2">

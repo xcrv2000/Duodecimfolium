@@ -160,7 +160,10 @@ export class BattleLoop {
     });
   }
 
+  private currentCard: CardInstance | null = null;
+
   private executeCard(source: BattleUnit, card: CardInstance, usedBuffs: { id: string; value: number }[] = []): void {
+    this.currentCard = card;
     this.log(source, null, `${source.name} uses ${card.name}!`, 'info', undefined, card.name);
 
     // Find targets
@@ -173,6 +176,8 @@ export class BattleLoop {
     } else {
       this.log(source, null, `Script ${card.scriptId} not found!`, 'info');
     }
+
+    this.currentCard = null;
 
     // Check Deaths
     this.checkDeaths();
@@ -291,7 +296,24 @@ export class BattleLoop {
     
     // 3. Apply Armor (if physical)
     let unmitigated = false;
-    if (type === 'physical') {
+    
+    // Check for Magic Attribute (from Modifiers)
+    // If card has 'attr_add' -> 'fire' (or 'magic' implied), we treat it as magic damage?
+    // User Requirement: "Fire Spirit Orb: Attack adds [Magic/Fire] attribute".
+    // If 'Fire' implies magic damage (ignores armor), then we override type.
+    // Let's assume 'fire' modifier means Magic damage for now, or we check specifically for 'magic' tag if added.
+    // The modifier value is 'fire'.
+    // If the card has modifier 'attr_add' with value 'fire', does it become magical?
+    // Usually 'Fire' is magical in many RPGs. Let's assume yes.
+    let effectiveType = type;
+    if (this.currentCard && this.currentCard.modifiers) {
+        if (this.currentCard.modifiers.some(m => m.effectId === 'attr_add' && m.value === 'fire')) {
+            effectiveType = 'magical';
+            this.log(source, target, `Fire attribute converts damage to Magical!`, 'buff');
+        }
+    }
+
+    if (effectiveType === 'physical') {
       if (target.armor > 0) {
         const armorDamage = Math.min(target.armor, damage);
         target.armor -= armorDamage;
@@ -305,7 +327,7 @@ export class BattleLoop {
     }
     
     // Apply Bleed extra damage if unmitigated physical
-    if (type === 'physical' && unmitigated && damage > 0) {
+    if (effectiveType === 'physical' && unmitigated && damage > 0) {
         const bleedBuffs = target.buffs.filter(b => b.id === 'bleed');
         if (bleedBuffs.length > 0) {
             const bleedDmg = bleedBuffs.reduce((acc, b) => acc + (b.value || 0), 0);

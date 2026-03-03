@@ -77,6 +77,10 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
               alert(`Player ${i+1} deck invalid.`);
               return;
           }
+          if (deck.cardIds.length < 8 || deck.cardIds.length > 12) {
+              alert(`Player ${i+1} 卡组必须包含8到12张卡牌！`);
+              return;
+          }
           playerConfigs.push({
               name: `Player ${i+1}`,
               cardIds: deck.cardIds,
