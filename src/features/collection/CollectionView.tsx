@@ -25,6 +25,45 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     }
   }, [decks, selectedDeckId]);
 
+  // Filter cards: show only owned cards or cards from unlocked packs?
+  // User Requirement: "在没有打开过对应卡包（剑魔法）前，卡组编辑页面不应显示对应的卡。这个设定应该和图鉴同步。"
+  // Interpretation: If I own 0 copies of a card AND I haven't unlocked its pack, hide it?
+  // Or: Just hide cards if I own 0 copies?
+  // But Compendium usually shows "???" for unknown cards.
+  // User says "不应显示对应的卡" (Should not show the corresponding card).
+  // Let's hide cards where owned count is 0.
+  // BUT what if I want to see what I'm missing?
+  // "这个设定应该和图鉴同步" -> Sync with Compendium.
+  // Compendium logic (usually): Show all if pack unlocked, or show if owned.
+  // Here in DeckBuilder, we usually only show owned cards anyway?
+  // Current logic: `collection[card.id] || 0`
+  // `cards.map(...)` iterates ALL cards.
+  // And `className={count === 0 ? 'opacity-30 grayscale' : ''}`.
+  // So currently it shows unowned cards as grayed out.
+  // We need to filter `cards` before mapping.
+  
+  // Logic: Show card IF (count > 0) OR (Pack is Unlocked).
+  // But wait, "在没有打开过对应卡包...不应显示".
+  // Means if Pack is LOCKED and count is 0 -> Hide.
+  // If Pack is UNLOCKED and count is 0 -> Show (Grayed out)? Or Hide?
+  // Usually Deck Builder only shows cards you CAN put in deck?
+  // But maybe you want to see what you are missing from a pack you own.
+  // Let's implement: Filter out cards where (count === 0 AND Pack is not unlocked).
+  // How to know if pack is unlocked?
+  // We don't have `unlockedPacks` in playerStore in this file scope.
+  // Let's check `usePlayerStore`.
+  const unlockedPacks = usePlayerStore(state => state.unlockedPacks);
+  
+  const visibleCards = cards.filter(card => {
+      const count = collection[card.id] || 0;
+      if (count > 0) return true;
+      // If count is 0, only show if its pack is unlocked
+      // Basic cards might not have a packId or be in 'basic' pack?
+      // Check data/cards.json: "packId": "basic_swordsmanship" etc.
+      if (!card.packId) return true; // Always show base cards?
+      return unlockedPacks.includes(card.packId);
+  });
+
   const currentDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
 
   // Helper to count cards in deck
@@ -183,7 +222,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         </h1>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20">
-          {cards.map(card => {
+          {visibleCards.map(card => {
             const count = collection[card.id] || 0;
             const inDeck = getDeckCardCount(card.id);
             const canAdd = count > inDeck && inDeck < 3;

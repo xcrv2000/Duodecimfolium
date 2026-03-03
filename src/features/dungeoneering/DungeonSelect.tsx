@@ -257,6 +257,13 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                     <span>Stages: {dungeon.stages.length}</span>
                 </div>
               </div>
+              
+              {/* Unlock Requirement Hint */}
+              {!isUnlocked && dungeon.unlockRequirementId && (
+                  <div className="mt-4 text-xs text-red-400">
+                      需要通关: {dungeons.find(d => d.id === dungeon.unlockRequirementId)?.name || dungeon.unlockRequirementId}
+                  </div>
+              )}
 
               {isUnlocked && (
                 <button className="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded font-bold transition-colors">

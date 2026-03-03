@@ -74,7 +74,7 @@ export class BattleLoop {
   }
 
   public executeStartOfBattleEffects(): void {
-    this.log(null, null, "--- Battle Start ---", 'info');
+    this.log(null, null, "--- 战斗开始 ---", 'info');
     
     // 1. Initialize Speeds & Apply NPC Bonus
     this.state.units.forEach(unit => {
@@ -125,7 +125,7 @@ export class BattleLoop {
       });
     });
 
-    this.log(null, null, "--- Turn End ---", 'info');
+    this.log(null, null, "--- 回合结束 ---", 'info');
   }
 
   private recalculateCardSpeed(unit: BattleUnit, card: CardInstance): void {
@@ -233,7 +233,7 @@ export class BattleLoop {
 
   private executeCard(source: BattleUnit, card: CardInstance): void {
     this.currentCard = card;
-    this.log(source, null, `${source.name} uses ${card.name}!`, 'info', undefined, card.name);
+    this.log(source, null, `${source.name} 发动了 ${card.name}!`, 'info', undefined, card.name);
 
     // Find targets
     const targets = this.findTargets(source, card);
@@ -245,10 +245,10 @@ export class BattleLoop {
           script(this, source, targets);
       } catch (e) {
           console.error(`Error executing script ${card.scriptId}`, e);
-          this.log(source, null, `Error executing ${card.name}: ${e}`, 'info');
+          this.log(source, null, `执行卡牌 ${card.name} 失败: ${e}`, 'info');
       }
     } else {
-      this.log(source, null, `Script ${card.scriptId} not found!`, 'info');
+      this.log(source, null, `找不到脚本 ${card.scriptId}!`, 'info');
     }
 
     this.currentCard = null;
@@ -280,7 +280,7 @@ export class BattleLoop {
       if (unit.hp <= 0) {
         unit.hp = 0;
         unit.isDead = true;
-        this.log(unit, null, `${unit.name} is defeated!`, 'death');
+        this.log(unit, null, `${unit.name} 被击败了!`, 'death');
       }
       if (!unit.isDead) {
         if (unit.team === 'player') teamAlive.player = true;
@@ -361,7 +361,7 @@ export class BattleLoop {
         const armorDamage = Math.min(target.armor, damage);
         target.armor -= armorDamage;
         damage -= armorDamage;
-        this.log(source, target, `Armor absorbed ${armorDamage} damage.`, 'info');
+        this.log(source, target, `护甲吸收了 ${armorDamage} 点伤害。`, 'info');
       }
       // If damage remains (or armor was 0), it pierced armor partially?
       // Bleed usually means "if HP damage is taken" or "if armor didn't block ALL"?
@@ -378,16 +378,16 @@ export class BattleLoop {
          const bleed = target.buffs.find(b => b.id === 'bleed');
          if (bleed) {
              damage += bleed.level;
-             this.log(source, target, `Bleed adds ${bleed.level} damage!`, 'buff');
+             this.log(source, target, `流血效果追加 ${bleed.level} 点伤害!`, 'buff');
          }
     }
     
     // 5. Apply HP Damage
     if (damage > 0) {
       target.hp -= damage;
-      this.log(source, target, `${target.name} takes ${damage} damage!`, 'attack', damage);
+      this.log(source, target, `${target.name} 受到了 ${damage} 点伤害!`, 'attack', damage);
     } else {
-      this.log(source, target, `${target.name} takes no damage.`, 'info');
+      this.log(source, target, `${target.name} 未受到伤害。`, 'info');
     }
     
     // 6. Recalculate Source Speed (in case Charge/Focus was consumed)
@@ -398,7 +398,7 @@ export class BattleLoop {
 
   public addArmor(unit: BattleUnit, amount: number): void {
     unit.armor += amount;
-    this.log(unit, unit, `Gained ${amount} armor.`, 'buff', amount);
+    this.log(unit, unit, `获得了 ${amount} 点护甲。`, 'buff', amount);
   }
 
   public addUnitBuff(unit: BattleUnit, buff: UnitBuff): void {
@@ -408,7 +408,7 @@ export class BattleLoop {
             existing.level += buff.level;
             // Refresh duration
             if (buff.duration > existing.duration) existing.duration = buff.duration;
-            this.log(unit, unit, `Stacked buff: ${buff.name} (Level ${existing.level})`, 'buff');
+            this.log(unit, unit, `Buff叠加: ${buff.name} (等级 ${existing.level})`, 'buff');
             unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
             return;
         }
@@ -419,14 +419,14 @@ export class BattleLoop {
             if (buff.level > existing.level) {
                 existing.level = buff.level;
                 existing.duration = buff.duration;
-                this.log(unit, unit, `Upgraded buff: ${buff.name} (Level ${existing.level})`, 'buff');
+                this.log(unit, unit, `Buff升级: ${buff.name} (等级 ${existing.level})`, 'buff');
                 unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
             }
             return;
         }
     }
     unit.buffs.push(buff);
-    this.log(unit, unit, `Applied buff: ${buff.name} (Level ${buff.level})`, 'buff');
+    this.log(unit, unit, `获得Buff: ${buff.name} (等级 ${buff.level})`, 'buff');
     
     // Recalculate speeds (e.g. for Charge)
     unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));

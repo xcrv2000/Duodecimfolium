@@ -15,6 +15,7 @@ const BattleView: React.FC = () => {
   const showOverlay = state && state.isOver && (!isLooping || isBossStage);
 
   const [hoveredCard, setHoveredCard] = React.useState<{ card: CardInstance, unit: BattleUnit, rect: DOMRect } | null>(null);
+  const [hoveredBuff, setHoveredBuff] = React.useState<{ buff: UnitBuff, rect: DOMRect } | null>(null);
 
   useEffect(() => {
     if (state && !state.isOver && !isPaused) {
@@ -75,7 +76,7 @@ const BattleView: React.FC = () => {
         {/* Player Side */}
         <div className="flex flex-col gap-2 overflow-y-auto h-full p-2 no-scrollbar">
             {playerUnits.map(unit => (
-                <UnitFrame key={unit.id} unit={unit} onCardHover={setHoveredCard} />
+                <UnitFrame key={unit.id} unit={unit} onCardHover={setHoveredCard} onBuffHover={setHoveredBuff} />
             ))}
         </div>
         
@@ -91,7 +92,7 @@ const BattleView: React.FC = () => {
         {/* Enemy Side */}
         <div className="flex flex-col gap-2 overflow-y-auto h-full p-2 no-scrollbar">
             {enemyUnits.map(unit => (
-                <UnitFrame key={unit.id} unit={unit} isEnemy onCardHover={setHoveredCard} />
+                <UnitFrame key={unit.id} unit={unit} isEnemy onCardHover={setHoveredCard} onBuffHover={setHoveredBuff} />
             ))}
         </div>
       </div>
@@ -102,6 +103,14 @@ const BattleView: React.FC = () => {
             card={hoveredCard.card} 
             unit={hoveredCard.unit} 
             rect={hoveredCard.rect} 
+        />
+      )}
+
+      {/* Buff Hover Overlay */}
+      {hoveredBuff && (
+        <BuffHoverOverlay 
+            buff={hoveredBuff.buff} 
+            rect={hoveredBuff.rect} 
         />
       )}
 
@@ -124,7 +133,14 @@ const BattleView: React.FC = () => {
   );
 };
 
-const UnitFrame: React.FC<{ unit?: BattleUnit, isEnemy?: boolean, onCardHover?: (data: { card: CardInstance, unit: BattleUnit, rect: DOMRect } | null) => void }> = ({ unit, onCardHover }) => {
+import { UnitBuff } from '../../core/domain/Battle';
+
+const UnitFrame: React.FC<{ 
+    unit?: BattleUnit, 
+    isEnemy?: boolean, 
+    onCardHover?: (data: { card: CardInstance, unit: BattleUnit, rect: DOMRect } | null) => void,
+    onBuffHover?: (data: { buff: UnitBuff, rect: DOMRect } | null) => void
+}> = ({ unit, onCardHover, onBuffHover }) => {
   if (!unit) return <div className="w-64 h-96 bg-slate-800/50 rounded flex items-center justify-center">Empty</div>;
 
   return (
@@ -142,7 +158,12 @@ const UnitFrame: React.FC<{ unit?: BattleUnit, isEnemy?: boolean, onCardHover?: 
       {/* Buffs */}
       <div className="flex gap-1 flex-wrap mb-4 min-h-[2rem]">
         {unit.buffs.map((buff, i) => (
-          <div key={i} className="bg-slate-700 px-2 py-1 rounded text-xs" title={buff.description}>
+          <div 
+            key={i} 
+            className="bg-slate-700 px-2 py-1 rounded text-xs cursor-help hover:bg-slate-600 transition-colors"
+            onMouseEnter={(e) => onBuffHover?.({ buff, rect: e.currentTarget.getBoundingClientRect() })}
+            onMouseLeave={() => onBuffHover?.(null)}
+          >
             {buff.name} {buff.level > 1 ? `Lv.${buff.level}` : ''} {buff.duration < 10 ? `(${buff.duration})` : ''}
           </div>
         ))}
@@ -260,6 +281,25 @@ const CardHoverOverlay: React.FC<{ card: CardInstance, unit: BattleUnit, rect: D
                     ))}
                 </div>
             )}
+        </div>
+    );
+};
+
+const BuffHoverOverlay: React.FC<{ buff: UnitBuff, rect: DOMRect }> = ({ buff, rect }) => {
+    const style: React.CSSProperties = {
+        left: rect.left,
+        top: rect.bottom + 8, // Below
+        position: 'fixed',
+        zIndex: 50
+    };
+
+    return (
+        <div className="bg-slate-800 border border-slate-500 p-3 rounded shadow-xl text-xs w-48 pointer-events-none" style={style}>
+            <div className="font-bold text-emerald-400 mb-1">{buff.name}</div>
+            <div className="text-slate-200 leading-relaxed">{buff.description}</div>
+            <div className="text-slate-500 mt-2 text-[10px]">
+                {buff.duration < 999 ? `Expires in ${buff.duration} turn(s)` : 'Permanent'}
+            </div>
         </div>
     );
 };
