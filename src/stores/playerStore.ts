@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { PlayerState } from '../core/domain/Player';
 
 interface PlayerStore extends PlayerState {
@@ -164,7 +164,9 @@ export const usePlayerStore = create<PlayerStore>()(
       })
     }),
     {
-      name: 'duodecimfolium-player-storage', // unique name
+      name: 'duodecimfolium-player-storage-v1', // unique name with version
+      storage: createJSONStorage(() => localStorage), // Explicitly use localStorage
+      version: 1,
       partialize: (state) => ({
         gold: state.gold,
         dust: state.dust,
@@ -175,6 +177,9 @@ export const usePlayerStore = create<PlayerStore>()(
         decks: state.decks,
         modifiers: state.modifiers
       }),
+      onRehydrateStorage: () => (state) => {
+        console.log('Storage rehydrated:', state);
+      },
     }
   )
 );
