@@ -2,11 +2,14 @@ import React, { useState } from 'react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useBattleStore, CustomUnitConfig } from '../../stores/battleStore';
 import { useReplayStore } from '../../stores/replayStore';
+import { Card } from '../../core/domain/Card';
+import cardsData from '../../data/cards.json';
 import dungeonsData from '../../data/dungeons.json';
 import { Dungeon } from '../../core/domain/Dungeon';
 import { Skull, Coins, Lock, Play, ArrowLeft, History, Star, Trash2 } from 'lucide-react';
 
 const dungeons = dungeonsData as unknown as Dungeon[];
+const cards = cardsData as Card[];
 
 const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigate }) => {
   const unlockedDungeons = usePlayerStore(state => state.unlockedDungeons);
@@ -56,6 +59,17 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
     // Check Deck Size
     if (deck.cardIds.length < 8 || deck.cardIds.length > 12) {
         alert("卡组必须包含8到12张卡牌！");
+        return;
+    }
+
+    // Check Consumables
+    const consumableCount = deck.cardIds.filter(id => {
+        const c = cards.find(x => x.id === id);
+        return c?.tags?.includes('补给品');
+    }).length;
+
+    if (consumableCount > 3) {
+        alert(`补给品最多携带3张! (当前: ${consumableCount})`);
         return;
     }
     

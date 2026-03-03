@@ -23,6 +23,7 @@ export interface BaseBuff {
   stackRule: 'stackable' | 'nonStackable';
   level: number; // 等级/层数
   sourceCardId?: string;
+  sourceInstanceId?: string;
 }
 
 export interface UnitBuff extends BaseBuff {

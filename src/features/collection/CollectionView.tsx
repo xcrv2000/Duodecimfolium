@@ -66,6 +66,16 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
 
   const currentDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
 
+  // Calculate Deck Stats
+  const consumableCount = currentDeck ? currentDeck.cardIds.filter(id => {
+      const c = cards.find(x => x.id === id);
+      return c?.tags?.includes('补给品');
+  }).length : 0;
+  
+  const isDeckSizeValid = currentDeck ? (currentDeck.cardIds.length >= 8 && currentDeck.cardIds.length <= 12) : false;
+  const isConsumableValid = consumableCount <= 3;
+  const isDeckValid = isDeckSizeValid && isConsumableValid;
+
   // Helper to count cards in deck
   const getDeckCardCount = (cardId: string) => {
     if (!currentDeck) return 0;
@@ -86,10 +96,11 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     // Prompt: "对于每个卡组，都可以携带不超过某张卡持有张数那么多的卡。" (Each deck can carry cards up to the owned count.)
     // Prompt also says: "一个卡组中最多有三张同名卡。" (Max 3 copies of same card in a deck.)
     // New Requirement: Deck must be 8-12 cards.
-    if (currentDeck.cardIds.length >= 12) {
-        alert("卡组最多包含12张卡牌。");
-        return;
-    }
+    // Removed hard limit of 12 to allow "soft" validation in UI.
+    // if (currentDeck.cardIds.length >= 12) {
+    //     alert("卡组最多包含12张卡牌。");
+    //     return;
+    // }
 
     // When adding a card, we just append ID. Modifiers are managed by index map.
     updateDeck(currentDeck.id, [...currentDeck.cardIds, cardId]);
@@ -248,14 +259,20 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         <div className="mb-6 flex flex-col gap-2">
             <div className="flex items-center justify-between mb-2">
                 <label className="text-slate-400 text-xs font-bold">当前卡组 (CURRENT DECK)</label>
-                <div className={`text-xs font-bold ${
-                    currentDeck.cardIds.length >= 8 && currentDeck.cardIds.length <= 12 
-                    ? 'text-emerald-400' 
-                    : 'text-red-400'
-                }`}>
-                    {currentDeck.cardIds.length} 张 {
-                        (currentDeck.cardIds.length < 8 || currentDeck.cardIds.length > 12) && '(不可用)'
-                    }
+                <div className="flex flex-col items-end">
+                    <div className={`text-xs font-bold ${isDeckValid ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {currentDeck.cardIds.length} 张
+                    </div>
+                    {!isDeckSizeValid && (
+                         <div className="text-[10px] text-red-400 whitespace-nowrap">
+                            卡组需8-12张 (当前{currentDeck.cardIds.length})
+                        </div>
+                    )}
+                    {!isConsumableValid && (
+                        <div className="text-[10px] text-red-400 whitespace-nowrap">
+                            补给品最多3张 (当前{consumableCount})
+                        </div>
+                    )}
                 </div>
             </div>
             
@@ -288,7 +305,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 </div>
             ) : (
                 <div className="flex justify-between items-center bg-slate-800 p-2 rounded border border-slate-700">
-                    <span className="font-bold truncate flex-1">{currentDeck.name}</span>
+                    <span className={`font-bold truncate flex-1 ${!isDeckValid ? 'text-red-400' : 'text-slate-200'}`}>{currentDeck.name}</span>
                     <button onClick={handleRenameStart} className="text-slate-400 hover:text-white ml-2" title="重命名"><Edit2 size={14} /></button>
                 </div>
             )}
@@ -359,7 +376,9 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                         const modifier = modifierId ? modifiers.find(m => m.id === modifierId) : null;
 
                         return (
-                            <div key={`${id}-${index}`} className="relative bg-slate-800 border border-slate-700 p-2 rounded flex flex-col gap-2 group hover:border-red-500 transition-colors">
+                            <div key={`${id}-${index}`} className={`relative p-2 rounded flex flex-col gap-2 group hover:border-red-500 transition-colors border ${
+                                (card.tags?.includes('补给品') && !isConsumableValid) ? 'border-red-500 bg-red-900/20' : 'bg-slate-800 border-slate-700'
+                            }`}>
                                 <div className="flex justify-between items-center">
                                     <div className="flex flex-col flex-1" onClick={() => removeFromDeck(index)}>
                                         <span className="font-bold text-sm text-slate-200">{card.name}</span>

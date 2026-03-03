@@ -288,7 +288,42 @@ export class BattleLoop {
     const script = CardScripts[card.scriptId];
     if (script) {
       try {
-          script(this, source, targets);
+          // Check for Calm Mind buff on source
+          const calmMindBuff = source.buffs.find(b => b.id === 'calm_mind');
+          const isMagicAttack = card.tags?.includes('魔法') && card.tags?.includes('攻击');
+
+          if (calmMindBuff && isMagicAttack) {
+              this.log(source, null, `触发气定神闲: ${card.name} 重复结算5次!`, 'buff');
+              
+              // Execute 5 times
+              for(let i=0; i<5; i++) {
+                  script(this, source, targets);
+                  this.checkDeaths(); // Check deaths between hits?
+                  if (this.state.isOver) break;
+              }
+              
+              // Remove the attack card (current card) from source deck
+              const cardIdx = source.cards.findIndex(c => c.instanceId === card.instanceId);
+              if (cardIdx !== -1) {
+                  source.cards.splice(cardIdx, 1);
+                  this.log(source, null, `移除攻击卡: ${card.name}`, 'info');
+              }
+              
+              // Remove the Calm Mind card from source deck (using sourceInstanceId from buff)
+              if (calmMindBuff.sourceInstanceId) {
+                  const cmIdx = source.cards.findIndex(c => c.instanceId === calmMindBuff.sourceInstanceId);
+                  if (cmIdx !== -1) {
+                      const cmCard = source.cards[cmIdx];
+                      source.cards.splice(cmIdx, 1);
+                      this.log(source, null, `移除气定神闲卡: ${cmCard.name}`, 'info');
+                  }
+              }
+              
+              // Remove the buff
+              this.removeBuff(source, 'calm_mind');
+          } else {
+              script(this, source, targets);
+          }
       } catch (e) {
           console.error(`Error executing script ${card.scriptId}`, e);
           this.log(source, null, `执行卡牌 ${card.name} 失败: ${e}`, 'info');

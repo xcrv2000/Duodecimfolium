@@ -380,14 +380,16 @@ export const CardScripts: Record<string, CardScript> = {
   // 23. Calm Mind (气定神闲)
   calm_mind: (loop, source, targets) => {
       const target = targets[0] || source;
+      const currentCard = (loop as any).currentCard;
       const buff: UnitBuff = {
           id: 'calm_mind',
           name: '气定神闲',
           description: '下一次魔法攻击重复结算5次，随后移除该攻击卡和本卡。',
-          duration: 1,
+          duration: 999, // Until used
           stackRule: 'nonStackable',
           level: 1,
-          type: 'buff'
+          type: 'buff',
+          sourceInstanceId: currentCard?.instanceId
       };
       loop.addUnitBuff(target, buff);
   },
