@@ -18,11 +18,26 @@ export class BattleLoop {
       // Hack: Assume tokens are pre-loaded or we construct dummy.
       // Since we don't have access to global 'cards' here, we might need to inject it or fetch from source.
       // Let's create a minimal card instance.
+      const isToken = cardId.includes('token') || cardId.includes('spin') || cardId.includes('upward');
+      let name = 'Token';
+      let desc = 'Token';
+      let effectDesc = 'Token Effect';
+      
+      if (cardId.includes('spin_slash')) {
+          name = '回旋·斩';
+          desc = '回旋斩的后续攻击。';
+          effectDesc = '造成6点物理伤害。';
+      } else if (cardId.includes('upward_slash')) {
+          name = '上挑斩·剑气';
+          desc = '上挑斩激发的剑气。';
+          effectDesc = '造成4点魔法伤害。';
+      }
+
       const newCard: any = {
           id: cardId,
-          name: cardId.includes('token') ? (cardId.includes('spin') ? '回旋·斩' : '上挑斩·剑气') : 'Token',
-          description: 'Token',
-          effectDescription: 'Token',
+          name: name,
+          description: desc,
+          effectDescription: effectDesc,
           packId: 'token',
           rarity: 0,
           speed: baseSpeed10 / 10,
@@ -31,6 +46,8 @@ export class BattleLoop {
           instanceId: `${source.id}_token_${Date.now()}_${Math.random()}`,
           baseSpeed10: baseSpeed10,
           currentSpeed10: baseSpeed10,
+          deckSpeedPenalty: 0,
+          permanentSpeedModifier: 0,
           ownerId: source.id,
           modifiers: [],
           buffs: []

@@ -203,6 +203,22 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     const playerStore = usePlayerStore.getState();
     const playerDeck = playerStore.decks[0]; // Default deck
     
+    // Check if player unit already exists from previous stage?
+    // If so, preserve HP.
+    const { state: previousState } = get();
+    let initialHp = 100;
+    
+    // If we are continuing a dungeon run (stage index > 0), try to find previous HP
+    if (currentStageIndex > 0 && previousState && previousState.units) {
+        const prevPlayer = previousState.units.find(u => u.team === 'player');
+        if (prevPlayer) {
+            initialHp = prevPlayer.hp;
+        }
+    } else {
+        // Start of dungeon or sandbox
+        initialHp = 100; // Or fetch from player stats if we had them
+    }
+
     // Count duplicates for penalty
     const playerCardCounts: Record<string, number> = {};
     const playerCardIds = playerDeck.cardIds;
@@ -210,7 +226,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     const playerUnit: BattleUnit = {
       id: 'player',
       name: 'Player',
-      hp: 100, // Default HP
+      hp: initialHp,
       maxHp: 100,
       armor: 0,
       initialDeckSize: playerCardIds.length,

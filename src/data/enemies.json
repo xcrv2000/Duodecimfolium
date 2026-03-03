@@ -57,22 +57,22 @@
     "mob_fire_mage": {
       "id": "mob_fire_mage",
       "name": "火法学徒",
-      "hpMin": 30,
-      "hpMax": 35,
+      "hpMin": 28,
+      "hpMax": 33,
       "deck": ["fireball", "fireball", "fireball", "flick_thrust"]
     },
     "mob_ice_mage": {
       "id": "mob_ice_mage",
       "name": "冰法学徒",
-      "hpMin": 30,
-      "hpMax": 35,
+      "hpMin": 28,
+      "hpMax": 33,
       "deck": ["ice_orb", "ice_orb", "ice_orb", "spin_slash"]
     },
     "mob_earth_mage": {
       "id": "mob_earth_mage",
       "name": "岩法学徒",
-      "hpMin": 30,
-      "hpMax": 35,
+      "hpMin": 28,
+      "hpMax": 33,
       "deck": ["stone_orb", "stone_orb", "stone_orb", "extend_slash"]
     },
     "mob_magic_swordsman": {
@@ -85,8 +85,8 @@
     "elite_fire_mage": {
       "id": "elite_fire_mage",
       "name": "精英火法",
-      "hpMin": 77,
-      "hpMax": 83,
+      "hpMin": 67,
+      "hpMax": 73,
       "deck": ["fireball", "fireball", "ice_orb", "stone_orb", "deterrence", "majesty", "calm_mind", "extend_slash", "flick_thrust"],
       "dropTable": {
         "chance": 0.1,
@@ -98,8 +98,8 @@
     "elite_magic_swordsman": {
       "id": "elite_magic_swordsman",
       "name": "精英魔剑士",
-      "hpMin": 77,
-      "hpMax": 83,
+      "hpMin": 67,
+      "hpMax": 73,
       "deck": ["bright_oil", "clear_oil", "upward_slash", "upward_slash", "spin_slash", "spin_slash", "extend_slash", "wind_thunder_strike", "majesty", "slash"],
       "dropTable": {
         "chance": 0.1,
@@ -111,8 +111,8 @@
     "elite_ice_mage": {
       "id": "elite_ice_mage",
       "name": "精英冰法",
-      "hpMin": 77,
-      "hpMax": 83,
+      "hpMin": 67,
+      "hpMax": 73,
       "deck": ["deterrence", "deterrence", "majesty", "fireball", "wind_thunder_strike", "flick_thrust", "extend_slash", "stone_orb"],
       "dropTable": {
         "chance": 0.1,

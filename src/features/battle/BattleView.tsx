@@ -251,7 +251,12 @@ const CardHoverOverlay: React.FC<{ card: CardInstance, unit: BattleUnit, rect: D
                 </div>
                 
                 <div className="flex-1 bg-slate-900/50 p-4 rounded text-slate-200 leading-relaxed">
-                    {card.effectDescription}
+                    {/* If token, might not have description? Check if 'Token' */}
+                    {/* User says: "上挑斩·剑气没有写出自己的描述。" -> effectDescription */}
+                    {/* In BattleLoop.spawnCard, we set name, description, effectDescription to 'Token' for tokens. */}
+                    {/* We need to update BattleLoop to provide real description for tokens. */}
+                    {/* But here, we just display what is in card.effectDescription. */}
+                    {card.effectDescription || "No effect description."}
                 </div>
                 
                 <div className="text-sm text-slate-500 italic text-center">
