@@ -6,11 +6,16 @@ import { ShoppingBag, Sparkles, Box } from 'lucide-react';
 import { Card } from '../../core/domain/Card';
 import CardDisplay from '../common/CardDisplay';
 
+import dungeonsData from '../../data/dungeons.json';
+import { Dungeon } from '../../core/domain/Dungeon';
+
 const packs = packsData as any[];
 const cards = cardsData as Card[];
+const dungeons = dungeonsData as Dungeon[];
 
 const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   const { gold, unlockedPacks, addGold, addCards } = usePlayerStore();
+  const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const [openingPack, setOpeningPack] = useState<any[] | null>(null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
   const [isAutoRevealing, setIsAutoRevealing] = useState(false);
@@ -206,7 +211,26 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {packs.map(pack => {
-            const isUnlocked = unlockedPacks.includes(pack.id);
+            // Check explicit unlock status
+            let isUnlocked = unlockedPacks.includes(pack.id);
+            let unlockCondition = "";
+            
+            // Also check dungeon requirements
+            // Find dungeon that unlocks this pack
+            const unlockingDungeon = dungeons.find(d => d.unlocksPackId === pack.id);
+            if (unlockingDungeon) {
+                if (clearedDungeons.includes(unlockingDungeon.id)) {
+                    isUnlocked = true;
+                } else {
+                    unlockCondition = `需通关: ${unlockingDungeon.name}`;
+                }
+            } else {
+                // If no dungeon unlocks it, maybe it's default unlocked?
+                // Pack 'basic_swordsmanship' is in initial unlockedPacks.
+                // If neither, show as Locked (Unknown condition).
+                if (!isUnlocked) unlockCondition = "未知解锁条件";
+            }
+            
             const canAfford5 = gold >= pack.price;
             const canAfford50 = gold >= pack.price * 10;
             
@@ -216,7 +240,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 className={`relative p-6 rounded-lg border-2 transition-all group ${
                     isUnlocked 
                     ? 'bg-slate-800 border-slate-700' 
-                    : 'hidden' 
+                    : 'bg-slate-900 border-slate-800 opacity-60' 
                 }`}
                 >
                 <div className="flex justify-between items-start mb-4">
@@ -228,33 +252,41 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 
                 <p className="text-slate-400 text-sm mb-6 h-10">{pack.description}</p>
                 
-                <div className="flex gap-2">
-                  <button 
-                      onClick={() => buyPack(pack.id, pack.price, 5)}
-                      disabled={!canAfford5}
-                      className={`flex-1 py-2 rounded font-bold transition-colors flex items-center justify-center gap-2 ${
-                          canAfford5 
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
-                          : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                      }`}
-                  >
-                      <Sparkles size={16} />
-                      抽卡 (5)
-                  </button>
+                {isUnlocked ? (
+                    <div className="flex gap-2">
+                    <button 
+                        onClick={() => buyPack(pack.id, pack.price, 5)}
+                        disabled={!canAfford5}
+                        className={`flex-1 py-2 rounded font-bold transition-colors flex items-center justify-center gap-2 ${
+                            canAfford5 
+                            ? 'bg-emerald-600 hover:bg-emerald-700 text-white' 
+                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                    >
+                        <Sparkles size={16} />
+                        抽卡 (5)
+                    </button>
 
-                  <button 
-                      onClick={() => buyPack(pack.id, pack.price, 50)}
-                      disabled={!canAfford50}
-                      className={`flex-1 py-2 rounded font-bold transition-colors flex items-center justify-center gap-2 ${
-                          canAfford50 
-                          ? 'bg-purple-600 hover:bg-purple-700 text-white' 
-                          : 'bg-slate-700 text-slate-500 cursor-not-allowed'
-                      }`}
-                  >
-                      <Box size={16} />
-                      十连抽 (50)
-                  </button>
-                </div>
+                    <button 
+                        onClick={() => buyPack(pack.id, pack.price, 50)}
+                        disabled={!canAfford50}
+                        className={`flex-1 py-2 rounded font-bold transition-colors flex items-center justify-center gap-2 ${
+                            canAfford50 
+                            ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                            : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                        }`}
+                    >
+                        <Box size={16} />
+                        十连抽 (50)
+                    </button>
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-center h-10 text-red-400 font-bold border border-red-900/50 bg-red-900/20 rounded">
+                        <span className="flex items-center gap-2">
+                            🔒 {unlockCondition}
+                        </span>
+                    </div>
+                )}
                 </div>
             );
             })}

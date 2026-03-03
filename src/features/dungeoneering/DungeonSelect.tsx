@@ -10,6 +10,7 @@ const dungeons = dungeonsData as unknown as Dungeon[];
 
 const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   const unlockedDungeons = usePlayerStore(state => state.unlockedDungeons);
+  const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const decks = usePlayerStore(state => state.decks);
   const startDungeon = useBattleStore(state => state.startDungeon);
   const startCustomBattle = useBattleStore(state => state.startCustomBattle);
@@ -225,12 +226,18 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {dungeons.map(dungeon => {
-          const isUnlocked = unlockedDungeons.includes(dungeon.id);
+          // Dynamic Unlock Logic: Unlocked if in state OR if requirement met
+          const isRequirementMet = !dungeon.unlockRequirementId || clearedDungeons.includes(dungeon.unlockRequirementId);
+          // Also check explicit unlock state just in case (for initial ones)
+          const isExplicitlyUnlocked = unlockedDungeons.includes(dungeon.id);
+          
+          const isUnlocked = isRequirementMet || isExplicitlyUnlocked;
+          const isCleared = clearedDungeons.includes(dungeon.id);
           
           return (
             <div 
               key={dungeon.id}
-              className={`relative p-6 rounded-lg border-2 transition-all group ${
+              className={`relative p-6 rounded-lg border-2 transition-all group overflow-hidden ${
                 isUnlocked 
                   ? 'bg-slate-800 border-slate-700 hover:border-emerald-500 cursor-pointer' 
                   : 'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'
@@ -241,6 +248,13 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 }
               }}
             >
+              {/* Cleared Ribbon */}
+              {isCleared && (
+                  <div className="absolute -left-8 top-4 bg-yellow-600 w-32 text-center transform -rotate-45 text-[10px] font-bold shadow-lg border-y border-yellow-400 text-white z-10">
+                      已通关
+                  </div>
+              )}
+
               <div className="flex justify-between items-start mb-4">
                 <h2 className="text-xl font-bold text-white group-hover:text-emerald-400">{dungeon.name}</h2>
                 {!isUnlocked && <Lock className="text-slate-500" />}
