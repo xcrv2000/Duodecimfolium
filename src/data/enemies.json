@@ -97,7 +97,7 @@
     },
     "elite_magic_swordsman": {
       "id": "elite_magic_swordsman",
-      "name": "精英魔剑士",
+      "name": "精纯于剑油的剑士",
       "hpMin": 67,
       "hpMax": 73,
       "deck": ["bright_oil", "clear_oil", "upward_slash", "upward_slash", "spin_slash", "spin_slash", "extend_slash", "wind_thunder_strike", "majesty", "slash"],
@@ -110,7 +110,7 @@
     },
     "elite_ice_mage": {
       "id": "elite_ice_mage",
-      "name": "精英冰法",
+      "name": "伪装成法师的魔剑士",
       "hpMin": 67,
       "hpMax": 73,
       "deck": ["deterrence", "deterrence", "majesty", "fireball", "wind_thunder_strike", "flick_thrust", "extend_slash", "stone_orb"],
