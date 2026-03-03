@@ -18,7 +18,7 @@ export class BattleLoop {
       // Hack: Assume tokens are pre-loaded or we construct dummy.
       // Since we don't have access to global 'cards' here, we might need to inject it or fetch from source.
       // Let's create a minimal card instance.
-      const isToken = cardId.includes('token') || cardId.includes('spin') || cardId.includes('upward');
+      // const isToken = cardId.includes('token') || cardId.includes('spin') || cardId.includes('upward');
       let name = 'Token';
       let desc = 'Token';
       let effectDesc = 'Token Effect';
