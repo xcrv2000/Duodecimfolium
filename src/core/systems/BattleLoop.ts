@@ -11,7 +11,6 @@ export class BattleLoop {
   }
 
   public spawnCard(source: BattleUnit, cardId: string, baseSpeed10: number): void {
-      const cardDef = this.state.units.flatMap(u => u.cards).find(c => c.id === cardId);
       // If cardId is token, it might not be in units. Need global card list or passed definition.
       // For now, let's look up in units or construct minimal.
       // Better: pass cardId and look up in a "CardDatabase" (but we don't have global access here easily).

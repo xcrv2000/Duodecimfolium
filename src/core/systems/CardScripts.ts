@@ -1,5 +1,5 @@
 import { BattleLoop } from './BattleLoop';
-import { BattleUnit, UnitBuff, CardFactoryBuff } from '../domain/Battle';
+import { BattleUnit, UnitBuff } from '../domain/Battle';
 
 type CardScript = (loop: BattleLoop, source: BattleUnit, targets: BattleUnit[]) => void;
 
@@ -239,7 +239,7 @@ export const CardScripts: Record<string, CardScript> = {
           stackRule: 'nonStackable',
           level: 1,
           type: 'buff',
-          onAttack: (unit, _t, _dmg, _battle) => {
+          onAttack: (_unit, _t, _dmg, _battle) => {
                // We need to know WHICH card triggered this to apply factory buff.
                // BattleLoop needs to expose current card context or pass it.
                // Currently onAttack doesn't pass card.
@@ -277,7 +277,7 @@ export const CardScripts: Record<string, CardScript> = {
   },
 
   // 16. Extend Slash (延势斩)
-  extend_slash: (loop, source, targets) => {
+  extend_slash: (loop, source, _targets) => {
       // AOE all enemies
       const enemies = loop.getAllUnits().filter(u => u.team !== source.team && !u.isDead);
       enemies.forEach(u => {
@@ -299,7 +299,7 @@ export const CardScripts: Record<string, CardScript> = {
           stackRule: 'nonStackable',
           level: 1,
           type: 'debuff',
-          onReceiveDamage: (unit, src, dmg, state) => {
+          onReceiveDamage: (_unit, _src, dmg, _state) => {
               // We need to know damage type. onReceiveDamage signature update needed?
               // For now assuming we can't distinguish type in buff easily without update.
               // I will update BattleLoop to pass type to onReceiveDamage.
@@ -422,14 +422,14 @@ export const CardScripts: Record<string, CardScript> = {
   },
 
   // 25. Ration (便携干粮)
-  ration: (loop, source, targets) => {
+  ration: (_loop, _source, _targets) => {
      // Non-tick card. Handled in BattleLoop.endTurn or special check?
      // "在战斗结束时触发".
      // This needs a hook `onBattleEnd`.
   },
 
   // 26. Whetstone (磨刀石)
-  whetstone: (loop, source, targets) => {
+  whetstone: (_loop, _source, _targets) => {
       // "精英战与 Boss 战开始时触发".
       // Handled in `executeStartOfBattleEffects`.
   },
