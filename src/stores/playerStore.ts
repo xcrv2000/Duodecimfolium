@@ -9,6 +9,7 @@ interface PlayerStore extends PlayerState {
   clearDungeon: (id: string) => void;
   unlockPack: (id: string) => void;
   addCard: (id: string, count?: number) => void;
+  addCards: (ids: string[]) => void;
   removeCard: (id: string, count?: number) => void;
   
   // Deck Management
@@ -95,6 +96,25 @@ export const usePlayerStore = create<PlayerStore>()(
         
         return {
           collection: { ...state.collection, [id]: newCount }
+        };
+      }),
+
+      addCards: (ids) => set((state) => {
+        const newCollection = { ...state.collection };
+        let newDust = state.dust;
+        
+        ids.forEach(id => {
+            const currentCount = newCollection[id] || 0;
+            if (currentCount >= 3) {
+                newDust += 1;
+            } else {
+                newCollection[id] = currentCount + 1;
+            }
+        });
+        
+        return {
+            collection: newCollection,
+            dust: newDust
         };
       }),
 

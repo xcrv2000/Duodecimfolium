@@ -10,7 +10,7 @@ const packs = packsData as any[];
 const cards = cardsData as Card[];
 
 const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
-  const { gold, unlockedPacks, addGold, addCard } = usePlayerStore();
+  const { gold, unlockedPacks, addGold, addCards } = usePlayerStore();
   const [openingPack, setOpeningPack] = useState<any[] | null>(null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
   const [isAutoRevealing, setIsAutoRevealing] = useState(false);
@@ -44,13 +44,16 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
 
     // 3. Draw cards
     const drawnCards: Card[] = [];
+    const drawnIds: string[] = [];
     for (let i = 0; i < count; i++) {
         const randomIndex = Math.floor(Math.random() * pool.length);
         const card = pool[randomIndex];
         drawnCards.push(card);
-        // Add to collection
-        addCard(card.id);
+        drawnIds.push(card.id);
     }
+    
+    // Add to collection in batch
+    addCards(drawnIds);
 
     setOpeningPack(drawnCards);
     setRevealedIndices([]); // Reset revealed

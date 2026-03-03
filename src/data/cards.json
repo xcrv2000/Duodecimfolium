@@ -91,7 +91,7 @@
     "id": "throw",
     "name": "摔",
     "description": "借力打力",
-    "effectDescription": "对随机敌方单位造成5点物理伤害，并施加2级【眩晕】（下回合卡牌速度+2）。",
+    "effectDescription": "对随机敌方单位造成5点物理伤害，并施加2级【眩晕】（下回合所有卡牌速度+2）。",
     "packId": "basic_swordsmanship",
     "rarity": 3,
     "speed": 10,
