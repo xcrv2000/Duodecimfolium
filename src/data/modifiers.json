@@ -14,10 +14,24 @@
         "value": 0.5
     },
     {
-        "id": "fire_spirit_orb",
+        "id": "fire_orb",
         "name": "火灵珠",
         "description": "攻击附加【魔法/火】属性",
         "effectId": "attr_add",
         "value": "fire"
+    },
+    {
+        "id": "ice_orb",
+        "name": "冰灵珠",
+        "description": "攻击附加【魔法/冰】属性",
+        "effectId": "attr_add",
+        "value": "ice"
+    },
+    {
+        "id": "rock_orb",
+        "name": "岩灵珠",
+        "description": "攻击附加【物理/冰】属性 (注：文档原文是物理/冰，可能是笔误？岩石一般是土/物理。根据文档：'岩灵珠：攻击附加【物理/冰】属性'。我将遵照文档，但也可能是【物理/土】？)",
+        "effectId": "attr_add",
+        "value": "rock"
     }
 ]

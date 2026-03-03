@@ -2,7 +2,9 @@
   "pools": {
     "training_mob": ["mob_1", "mob_2", "mob_3"],
     "training_elite": ["elite_1"],
-    "training_boss": ["boss_1"]
+    "training_boss": ["boss_1"],
+    "magic_mob": ["mob_fire_mage", "mob_ice_mage", "mob_earth_mage", "mob_magic_swordsman"],
+    "magic_elite": ["elite_fire_mage", "elite_magic_swordsman", "elite_ice_mage"]
   },
   "definitions": {
     "mob_1": {
@@ -50,6 +52,73 @@
         "min": 1,
         "max": 3,
         "pool": ["breeze_orb", "iron_orb"]
+      }
+    },
+    "mob_fire_mage": {
+      "id": "mob_fire_mage",
+      "name": "火法学徒",
+      "hpMin": 30,
+      "hpMax": 35,
+      "deck": ["fireball", "fireball", "fireball", "flick_thrust"]
+    },
+    "mob_ice_mage": {
+      "id": "mob_ice_mage",
+      "name": "冰法学徒",
+      "hpMin": 30,
+      "hpMax": 35,
+      "deck": ["ice_orb", "ice_orb", "ice_orb", "spin_slash"]
+    },
+    "mob_earth_mage": {
+      "id": "mob_earth_mage",
+      "name": "岩法学徒",
+      "hpMin": 30,
+      "hpMax": 35,
+      "deck": ["stone_orb", "stone_orb", "stone_orb", "extend_slash"]
+    },
+    "mob_magic_swordsman": {
+      "id": "mob_magic_swordsman",
+      "name": "魔剑士学徒",
+      "hpMin": 30,
+      "hpMax": 35,
+      "deck": ["clear_oil", "extend_slash", "upward_slash", "spin_slash"]
+    },
+    "elite_fire_mage": {
+      "id": "elite_fire_mage",
+      "name": "精英火法",
+      "hpMin": 77,
+      "hpMax": 83,
+      "deck": ["fireball", "fireball", "ice_orb", "stone_orb", "deterrence", "majesty", "calm_mind", "extend_slash", "flick_thrust"],
+      "dropTable": {
+        "chance": 0.1,
+        "min": 1,
+        "max": 1,
+        "pool": ["fire_orb"]
+      }
+    },
+    "elite_magic_swordsman": {
+      "id": "elite_magic_swordsman",
+      "name": "精英魔剑士",
+      "hpMin": 77,
+      "hpMax": 83,
+      "deck": ["bright_oil", "clear_oil", "upward_slash", "upward_slash", "spin_slash", "spin_slash", "extend_slash", "wind_thunder_strike", "majesty", "slash"],
+      "dropTable": {
+        "chance": 0.1,
+        "min": 1,
+        "max": 1,
+        "pool": ["rock_orb"]
+      }
+    },
+    "elite_ice_mage": {
+      "id": "elite_ice_mage",
+      "name": "精英冰法",
+      "hpMin": 77,
+      "hpMax": 83,
+      "deck": ["deterrence", "deterrence", "majesty", "fireball", "wind_thunder_strike", "flick_thrust", "extend_slash", "stone_orb"],
+      "dropTable": {
+        "chance": 0.1,
+        "min": 1,
+        "max": 1,
+        "pool": ["ice_orb"]
       }
     }
   }

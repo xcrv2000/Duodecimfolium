@@ -4,5 +4,11 @@
     "name": "基础剑术",
     "description": "包含基础的物理攻击和防御手段。",
     "price": 10
+  },
+  {
+    "id": "sword_and_magic",
+    "name": "剑与魔法",
+    "description": "融合了物理与魔法的技巧，包含多种属性攻击与状态控制。",
+    "price": 10
   }
 ]

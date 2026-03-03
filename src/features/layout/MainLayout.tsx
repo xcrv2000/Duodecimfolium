@@ -123,8 +123,17 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
         </div>
 
         <div className="mt-8 p-4 bg-slate-900/50 rounded border border-slate-800">
-            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.1.0)</h3>
-            <ul className="list-disc list-inside text-sm text-slate-400">
+            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.0)</h3>
+            <ul className="list-disc list-inside text-sm text-slate-400 mb-4">
+                <li>新地牢：魔法学院来客</li>
+                <li>新卡包：剑与魔法（30+ 新卡牌）</li>
+                <li>新增修饰珠系统：火灵珠、冰灵珠、岩灵珠</li>
+                <li>战斗系统重构：基于 0.1 精度的动态时间轴</li>
+                <li>新增状态效果：燃烧、冰冻、眩晕、剑油等</li>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2 text-xs">历史版本 (v0.1.0)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>基础战斗系统实装</li>
                 <li>训练场地牢开放</li>
                 <li>基础剑术卡包上架</li>

@@ -29,5 +29,26 @@
       { "type": "mob", "enemyPoolId": "training_mob" },
       { "type": "boss", "enemyPoolId": "training_boss" }
     ]
+  },
+  {
+    "id": "magic_academy_visitor",
+    "name": "魔法学院来客",
+    "description": "来自远方魔法学院的访问者。",
+    "unlockRequirementId": "training_ground",
+    "teamSize": 1,
+    "unlocksPackId": "sword_and_magic",
+    "goldRewardMin": 20,
+    "goldRewardMax": 20,
+    "stages": [
+      { "type": "mob", "enemyPoolId": "magic_mob" },
+      { "type": "mob", "enemyPoolId": "magic_mob" },
+      { "type": "elite", "enemyPoolId": "magic_elite" },
+      { "type": "mob", "enemyPoolId": "magic_mob" },
+      { "type": "mob", "enemyPoolId": "magic_mob" },
+      { "type": "elite", "enemyPoolId": "magic_elite" },
+      { "type": "mob", "enemyPoolId": "magic_mob" },
+      { "type": "mob", "enemyPoolId": "magic_mob" },
+      { "type": "elite", "enemyPoolId": "magic_elite" }
+    ]
   }
 ]

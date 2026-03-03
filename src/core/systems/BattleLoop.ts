@@ -10,6 +10,55 @@ export class BattleLoop {
     this.state = state;
   }
 
+  public spawnCard(source: BattleUnit, cardId: string, baseSpeed10: number): void {
+      const cardDef = this.state.units.flatMap(u => u.cards).find(c => c.id === cardId);
+      // If cardId is token, it might not be in units. Need global card list or passed definition.
+      // For now, let's look up in units or construct minimal.
+      // Better: pass cardId and look up in a "CardDatabase" (but we don't have global access here easily).
+      // Or just clone source's card and modify?
+      // Hack: Assume tokens are pre-loaded or we construct dummy.
+      // Since we don't have access to global 'cards' here, we might need to inject it or fetch from source.
+      // Let's create a minimal card instance.
+      const newCard: any = {
+          id: cardId,
+          name: cardId.includes('token') ? (cardId.includes('spin') ? '回旋·斩' : '上挑斩·剑气') : 'Token',
+          description: 'Token',
+          effectDescription: 'Token',
+          packId: 'token',
+          rarity: 0,
+          speed: baseSpeed10 / 10,
+          scriptId: cardId,
+          tags: ['衍生', '攻击', cardId.includes('upward') ? '魔法' : '物理'],
+          instanceId: `${source.id}_token_${Date.now()}_${Math.random()}`,
+          baseSpeed10: baseSpeed10,
+          currentSpeed10: baseSpeed10,
+          ownerId: source.id,
+          modifiers: [],
+          buffs: []
+      };
+      
+      source.cards.push(newCard);
+      this.recalculateCardSpeed(source, newCard);
+      this.log(source, null, `Spawned ${newCard.name}!`, 'info');
+      
+      // If it falls into current tick or future, it will be picked up by processTick loop if we re-scan?
+      // processTick re-scans via `while(true)`. 
+      // But we need to ensure it's sorted correctly.
+      // The `while` loop re-gathers candidates. So yes.
+  }
+
+  public getCurrentTick(): number {
+      return this.state.tick;
+  }
+  
+  public getCurrentTurn(): number {
+      return this.state.turn;
+  }
+  
+  public getAllUnits(): BattleUnit[] {
+      return this.state.units;
+  }
+
   // --- Main Loop Methods ---
 
   public nextTick(): BattleState {
@@ -282,11 +331,31 @@ export class BattleLoop {
     // 3. Apply Armor (if physical)
     // Assume Physical unless specified magical
     let effectiveType = type;
-    // Check for Magic Attribute (fire, etc.) - Simplified
-    if (this.currentCard?.modifiers?.some(m => m.effectId === 'attr_add' && m.value === 'fire')) {
+    
+    // Check for Magic Attribute (fire, ice, etc.)
+    // If card has attr_add modifiers, we might change damage type OR just add tags.
+    // For now, if "fire" or "ice", treat as magical for armor purposes?
+    // Docs say: "fire_orb: 攻击附加【魔法/火】属性"
+    // "rock_orb: 攻击附加【物理/冰】属性" (Weird, but okay. Rock usually Physical.)
+    // "ice_orb: 攻击附加【魔法/冰】属性"
+    
+    // Logic: 
+    // If base type is physical:
+    //   - fire_orb -> adds magic -> mixed? Armor applies?
+    //   - rock_orb -> adds physical/ice -> still physical -> Armor applies.
+    //   - ice_orb -> adds magic/ice -> mixed?
+    
+    // Simplified Logic for now:
+    // If ANY modifier makes it 'Magical' (Fire, Ice), we treat as Magical for Armor bypass?
+    // BUT Rock is 'Physical/Ice'.
+    // Let's check the modifier values.
+    const modifiers = this.currentCard?.modifiers || [];
+    
+    if (modifiers.some(m => m.effectId === 'attr_add' && (m.value === 'fire' || m.value === 'ice'))) {
         effectiveType = 'magical';
     }
-
+    // Rock is Physical/Ice, so it stays Physical (Armor works).
+    
     let unmitigated = false;
     if (effectiveType === 'physical') {
       if (target.armor > 0) {
