@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Trash2, RefreshCw } from 'lucide-react';
-import { usePlayerStore } from '../../stores/playerStore';
 
 const SettingsView: React.FC = () => {
   const [confirmText, setConfirmText] = useState('');
