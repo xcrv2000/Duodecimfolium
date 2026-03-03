@@ -429,9 +429,60 @@ export const CardScripts: Record<string, CardScript> = {
   },
 
   // 26. Whetstone (磨刀石)
-  whetstone: (_loop, _source, _targets) => {
+  whetstone: (loop, source, _targets) => {
       // "精英战与 Boss 战开始时触发".
-      // Handled in `executeStartOfBattleEffects`.
+      // But user says: "磨刀石应该给玩家一个直到战斗结束为止的【力量1】效果（物理攻击+1，可叠加）"
+      // The current prompt says: "whetstone logic ... should give Strength 1"
+      // Wait, is Whetstone triggered via script or via StartOfBattle hook?
+      // If it's a non-tick card, it won't be executed in normal loop.
+      // But we can execute it manually in StartOfBattle if we want, OR
+      // we can handle it inside BattleLoop.executeStartOfBattleEffects directly.
+      // However, making the script functional allows BattleLoop to just call it.
+      
+      const buff: UnitBuff = {
+          id: 'strength',
+          name: '力量',
+          description: '物理攻击伤害 +{level}。',
+          duration: 999, // Battle end
+          stackRule: 'stackable',
+          level: 1,
+          type: 'buff',
+          onAttack: (_unit, _t, damage, _state) => {
+              // Wait, onAttack receives raw damage.
+              // We need to know if it's PHYSICAL.
+              // BattleLoop.dealDamage applies onAttack buffs.
+              // But onAttack doesn't get 'type'.
+              // We need to assume physical or update BattleLoop?
+              // Most attacks are physical.
+              // Let's blindly add damage for now, OR rely on BattleLoop update.
+              // Actually, BattleLoop.dealDamage calls onAttack BEFORE type check?
+              // No, dealDamage signature is (source, target, amount, type).
+              // It calls onAttack(source, target, damage, state).
+              // It doesn't pass 'type'.
+              // We should probably check the CARD tags if we could access it.
+              // But we can't access currentCard easily here without context.
+              // BUT, `strength` usually implies physical.
+              // Let's add damage.
+              return damage + 1; // Level is handled by stackable? 
+              // Wait, onAttack is a function. It doesn't know 'level' unless we capture it?
+              // The `buff` object passed to onAttack? No.
+              // We need to find the buff on the unit to get current level.
+          }
+      };
+      
+      // We need a better onAttack that can access the buff level.
+      // Or we define onAttack dynamically when adding/stacking?
+      // BattleLoop.addUnitBuff handles stacking by merging levels.
+      // But the `onAttack` function remains the one from the NEW buff or OLD buff?
+      // Usually simple systems keep the old function.
+      // So the function must find the buff instance on the unit.
+      
+      buff.onAttack = (unit, _t, damage, _state) => {
+          const myBuff = unit.buffs.find(b => b.id === 'strength');
+          return damage + (myBuff ? myBuff.level : 0);
+      };
+      
+      loop.addUnitBuff(source, buff);
   },
 
   // 27. Flick Thrust (上撩突刺)

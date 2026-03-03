@@ -85,8 +85,8 @@
     "elite_fire_mage": {
       "id": "elite_fire_mage",
       "name": "精英火法",
-      "hpMin": 67,
-      "hpMax": 73,
+      "hpMin": 52,
+      "hpMax": 56,
       "deck": ["fireball", "fireball", "ice_orb", "stone_orb", "deterrence", "majesty", "calm_mind", "extend_slash", "flick_thrust"],
       "dropTable": {
         "chance": 0.1,
@@ -98,8 +98,8 @@
     "elite_magic_swordsman": {
       "id": "elite_magic_swordsman",
       "name": "精纯于剑油的剑士",
-      "hpMin": 67,
-      "hpMax": 73,
+      "hpMin": 52,
+      "hpMax": 56,
       "deck": ["bright_oil", "clear_oil", "upward_slash", "upward_slash", "spin_slash", "spin_slash", "extend_slash", "wind_thunder_strike", "majesty", "slash"],
       "dropTable": {
         "chance": 0.1,
@@ -111,8 +111,8 @@
     "elite_ice_mage": {
       "id": "elite_ice_mage",
       "name": "伪装成法师的魔剑士",
-      "hpMin": 67,
-      "hpMax": 73,
+      "hpMin": 52,
+      "hpMax": 56,
       "deck": ["deterrence", "deterrence", "majesty", "fireball", "wind_thunder_strike", "flick_thrust", "extend_slash", "stone_orb"],
       "dropTable": {
         "chance": 0.1,

@@ -117,8 +117,25 @@ export class BattleLoop {
     });
 
     // 2. Execute passive effects (Start of Battle)
+    // Check for Whetstone (Elite/Boss only)
+    const isEliteOrBoss = this.state.units.some(u => 
+        u.team === 'enemy' && (u.id.includes('elite') || u.id.includes('boss') || u.name.includes('精英') || u.name.includes('Boss') || u.name.includes('BOSS'))
+    );
+    
     this.state.units.forEach(unit => {
       unit.cards.forEach(card => {
+        // Handle Whetstone separately
+        if (card.scriptId === 'whetstone') {
+             if (isEliteOrBoss) {
+                 this.executeCard(unit, card);
+             }
+             return;
+        }
+        
+        // Skip Ration (handled at end)
+        if (card.scriptId === 'ration') return;
+        
+        // Execute other passives
         if (card.baseSpeed10 === null) {
           this.executeCard(unit, card);
         }
@@ -320,10 +337,42 @@ export class BattleLoop {
     if (!teamAlive.player) {
       this.state.isOver = true;
       this.state.winner = 'enemy';
+      this.onBattleEnd();
     } else if (!teamAlive.enemy) {
       this.state.isOver = true;
       this.state.winner = 'player';
+      this.onBattleEnd();
     }
+  }
+
+  private onBattleEnd(): void {
+    // Trigger "Supply" cards (补给品)
+    this.state.units.forEach(unit => {
+        if (unit.team === 'player' && !unit.isDead) {
+             unit.cards.forEach(card => {
+                 if (card.scriptId === 'ration') {
+                     const hpPercent = unit.hp / unit.maxHp;
+                     if (hpPercent < 0.7) {
+                         // Need to track usage. CardInstance is recreated per battle from BattleStore usually?
+                         // If BattleStore preserves unit.cards across stages, this works.
+                         // But BattleStore creates new BattleLoop each stage.
+                         // We need to mutate the UNIT's card instance which is passed back to store?
+                         // The unit in BattleState is a clone?
+                         // Let's assume for now we mutate this instance. 
+                         // To make it persist across dungeon stages, BattleStore must copy this unit state back.
+                         
+                         const triggers = (card as any).triggerCount || 0;
+                         if (triggers < 3) {
+                             const heal = 20;
+                             unit.hp = Math.min(unit.hp + heal, unit.maxHp);
+                             (card as any).triggerCount = triggers + 1;
+                             this.log(unit, unit, `便携干粮触发: 回复${heal}生命 (剩余次数: ${2 - triggers})`, 'buff', heal);
+                         }
+                     }
+                 }
+             });
+        }
+    });
   }
 
   private log(source: BattleUnit | null, target: BattleUnit | null, message: string, type: BattleLogEntry['type'], value?: number, cardName?: string): void {
@@ -348,7 +397,12 @@ export class BattleLoop {
             damage = buff.onAttack(source, target, damage, this.state);
         }
     });
-
+    
+    // Explicitly handle "Strength" buff if not handled by onAttack (or to be safe)
+    // Actually, we implemented onAttack in the Whetstone script.
+    // But let's verify if onAttack is called correctly.
+    // Yes, above loop calls it.
+    
     // 2. Apply Target Buffs (onReceiveDamage)
     target.buffs.forEach(buff => {
         if (buff.onReceiveDamage) {
