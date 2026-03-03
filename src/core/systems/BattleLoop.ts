@@ -11,26 +11,28 @@ export class BattleLoop {
   }
 
   public spawnCard(source: BattleUnit, cardId: string, baseSpeed10: number): void {
-      // If cardId is token, it might not be in units. Need global card list or passed definition.
-      // For now, let's look up in units or construct minimal.
-      // Better: pass cardId and look up in a "CardDatabase" (but we don't have global access here easily).
-      // Or just clone source's card and modify?
-      // Hack: Assume tokens are pre-loaded or we construct dummy.
-      // Since we don't have access to global 'cards' here, we might need to inject it or fetch from source.
-      // Let's create a minimal card instance.
-      // const isToken = cardId.includes('token') || cardId.includes('spin') || cardId.includes('upward');
+      // Find card definition if possible
+      // Since we don't have access to global cards array directly in class unless passed,
+      // we can try to find it in the source unit's deck if it exists there, OR use hardcoded fallback
+      // BUT `cards.json` has the tokens defined.
+      // Ideally, BattleLoop should have access to a card database.
+      // For now, let's hardcode the KNOWN tokens from cards.json to ensure consistency.
+      
       let name = 'Token';
       let desc = 'Token';
       let effectDesc = 'Token Effect';
+      let tags = ['衍生'];
       
-      if (cardId.includes('spin_slash')) {
+      if (cardId === 'spin_slash_token') {
           name = '回旋·斩';
           desc = '回旋斩的后续攻击。';
           effectDesc = '造成6点物理伤害。';
-      } else if (cardId.includes('upward_slash')) {
+          tags = ["攻击", "物理", "衍生"];
+      } else if (cardId === 'upward_slash_token') {
           name = '上挑斩·剑气';
           desc = '上挑斩激发的剑气。';
           effectDesc = '造成4点魔法伤害。';
+          tags = ["攻击", "魔法", "衍生"];
       }
 
       const newCard: any = {
@@ -42,7 +44,7 @@ export class BattleLoop {
           rarity: 0,
           speed: baseSpeed10 / 10,
           scriptId: cardId,
-          tags: ['衍生', '攻击', cardId.includes('upward') ? '魔法' : '物理'],
+          tags: tags,
           instanceId: `${source.id}_token_${Date.now()}_${Math.random()}`,
           baseSpeed10: baseSpeed10,
           currentSpeed10: baseSpeed10,
@@ -191,6 +193,12 @@ export class BattleLoop {
       
       // Apply Deck Speed Penalty
       speed += (card.deckSpeedPenalty || 0);
+      
+      // Ensure speed is not below 0
+      // "所有卡的减速效果，除非有额外描述，不应该将其减速至0以下。"
+      // speed 0 means it executes at tick 0.
+      // Negative speed is invalid in this system as tick starts at 0.
+      if (speed < 0) speed = 0;
       
       card.currentSpeed10 = speed;
   }

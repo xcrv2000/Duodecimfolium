@@ -234,7 +234,7 @@ export const CardScripts: Record<string, CardScript> = {
       const buff: UnitBuff = {
           id: 'clear_oil',
           name: '清亮剑油',
-          description: '下一次物理攻击后，该卡从下回合起速度-2。',
+          description: '下一次物理攻击后，那张卡从下回合起速度-2。（至少为0）',
           duration: 999, // Until battle end
           stackRule: 'nonStackable',
           level: 1,
@@ -266,7 +266,7 @@ export const CardScripts: Record<string, CardScript> = {
       const buff: UnitBuff = {
           id: 'bright_oil',
           name: '明亮剑油',
-          description: '下一次物理攻击后，该卡永久速度-3。',
+          description: '下一次物理攻击后，那张卡永久速度-3。（至少为0）',
           duration: 999,
           stackRule: 'nonStackable',
           level: 1,
