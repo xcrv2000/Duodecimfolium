@@ -56,6 +56,7 @@ export class BattleLoop {
           permanentSpeedModifier: 0,
           ownerId: source.id,
           modifiers: [],
+          factoryBuffs: [],
           buffs: []
       };
       
