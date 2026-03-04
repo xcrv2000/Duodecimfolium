@@ -1,6 +1,5 @@
 import { BattleLoop } from './BattleLoop';
 import { BattleUnit, UnitBuff } from '../domain/Battle';
-import type { DamageInfo } from '../domain/Battle';
 
 type CardScript = (loop: BattleLoop, source: BattleUnit, targets: BattleUnit[]) => void;
 
