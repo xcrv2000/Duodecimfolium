@@ -1,4 +1,4 @@
-import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff, DamageInfo } from '../domain/Battle';
+import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff, CardFactoryBuff, DamageInfo } from '../domain/Battle';
 import { CardInstance } from '../domain/Card';
 import { CardScripts } from './CardScripts';
 

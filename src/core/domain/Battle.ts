@@ -49,7 +49,8 @@ export interface CardInstanceBuff extends BaseBuff {
 }
 
 export interface CardFactoryBuff extends BaseBuff {
-    // Specific to Card Factories
+    // Specific to Card Factories (e.g. permanent speed modification)
+    speedModification?: number; // 速度修正值 (x10)
 }
 
 export interface BattleState {
