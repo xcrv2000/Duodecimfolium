@@ -1,5 +1,5 @@
 import { BattleLoop } from './BattleLoop';
-import { BattleUnit, UnitBuff } from '../domain/Battle';
+import { BattleUnit, UnitBuff, DamageInfo } from '../domain/Battle';
 
 type CardScript = (loop: BattleLoop, source: BattleUnit, targets: BattleUnit[]) => void;
 
@@ -118,7 +118,7 @@ export const CardScripts: Record<string, CardScript> = {
           description: '下回合所有卡牌速度+{level}。',
           duration: 2, // Current + Next
           stackRule: 'nonStackable',
-          level: 20, // +2.0 Speed (x10)
+          level: 2, // +2.0 Speed (x10)
           type: 'debuff'
       };
       loop.addUnitBuff(target, stun);
@@ -299,11 +299,13 @@ export const CardScripts: Record<string, CardScript> = {
           stackRule: 'nonStackable',
           level: 1,
           type: 'debuff',
-          onReceiveDamage: (_unit, _src, dmg, _state) => {
-              // We need to know damage type. onReceiveDamage signature update needed?
-              // For now assuming we can't distinguish type in buff easily without update.
-              // I will update BattleLoop to pass type to onReceiveDamage.
-              return dmg; 
+          onReceiveDamage: (_unit, damageInfo, _state) => {
+              // Only double magical damage
+              const hasMagicTag = damageInfo.tags.some(tag => tag.includes('魔法'));
+              if (hasMagicTag) {
+                  return damageInfo.amount * 2;
+              }
+              return damageInfo.amount;
           }
       };
       loop.addUnitBuff(target, debuff);
@@ -322,7 +324,15 @@ export const CardScripts: Record<string, CardScript> = {
           duration: 1,
           stackRule: 'nonStackable',
           level: 1,
-          type: 'debuff'
+          type: 'debuff',
+          onReceiveDamage: (_unit, damageInfo, _state) => {
+              // Only double physical damage (not magical)
+              const hasMagicTag = damageInfo.tags.some(tag => tag.includes('魔法'));
+              if (!hasMagicTag && damageInfo.type === 'physical') {
+                  return damageInfo.amount * 2;
+              }
+              return damageInfo.amount;
+          }
       };
       loop.addUnitBuff(target, debuff);
   },

@@ -1,4 +1,4 @@
-import type { CardInstanceBuff } from './Battle';
+import type { CardInstanceBuff, CardFactoryBuff } from './Battle';
 
 export type CardRarity = number; // 卡包中的份数
 export type CardSpeed = number | null; // 配置中的速度 (e.g. 2.1), null for passive
@@ -13,6 +13,7 @@ export interface Card {
   speed: CardSpeed; // 基础速度
   scriptId: string; // 给系统看的卡的脚本
   tags: string[]; // 属性 (e.g., "攻击/物理")
+  factoryBuffs?: CardFactoryBuff[]; // 卡工厂级buff（持续到战斗结束）
 }
 
 export interface Modifier {
@@ -36,6 +37,8 @@ export interface CardInstance extends Card {
 
   permanentSpeedModifier?: number; // 永久速度修正 (e.g. NPC +0.1 -> +1)
   deckSpeedPenalty?: number; // 同名卡速度惩罚
+  
+  tagsRuntime?: string[]; // 运行时标签 (继承base tags + 修饰珠添加的标签)
   
   ownerId: string; // 持有者ID
   modifiers: Modifier[]; // 修饰珠

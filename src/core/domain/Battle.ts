@@ -2,6 +2,14 @@ import { CardInstance } from './Card';
 
 export type TeamType = 'player' | 'enemy';
 
+export interface DamageInfo {
+  amount: number;
+  sourceUnit: BattleUnit;
+  targetUnit: BattleUnit;
+  type: 'physical' | 'magical';
+  tags: string[]; // Card tags, may include modifier-added tags like '魔法/火'
+}
+
 export interface BattleUnit {
   id: string;
   name: string;
@@ -32,7 +40,7 @@ export interface UnitBuff extends BaseBuff {
   onTurnStart?: (unit: BattleUnit, battle: BattleState) => void;
   onTurnEnd?: (unit: BattleUnit, battle: BattleState) => void;
   onAttack?: (unit: BattleUnit, target: BattleUnit, damage: number, battle: BattleState) => number; // Returns modified damage
-  onReceiveDamage?: (unit: BattleUnit, source: BattleUnit, damage: number, battle: BattleState) => number; // Returns modified damage
+  onReceiveDamage?: (unit: BattleUnit, damageInfo: DamageInfo, battle: BattleState) => number; // Returns modified damage
 }
 
 export interface CardInstanceBuff extends BaseBuff {

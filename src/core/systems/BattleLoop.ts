@@ -1,4 +1,4 @@
-import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff } from '../domain/Battle';
+import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff, DamageInfo } from '../domain/Battle';
 import { CardInstance } from '../domain/Card';
 import { CardScripts } from './CardScripts';
 
@@ -59,6 +59,7 @@ export class BattleLoop {
           buffs: []
       };
       
+      this.initializeCardTags(newCard);
       source.cards.push(newCard);
       this.recalculateCardSpeed(source, newCard);
       this.log(source, null, `Spawned ${newCard.name}!`, 'info');
@@ -81,6 +82,34 @@ export class BattleLoop {
       return this.state.units;
   }
 
+  // --- Helper Methods ---
+
+  private initializeCardTags(card: CardInstance): void {
+      // Initialize tagsRuntime with base tags + modifier-added tags
+      card.tagsRuntime = [...(card.tags || [])];
+      
+      // Apply attr_add modifiers to tags
+      card.modifiers.forEach(mod => {
+          if (mod.effectId === 'attr_add') {
+              // Convert modifier value to tag path
+              // e.g., 'fire' -> add ["魔法", "火"] or similar
+              if (mod.value === 'fire') {
+                  if (!card.tagsRuntime!.includes('魔法/火')) {
+                      card.tagsRuntime!.push('魔法/火');
+                  }
+              } else if (mod.value === 'ice') {
+                  if (!card.tagsRuntime!.includes('魔法/冰')) {
+                      card.tagsRuntime!.push('魔法/冰');
+                  }
+              } else if (mod.value === 'rock') {
+                  if (!card.tagsRuntime!.includes('物理/岩')) {
+                      card.tagsRuntime!.push('物理/岩');
+                  }
+              }
+          }
+      });
+  }
+
   // --- Main Loop Methods ---
 
   public nextTick(): BattleState {
@@ -98,6 +127,38 @@ export class BattleLoop {
 
   public executeStartOfBattleEffects(): void {
     this.log(null, null, "--- 战斗开始 ---", 'info');
+    
+    // 0. Apply Duplicate Card Speed Penalty
+    // "同名卡第2张速度+0.9，第3张速度+2.8"
+    this.state.units.forEach(unit => {
+        const cardNameCount = new Map<string, number>();
+        
+        unit.cards.forEach(card => {
+            const count = cardNameCount.get(card.id) ?? 0;
+            cardNameCount.set(card.id, count + 1);
+            
+            if (count === 1) {
+                // Second occurrence: +0.9 speed = +9 speed10
+                card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 9;
+                this.log(unit, null, `${card.name} (第2张): 速度惩罚 +0.9`, 'info');
+            } else if (count === 2) {
+                // Third occurrence: +2.8 speed = +28 speed10
+                card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 28;
+                this.log(unit, null, `${card.name} (第3张): 速度惩罚 +2.8`, 'info');
+            }
+        });
+    });
+
+    // 0.5. Initialize Card Tags (including modifier-added tags) and Factory Buffs
+    this.state.units.forEach(unit => {
+        unit.cards.forEach(card => {
+            this.initializeCardTags(card);
+            // Initialize factoryBuffs if not already present
+            if (!card.factoryBuffs) {
+                card.factoryBuffs = [];
+            }
+        });
+    });
     
     // 1. Initialize Speeds & Apply NPC Bonus
     this.state.units.forEach(unit => {
@@ -187,6 +248,15 @@ export class BattleLoop {
                 if (!isNaN(val)) {
                     speed += Math.round(val * 10);
                 }
+            }
+        });
+      }
+
+      // Apply CardFactoryBuffs
+      if (card.factoryBuffs) {
+        card.factoryBuffs.forEach(buff => {
+            if (buff.speedModification) {
+                speed += buff.speedModification;
             }
         });
       }
@@ -433,45 +503,21 @@ export class BattleLoop {
         }
     });
     
-    // Explicitly handle "Strength" buff if not handled by onAttack (or to be safe)
-    // Actually, we implemented onAttack in the Whetstone script.
-    // But let's verify if onAttack is called correctly.
-    // Yes, above loop calls it.
-    
-    // 2. Apply Target Buffs (onReceiveDamage)
-    target.buffs.forEach(buff => {
-        if (buff.onReceiveDamage) {
-            damage = buff.onReceiveDamage(target, source, damage, this.state);
-        }
-    });
-    
     // 3. Apply Armor (if physical)
-    // Assume Physical unless specified magical
+    // Use card.tagsRuntime to determine damage type (includes modifier-added tags)
     let effectiveType = type;
     
-    // Check for Magic Attribute (fire, ice, etc.)
-    // If card has attr_add modifiers, we might change damage type OR just add tags.
-    // For now, if "fire" or "ice", treat as magical for armor purposes?
-    // Docs say: "fire_orb: 攻击附加【魔法/火】属性"
-    // "rock_orb: 攻击附加【物理/冰】属性" (Weird, but okay. Rock usually Physical.)
-    // "ice_orb: 攻击附加【魔法/冰】属性"
+    const cardTags = this.currentCard?.tagsRuntime || [];
+    // Check if card has magic tags
+    const hasMagicTag = cardTags.some(tag => tag.includes('魔法'));
     
-    // Logic: 
-    // If base type is physical:
-    //   - fire_orb -> adds magic -> mixed? Armor applies?
-    //   - rock_orb -> adds physical/ice -> still physical -> Armor applies.
-    //   - ice_orb -> adds magic/ice -> mixed?
-    
-    // Simplified Logic for now:
-    // If ANY modifier makes it 'Magical' (Fire, Ice), we treat as Magical for Armor bypass?
-    // BUT Rock is 'Physical/Ice'.
-    // Let's check the modifier values.
-    const modifiers = this.currentCard?.modifiers || [];
-    
-    if (modifiers.some(m => m.effectId === 'attr_add' && (m.value === 'fire' || m.value === 'ice'))) {
+    if (hasMagicTag && type === 'physical') {
+        // Mixed damage - treat as magical for armor purposes
         effectiveType = 'magical';
+    } else if (cardTags.some(tag => tag === '物理/岩')) {
+        // Rock explicitly marked as physical
+        effectiveType = 'physical';
     }
-    // Rock is Physical/Ice, so it stays Physical (Armor works).
     
     let unmitigated = false;
     if (effectiveType === 'physical') {
@@ -481,15 +527,26 @@ export class BattleLoop {
         damage -= armorDamage;
         this.log(source, target, `护甲吸收了 ${armorDamage} 点伤害。`, 'info');
       }
-      // If damage remains (or armor was 0), it pierced armor partially?
-      // Bleed usually means "if HP damage is taken" or "if armor didn't block ALL"?
-      // "unmitigated by armor" usually means if armor was 0 or bypassed.
-      // But here: "target received unmitigated physical damage" -> "受到未被护甲抵消的..."
-      // This usually means the PORTION of damage that went through.
-      // "Every time target takes physical damage NOT blocked by armor..."
-      // So if damage > 0 after armor, it triggers.
       if (damage > 0) unmitigated = true;
     }
+    
+    // 2. Apply Target Buffs (onReceiveDamage)
+    // Build DamageInfo structure
+    const damageInfo: DamageInfo = {
+        amount: damage,
+        sourceUnit: source,
+        targetUnit: target,
+        type: effectiveType,
+        tags: cardTags
+    };
+    
+    target.buffs.forEach(buff => {
+        if (buff.onReceiveDamage) {
+            damage = buff.onReceiveDamage(target, damageInfo, this.state);
+            // Update damageInfo for next callbacks
+            damageInfo.amount = damage;
+        }
+    });
     
     // 4. Apply Bleed (Hardcoded mechanic)
     if (effectiveType === 'physical' && unmitigated) {
@@ -576,6 +633,17 @@ export class BattleLoop {
   public addCardInstanceBuff(card: CardInstance, buff: CardInstanceBuff): void {
       if (!card.buffs) card.buffs = [];
       card.buffs.push(buff);
+      
+      const unit = this.state.units.find(u => u.id === card.ownerId);
+      if (unit) {
+          this.recalculateCardSpeed(unit, card);
+      }
+  }
+
+  // API: Add Card Factory Buff (持续到战斗结束)
+  public addCardFactoryBuff(card: CardInstance, buff: CardFactoryBuff): void {
+      if (!card.factoryBuffs) card.factoryBuffs = [];
+      card.factoryBuffs.push(buff);
       
       const unit = this.state.units.find(u => u.id === card.ownerId);
       if (unit) {
