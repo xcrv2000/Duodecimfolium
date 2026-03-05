@@ -50,5 +50,18 @@
       { "type": "mob", "enemyPoolId": "magic_mob" },
       { "type": "elite", "enemyPoolId": "magic_elite" }
     ]
+  },
+  {
+    "id": "fiery_duelist",
+    "name": "热烈的决斗者",
+    "description": "炎热之中，决斗者们挥洒汗水。",
+    "unlockRequirementId": "training_ground",
+    "teamSize": 1,
+    "unlocksPackId": "pack_3_lakshir_ritual",
+    "goldRewardMin": 1,
+    "goldRewardMax": 1,
+    "stages": [
+      { "type": "boss", "enemyPoolId": "fiery_duelist_boss" }
+    ]
   }
 ]

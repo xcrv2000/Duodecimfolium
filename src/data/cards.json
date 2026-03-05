@@ -250,7 +250,7 @@
     "rarity": 1,
     "speed": 5,
     "scriptId": "calm_mind",
-    "tags": ["辅助"]
+    "tags": ["辅助", "全力"]
   },
   {
     "id": "wind_thunder_strike",
@@ -306,5 +306,225 @@
     "speed": 10,
     "scriptId": "moonlight_slash",
     "tags": ["攻击", "物理", "魔法"]
+  },
+  {
+    "id": "lakshir_ritual",
+    "name": "拉克希尔之仪",
+    "description": "献祭仪式。",
+    "effectDescription": "失去12血，获得24护盾。",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 3,
+    "speed": 2,
+    "scriptId": "lakshir_ritual",
+    "tags": []
+  },
+  {
+    "id": "duel_slash",
+    "name": "斩·一心",
+    "description": "新的标准攻击模型",
+    "effectDescription": "【全力】对血量最高的敌方单位造成10伤害",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 6,
+    "scriptId": "duel_slash",
+    "tags": ["攻击", "物理", "全力"]
+  },
+  {
+    "id": "powerful_cleave",
+    "name": "蓄力劈砍",
+    "description": "纯纯的数值",
+    "effectDescription": "【全力】对血量最高的敌方单位造成15伤害",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 9,
+    "scriptId": "powerful_cleave",
+    "tags": ["攻击", "物理", "全力"]
+  },
+  {
+    "id": "sledgehammer",
+    "name": "重锤",
+    "description": "花里胡哨的，吃我一锤",
+    "effectDescription": "【全力】对血量最高的敌方单位造成18伤害",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 3,
+    "speed": 12,
+    "scriptId": "sledgehammer",
+    "tags": ["攻击", "物理", "全力"]
+  },
+  {
+    "id": "maze_step",
+    "name": "迷踪步",
+    "description": "玩捉迷藏吗？",
+    "effectDescription": "50%闪避下一次攻击",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 3,
+    "scriptId": "maze_step",
+    "tags": []
+  },
+  {
+    "id": "temporary_ceasefire",
+    "name": "一时休战",
+    "description": "跳过攻击阶段！",
+    "effectDescription": "本tick内所有角色的所有未发动的【攻击】卡 速度+1",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 8,
+    "scriptId": "temporary_ceasefire",
+    "tags": ["全力"]
+  },
+  {
+    "id": "conch_shell",
+    "name": "海螺壳",
+    "description": "从一个蓝色的机器人身上偷的……",
+    "effectDescription": "下次收到的伤害变为0",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 8,
+    "scriptId": "conch_shell",
+    "tags": ["全力"]
+  },
+  {
+    "id": "flame_arrow",
+    "name": "火焰箭",
+    "description": "变戏法的来咯",
+    "effectDescription": "对随机敌方目标造成3魔法/火焰伤害，造成【灼烧1】",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 4,
+    "scriptId": "flame_arrow",
+    "tags": ["攻击", "魔法", "火"]
+  },
+  {
+    "id": "flame_arrow_ring",
+    "name": "火焰箭·升环",
+    "description": "你为什么要升环一个戏法？",
+    "effectDescription": "对默认敌方目标造成6魔法/火焰伤害，造成【灼烧3】",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 7,
+    "scriptId": "flame_arrow_ring",
+    "tags": ["攻击", "魔法", "火"]
+  },
+  {
+    "id": "resist_fire_ring",
+    "name": "抗拒火环",
+    "description": "并不能推开任何人，但是可以让他们付出点代价",
+    "effectDescription": "获得【抗拒火环 3】buff",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 3,
+    "speed": 8,
+    "scriptId": "resist_fire_ring",
+    "tags": ["魔法", "火"]
+  },
+  {
+    "id": "shadow_step",
+    "name": "暗影步",
+    "description": "",
+    "effectDescription": "失去2血。本回合下一次攻击获得【穿甲】",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 3,
+    "scriptId": "shadow_step",
+    "tags": ["魔法", "暗影"]
+  },
+  {
+    "id": "shadow_claw",
+    "name": "暗影爪",
+    "description": "",
+    "effectDescription": "失去2血。对血量最低的敌方单位造成5伤",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 3,
+    "scriptId": "shadow_claw",
+    "tags": ["攻击", "魔法", "暗影"]
+  },
+  {
+    "id": "shadow_beam",
+    "name": "暗影束",
+    "description": "",
+    "effectDescription": "失去3血。你的血量距离血量上限每差6点，造成1点伤害",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": 7,
+    "scriptId": "shadow_beam",
+    "tags": ["攻击", "魔法", "暗影"]
+  },
+  {
+    "id": "shadow_form",
+    "name": "暗影形态",
+    "description": "",
+    "effectDescription": "下一个回合中，每当你因为自己的效果失去血量，血量最低的对手失去同样多的血量",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 3,
+    "speed": 12,
+    "scriptId": "shadow_form",
+    "tags": ["暗影", "全力"]
+  },
+  {
+    "id": "steel_full_armor",
+    "name": "钢制全身甲",
+    "description": "坚硬，扎实的板甲",
+    "effectDescription": "战斗开始时生效，持续至战斗结束。角色受到的所有伤害-1。角色的卡结算后，其后1tick之内属于的该角色其它卡获得 速度+1。每回合开始时，增加24护甲",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": null,
+    "scriptId": "steel_full_armor",
+    "tags": ["护具"]
+  },
+  {
+    "id": "leather_half_armor",
+    "name": "皮质半身甲",
+    "description": "轻快的斥候用甲",
+    "effectDescription": "战斗开始时生效，持续至战斗结束。角色受到的所有被护甲格挡的伤害-1。角色的卡结算后，其后0.5tick之内属于的该角色其它卡获得 速度+0.5。每回合开始时，增加16护甲",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": null,
+    "scriptId": "leather_half_armor",
+    "tags": ["护具"]
+  },
+  {
+    "id": "cloth_light_armor",
+    "name": "布质轻甲",
+    "description": "穿厚点也算是甲",
+    "effectDescription": "战斗开始时生效，持续至战斗结束。角色每tick受到的第一次伤害-1。角色的卡结算后，其后0.3tick之内属于的该角色其它卡获得 速度+0.3。每回合开始时，增加12护甲",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 6,
+    "speed": null,
+    "scriptId": "cloth_light_armor",
+    "tags": ["护具"]
+  },
+  {
+    "id": "mother_of_pearl_helmet",
+    "name": "螺钿盔",
+    "description": "应该躺在博物馆里",
+    "effectDescription": "战斗开始后生效，持续至战斗结束。角色每回合受到的第一次伤害变为0",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 3,
+    "speed": null,
+    "scriptId": "mother_of_pearl_helmet",
+    "tags": ["护具"]
+  },
+  {
+    "id": "gauze_skirt",
+    "name": "纱裙",
+    "description": "嘿，看哪呢",
+    "effectDescription": "战斗开始后生效，持续至战斗结束。你有20%几率闪避受到的物理攻击",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 3,
+    "speed": null,
+    "scriptId": "gauze_skirt",
+    "tags": ["护具"]
+  },
+  {
+    "id": "tight_robe",
+    "name": "紧束法袍",
+    "description": "不对不对，我们法师不是拿皮带当捆扎带用的变态",
+    "effectDescription": "战斗开始后生效，持续至战斗结束。速度+1。当你需要【随机指定目标】时，你会尽可能指定和上一次相同的目标",
+    "packId": "pack_3_lakshir_ritual",
+    "rarity": 3,
+    "speed": null,
+    "scriptId": "tight_robe",
+    "tags": ["护具"]
   }
 ]

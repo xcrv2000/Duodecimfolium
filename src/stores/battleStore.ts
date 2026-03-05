@@ -237,8 +237,10 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
           // Recursive call to start stage 0
           get().nextStage();
       } else {
-          // Exit
-          set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false });
+          // Exit, unless it's training_ground
+          if (currentDungeonId !== 'training_ground') {
+              set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false });
+          }
       }
       return;
     }

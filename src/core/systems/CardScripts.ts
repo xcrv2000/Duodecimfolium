@@ -489,5 +489,197 @@ export const CardScripts: Record<string, CardScript> = {
       const turn = loop.getCurrentTurn();
       const dmg = turn === 1 ? 12 : 18;
       loop.dealDamage(source, target, dmg, 'physical'); // Phys+Mag?
+  },
+
+  // New cards for pack 3
+  lakshir_ritual: (loop, source, targets) => {
+    const target = targets[0] || source;
+    // Lose 12 HP (not damage, direct HP loss)
+    loop.directHpChange(source, -12);
+    // Gain 24 shield (armor)
+    loop.addArmor(target, 24);
+  },
+
+  duel_slash: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 10, 'physical');
+  },
+
+  powerful_cleave: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 15, 'physical');
+  },
+
+  sledgehammer: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 18, 'physical');
+  },
+
+  maze_step: (loop, source, targets) => {
+    const target = targets[0] || source;
+    // 50% evade next attack
+    const buff: UnitBuff = {
+      id: 'evade',
+      name: '闪避',
+      description: '下一次攻击被闪避。',
+      duration: -1, // Until triggered
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff'
+    };
+    loop.addUnitBuff(target, buff);
+  },
+
+  temporary_ceasefire: (loop, source, targets) => {
+    // Speed +1 to all unplayed attack cards of all characters this tick
+    const currentTick = loop.getCurrentTick();
+    const tickStart = currentTick * 10;
+    const tickEnd = (currentTick + 1) * 10;
+    loop.getAllUnits().forEach(unit => {
+      unit.cards.forEach(card => {
+        if (card.currentSpeed10 !== null &&
+            card.currentSpeed10 >= tickStart &&
+            card.currentSpeed10 < tickEnd &&
+            card.tagsRuntime?.includes('攻击') &&
+            !card.executed) { // Assuming executed flag
+          loop.modifyCardSpeed(card, 10);
+        }
+      });
+    });
+  },
+
+  conch_shell: (loop, source, targets) => {
+    const target = targets[0] || source;
+    // Nullify next damage
+    const buff: UnitBuff = {
+      id: 'damage_nullify',
+      name: '伤害无效',
+      description: '下次收到的伤害变为0。',
+      duration: -1,
+      stackRule: 'stackable',
+      level: 1,
+      type: 'buff'
+    };
+    loop.addUnitBuff(target, buff);
+  },
+
+  flame_arrow: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 3, 'magical', ['火']);
+    // Add scorch
+    const scorchBuff: UnitBuff = {
+      id: 'scorch',
+      name: '灼烧',
+      description: '回合结束时，对该角色造成1点伤害。',
+      duration: -1,
+      stackRule: 'stackable',
+      level: 1,
+      type: 'debuff'
+    };
+    loop.addUnitBuff(target, scorchBuff);
+  },
+
+  flame_arrow_ring: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 6, 'magical', ['火']);
+    const scorchBuff: UnitBuff = {
+      id: 'scorch',
+      name: '灼烧',
+      description: '回合结束时，对该角色造成3点伤害。',
+      duration: -1,
+      stackRule: 'stackable',
+      level: 3,
+      type: 'debuff'
+    };
+    loop.addUnitBuff(target, scorchBuff);
+  },
+
+  resist_fire_ring: (loop, source, targets) => {
+    const target = targets[0] || source;
+    const buff: UnitBuff = {
+      id: 'resist_fire_circle',
+      name: '抗拒火环',
+      description: '敌人每对该角色造成一次物理伤害，对其造成3点伤害。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 3,
+      type: 'buff'
+    };
+    loop.addUnitBuff(target, buff);
+  },
+
+  shadow_step: (loop, source, targets) => {
+    const target = targets[0] || source;
+    loop.directHpChange(source, -2);
+    // Pierce for next attack
+    const buff: UnitBuff = {
+      id: 'pierce',
+      name: '穿甲',
+      description: '下一次攻击无视对方护甲。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff'
+    };
+    loop.addUnitBuff(target, buff);
+  },
+
+  shadow_claw: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.directHpChange(source, -2);
+    loop.dealDamage(source, target, 5, 'magical', ['暗影']);
+  },
+
+  shadow_beam: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.directHpChange(source, -3);
+    const damage = Math.floor((source.maxHp - source.hp) / 6);
+    loop.dealDamage(source, target, damage, 'magical', ['暗影']);
+  },
+
+  shadow_form: (loop, source, targets) => {
+    const target = targets[0] || source;
+    const buff: UnitBuff = {
+      id: 'shadow_form',
+      name: '暗影形态',
+      description: '下一个回合中，每当你因为自己的效果失去血量，血量最低的对手失去同样多的血量。',
+      duration: 2, // Next turn
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff'
+    };
+    loop.addUnitBuff(target, buff);
+  },
+
+  // Armor cards - these apply buffs at battle start, handled separately
+  steel_full_armor: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
+  },
+
+  leather_half_armor: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
+  },
+
+  cloth_light_armor: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
+  },
+
+  mother_of_pearl_helmet: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
+  },
+
+  gauze_skirt: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
+  },
+
+  tight_robe: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
   }
 };

@@ -16,6 +16,15 @@ export interface PlayerState {
    * 入场时检查库存 >= 卡组镶嵌的修饰珠总数（确保不超过持有上限）
    */
   modifiers: Record<string, number>; // modifierId -> count
+
+  /**
+   * 信物库存
+   * tokenId -> 拥有数量
+   * 
+   * 玩家通过击败特定敌人获得的特殊物品。
+   * 用于解锁特定卡包。
+   */
+  tokens: Record<string, number>; // tokenId -> count
 }
 
 export interface Deck {

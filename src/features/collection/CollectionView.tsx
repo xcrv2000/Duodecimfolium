@@ -72,9 +72,15 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
       return c?.tags?.includes('补给品');
   }).length : 0;
   
+  const armorCount = currentDeck ? currentDeck.cardIds.filter(id => {
+      const c = cards.find(x => x.id === id);
+      return c?.tags?.includes('护具');
+  }).length : 0;
+  
   const isDeckSizeValid = currentDeck ? (currentDeck.cardIds.length >= 8 && currentDeck.cardIds.length <= 12) : false;
   const isConsumableValid = consumableCount <= 3;
-  const isDeckValid = isDeckSizeValid && isConsumableValid;
+  const isArmorValid = armorCount <= 1;
+  const isDeckValid = isDeckSizeValid && isConsumableValid && isArmorValid;
 
   // Helper to count cards in deck
   const getDeckCardCount = (cardId: string) => {
@@ -167,14 +173,32 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         alert("无法导出：卡组必须包含8到12张卡牌。");
         return;
     }
-    const data = JSON.stringify(currentDeck);
+    // Obfuscate deck data
+    const obfuscated = {
+      c: currentDeck.cardIds,
+      m: currentDeck.modifierSlots,
+      n: currentDeck.name
+    };
+    const data = btoa(JSON.stringify(obfuscated));
     navigator.clipboard.writeText(data).then(() => alert('Deck copied to clipboard!'));
   };
 
   const handleImport = async () => {
     try {
       const text = await navigator.clipboard.readText();
-      const deck = JSON.parse(text);
+      let deck;
+      try {
+        // Try to parse as obfuscated
+        const decoded = JSON.parse(atob(text));
+        deck = {
+          cardIds: decoded.c,
+          modifierSlots: decoded.m,
+          name: decoded.n
+        };
+      } catch {
+        // Fallback to plain JSON
+        deck = JSON.parse(text);
+      }
       if (deck && deck.cardIds) {
         importDeck(deck);
         alert('Deck imported!');
@@ -271,6 +295,11 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                     {!isConsumableValid && (
                         <div className="text-[10px] text-red-400 text-right">
                             补给品最多3张 (当前{consumableCount})
+                        </div>
+                    )}
+                    {!isArmorValid && (
+                        <div className="text-[10px] text-red-400 text-right">
+                            护具最多1张 (当前{armorCount})
                         </div>
                     )}
                 </div>

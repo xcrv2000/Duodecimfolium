@@ -46,5 +46,45 @@
     "type": "buff",
     "stackRule": "stackable",
     "duration": 1
+  },
+  {
+    "id": "scorch",
+    "name": "灼烧",
+    "description": "回合结束时，对该角色造成{level}点伤害。",
+    "type": "debuff",
+    "stackRule": "stackable",
+    "duration": -1
+  },
+  {
+    "id": "resist_fire_circle",
+    "name": "抗拒火环",
+    "description": "敌人每对该角色造成一次物理伤害，对其造成{level}点伤害。",
+    "type": "buff",
+    "stackRule": "nonStackable",
+    "duration": 1
+  },
+  {
+    "id": "pierce",
+    "name": "穿甲",
+    "description": "下一次攻击无视对方护甲。",
+    "type": "buff",
+    "stackRule": "nonStackable",
+    "duration": 1
+  },
+  {
+    "id": "evade",
+    "name": "闪避",
+    "description": "下一次攻击被闪避。",
+    "type": "buff",
+    "stackRule": "nonStackable",
+    "duration": -1
+  },
+  {
+    "id": "damage_nullify",
+    "name": "伤害无效",
+    "description": "下次收到的伤害变为0。",
+    "type": "buff",
+    "stackRule": "stackable",
+    "duration": -1
   }
 ]

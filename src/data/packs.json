@@ -10,5 +10,13 @@
     "name": "剑与魔法",
     "description": "融合了物理与魔法的技巧，包含多种属性攻击与状态控制。",
     "price": 10
+  },
+  {
+    "id": "pack_3_lakshir_ritual",
+    "name": "拉克希尔之仪",
+    "description": "烈焰与黑影纠缠的仪式。",
+    "price": 10,
+    "requiredTokenId": "duelist_proof",
+    "requiredTokenCount": 1
   }
 ]

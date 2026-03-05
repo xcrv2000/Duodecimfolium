@@ -14,7 +14,7 @@ const cards = cardsData as Card[];
 const dungeons = dungeonsData as Dungeon[];
 
 const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
-  const { gold, unlockedPacks, addGold, addCards } = usePlayerStore();
+  const { gold, unlockedPacks, addGold, addCards, tokens, addToken, removeToken } = usePlayerStore();
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const [openingPack, setOpeningPack] = useState<any[] | null>(null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
@@ -23,6 +23,9 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   const PAGE_SIZE = 10;
 
   const buyPack = (packId: string, price: number, count: number) => {
+    const pack = packs.find(p => p.id === packId);
+    if (!pack) return;
+
     // Determine cost
     // 5 cards = 10G
     // 50 cards = 100G
@@ -31,9 +34,22 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     const finalCost = price * multiplier;
     
     if (gold < finalCost) return;
+
+    // Check token requirement
+    if (pack.requiredTokenId) {
+      const requiredCount = (pack.requiredTokenCount || 1) * multiplier;
+      const currentTokens = tokens[pack.requiredTokenId] || 0;
+      if (currentTokens < requiredCount) return;
+    }
     
     // Deduct Gold
     addGold(-finalCost);
+
+    // Deduct Tokens
+    if (pack.requiredTokenId) {
+      const requiredCount = (pack.requiredTokenCount || 1) * multiplier;
+      removeToken(pack.requiredTokenId, requiredCount);
+    }
 
     // Open Pack Logic
     // 1. Filter cards in this pack
@@ -231,8 +247,8 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 if (!isUnlocked) unlockCondition = "未知解锁条件";
             }
             
-            const canAfford5 = gold >= pack.price;
-            const canAfford50 = gold >= pack.price * 10;
+            const canAfford5 = gold >= pack.price && (!pack.requiredTokenId || (tokens[pack.requiredTokenId] || 0) >= (pack.requiredTokenCount || 1));
+            const canAfford50 = gold >= pack.price * 10 && (!pack.requiredTokenId || (tokens[pack.requiredTokenId] || 0) >= (pack.requiredTokenCount || 1) * 10);
             
             return (
                 <div 
@@ -246,7 +262,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 <div className="flex justify-between items-start mb-4">
                     <h2 className="text-xl font-bold text-white">{pack.name}</h2>
                     <div className="bg-slate-900 px-3 py-1 rounded text-yellow-400 font-bold">
-                        {pack.price} G / 5张
+                        {pack.price} G{pack.requiredTokenId ? ` + ${pack.requiredTokenCount || 1} ${pack.requiredTokenId}` : ''} / 5张
                     </div>
                 </div>
                 

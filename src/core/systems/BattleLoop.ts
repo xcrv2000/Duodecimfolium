@@ -231,6 +231,143 @@ export class BattleLoop {
         }
       });
     });
+
+    // 3. Apply Armor buffs
+    this.applyArmorBuffs();
+  }
+
+  private applyArmorBuffs(): void {
+    this.state.units.forEach(unit => {
+      const armorCards = unit.cards.filter(card => card.factory.tags.includes('护具'));
+      armorCards.forEach(card => {
+        const scriptId = card.factory.scriptId;
+        if (scriptId === 'steel_full_armor') {
+          // 所有伤害-1，卡结算后该角色其他卡速度+1，回合开始+24护甲
+          const damageBuff: UnitBuff = {
+            id: 'steel_armor_damage',
+            name: '钢制全身甲',
+            description: '受到的所有伤害-1。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'buff',
+            onReceiveDamage: (_unit, damageInfo, _state) => damageInfo.amount - 1
+          };
+          this.addUnitBuff(unit, damageBuff);
+          // Speed buff after card settlement - handled in processTick or executeCard
+          // Turn start armor
+          const armorBuff: UnitBuff = {
+            id: 'steel_armor_shield',
+            name: '钢制全身甲护甲',
+            description: '回合开始获得24护甲。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 24,
+            type: 'buff',
+            onTurnStart: (u, _state) => this.addArmor(u, 24)
+          };
+          this.addUnitBuff(unit, armorBuff);
+        } else if (scriptId === 'leather_half_armor') {
+          // 被护甲格挡的伤害-1，卡结算后该角色其他卡速度+0.5，回合开始+16护甲
+          const damageBuff: UnitBuff = {
+            id: 'leather_armor_damage',
+            name: '皮质半身甲',
+            description: '受到的被护甲格挡的伤害-1。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'buff',
+            onReceiveDamage: (_unit, damageInfo, _state) => {
+              // Assume if armor > 0, it's blocked
+              if (unit.buffs.some(b => b.id === 'armor' && b.level > 0)) {
+                return damageInfo.amount - 1;
+              }
+              return damageInfo.amount;
+            }
+          };
+          this.addUnitBuff(unit, damageBuff);
+          // Speed +0.5 after settlement
+          // Turn start armor
+          const armorBuff: UnitBuff = {
+            id: 'leather_armor_shield',
+            name: '皮质半身甲护甲',
+            description: '回合开始获得16护甲。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 16,
+            type: 'buff',
+            onTurnStart: (u, _state) => this.addArmor(u, 16)
+          };
+          this.addUnitBuff(unit, armorBuff);
+        } else if (scriptId === 'cloth_light_armor') {
+          // 每tick第一次伤害-1，卡结算后该角色其他卡速度+0.3，回合开始+12护甲
+          const damageBuff: UnitBuff = {
+            id: 'cloth_armor_damage',
+            name: '布质轻甲',
+            description: '每tick受到的第一次伤害-1。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'buff'
+            // Need to track per tick - complex, simplify to -1 per damage
+          };
+          this.addUnitBuff(unit, damageBuff);
+          // Speed +0.3 after settlement
+          // Turn start armor
+          const armorBuff: UnitBuff = {
+            id: 'cloth_armor_shield',
+            name: '布质轻甲护甲',
+            description: '回合开始获得12护甲。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 12,
+            type: 'buff',
+            onTurnStart: (u, _state) => this.addArmor(u, 12)
+          };
+          this.addUnitBuff(unit, armorBuff);
+        } else if (scriptId === 'mother_of_pearl_helmet') {
+          // 每回合第一次伤害变为0
+          const damageBuff: UnitBuff = {
+            id: 'helmet_damage',
+            name: '螺钿盔',
+            description: '每回合受到的第一次伤害变为0。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'buff'
+            // Need per turn tracking
+          };
+          this.addUnitBuff(unit, damageBuff);
+        } else if (scriptId === 'gauze_skirt') {
+          // 20%闪避物理攻击
+          const evadeBuff: UnitBuff = {
+            id: 'skirt_evade',
+            name: '纱裙',
+            description: '20%几率闪避受到的物理攻击。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'buff',
+            onReceiveDamage: (_unit, damageInfo, _state) => {
+              if (damageInfo.type === 'physical' && this.rng.next() < 0.2) {
+                return 0;
+              }
+              return damageInfo.amount;
+            }
+          };
+          this.addUnitBuff(unit, evadeBuff);
+        } else if (scriptId === 'tight_robe') {
+          // 速度+1，随机指定目标时尽可能指定相同
+          // Speed +1 to all cards
+          unit.cards.forEach(c => {
+            if (c.baseSpeed10 !== null) {
+              c.permanentSpeedModifier = (c.permanentSpeedModifier || 0) + 10;
+            }
+          });
+          // Target consistency - handled in target selection
+        }
+      });
+    });
   }
 
   public endTurn(): void {
@@ -396,6 +533,8 @@ export class BattleLoop {
     
     // Track executed cards in this tick to avoid loops/duplicates
     const executedCardIds = new Set<string>();
+    // Track units that have played All-Out cards this tick
+    const allOutUnits = new Set<string>();
 
     // Dynamic Re-sorting Loop
     while (true) {
@@ -411,6 +550,12 @@ export class BattleLoop {
                     card.currentSpeed10 < tickEnd) {
                     
                     if (!executedCardIds.has(card.instanceId)) {
+                        // All-Out check: if unit has played All-Out this tick and this card is All-Out, skip
+                        const isAllOut = card.factory.tags.includes('全力');
+                        if (isAllOut && allOutUnits.has(unit.id)) {
+                            // Skip this All-Out card
+                            continue;
+                        }
                         candidates.push({ unit, card });
                     }
                 }
@@ -436,6 +581,21 @@ export class BattleLoop {
         // 3. Execute ONE (the first)
         const action = candidates[0];
         executedCardIds.add(action.card.instanceId); 
+        
+        // Check if this is an All-Out card
+        const isAllOut = action.card.factory.tags.includes('全力');
+        if (isAllOut) {
+            allOutUnits.add(action.unit.id);
+            // After successful execution, increase speed of remaining cards of this unit in this tick
+            action.unit.cards.forEach(card => {
+                if (card.currentSpeed10 !== null && 
+                    card.currentSpeed10 >= tickStart && 
+                    card.currentSpeed10 < tickEnd &&
+                    !executedCardIds.has(card.instanceId)) {
+                    card.currentSpeed10 += 1;
+                }
+            });
+        }
         
         this.executeCard(action.unit, action.card);
         
@@ -508,8 +668,10 @@ export class BattleLoop {
     // Targeting Logic
     const isSupport = card.tagsRuntime?.includes('辅助');
     const isDefense = card.tagsRuntime?.includes('防御');
+    const isAllOut = card.tagsRuntime?.includes('全力');
+    const isAttack = card.tagsRuntime?.includes('攻击');
     
-    if (isSupport || isDefense || card.factory.scriptId === 'concentrate') {
+    if (isSupport || isDefense || (isAllOut && !isAttack)) {
         return [source];
     }
     

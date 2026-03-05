@@ -13,7 +13,7 @@ type Tab = 'home' | 'battle' | 'dungeon' | 'collection' | 'gacha' | 'settings' |
 
 const MainLayout: React.FC = () => {
   const { state: battleState } = useBattleStore();
-  const { gold, dust } = usePlayerStore();
+  const { gold, dust, tokens } = usePlayerStore();
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [notification, setNotification] = useState<{ title: string, message: string, type: 'success' | 'failure' } | null>(null);
 
@@ -120,6 +120,12 @@ const MainLayout: React.FC = () => {
                 <span>Dust:</span>
                 <span>{dust}</span>
             </div>
+            {Object.keys(tokens).length > 0 && (
+                <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                    <span>Tokens:</span>
+                    <span>{Object.entries(tokens).map(([id, count]) => `${id}:${count}`).join(', ')}</span>
+                </div>
+            )}
             </div>
         </div>
 
@@ -178,12 +184,12 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 hover:border-emerald-500 cursor-pointer transition-all group" onClick={() => onNavigate('dungeon')}>
                 <h2 className="text-2xl font-bold mb-2 group-hover:text-emerald-400">冒险 (Adventure)</h2>
-                <p className="text-slate-400">挑战地牢，获取金币与卡包。</p>
+                <p className="text-slate-400">战斗，爽！</p>
             </div>
 
             <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 hover:border-emerald-500 cursor-pointer transition-all group" onClick={() => onNavigate('gacha')}>
                 <h2 className="text-2xl font-bold mb-2 group-hover:text-emerald-400">抽卡 (Gacha)</h2>
-                <p className="text-slate-400">使用金币购买卡包，扩充你的卡池。</p>
+                <p className="text-slate-400">购买卡包，扩充收藏。</p>
             </div>
             
             <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 hover:border-emerald-500 cursor-pointer transition-all group" onClick={() => onNavigate('collection')}>
@@ -193,8 +199,14 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
         </div>
 
         <div className="mt-8 p-4 bg-slate-900/50 rounded border border-slate-800">
-            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.5)</h3>
+            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.3.0)</h3>
             <ul className="list-disc list-inside text-sm text-slate-400 mb-4">
+                <li>新地牢！新卡包！</li>
+                <br></br>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.5)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>0.2.5 完整重构</li>
                 <br></br>
             </ul>

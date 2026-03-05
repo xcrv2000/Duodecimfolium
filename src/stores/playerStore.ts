@@ -23,6 +23,10 @@ interface PlayerStore extends PlayerState {
   addModifier: (id: string, count?: number) => void;
   removeModifier: (id: string, count?: number) => void;
 
+  // Tokens
+  addToken: (id: string, count?: number) => void;
+  removeToken: (id: string, count?: number) => void;
+
   // Crafting
   craftCard: (cardId: string, cost: number) => void;
 }
@@ -47,7 +51,8 @@ const initialState: PlayerState = {
     'breeze_orb': 3,
     'iron_orb': 3,
     'fire_spirit_orb': 3
-  }
+  },
+  tokens: {}
 };
 
 export const usePlayerStore = create<PlayerStore>()(
@@ -66,6 +71,14 @@ export const usePlayerStore = create<PlayerStore>()(
       /** @deprecated 修饰珠不会被消耗，只用于数据修复 */
       removeModifier: (id, count = 1) => set((state) => ({
         modifiers: { ...state.modifiers, [id]: Math.max(0, (state.modifiers[id] || 0) - count) }
+      })),
+
+      addToken: (id, count = 1) => set((state) => ({
+        tokens: { ...state.tokens, [id]: (state.tokens[id] || 0) + count }
+      })),
+
+      removeToken: (id, count = 1) => set((state) => ({
+        tokens: { ...state.tokens, [id]: Math.max(0, (state.tokens[id] || 0) - count) }
       })),
 
       unlockDungeon: (id) => set((state) => {

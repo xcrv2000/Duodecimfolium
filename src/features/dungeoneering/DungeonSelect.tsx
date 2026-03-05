@@ -72,6 +72,16 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
         alert(`补给品最多携带3张! (当前: ${consumableCount})`);
         return;
     }
+
+    // Check Armor
+    const armorCount = deck.cardIds.filter(id => {
+        const c = cards.find(x => x.id === id);
+        return c?.tags?.includes('护具');
+    }).length;
+    if (armorCount > 1) {
+        alert(`护具最多携带1张! (当前: ${armorCount})`);
+        return;
+    }
     
     // Check Modifiers
     const usedModifiers: Record<string, number> = {};

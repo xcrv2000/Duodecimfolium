@@ -4,7 +4,8 @@
     "training_elite": ["elite_1"],
     "training_boss": ["boss_1"],
     "magic_mob": ["mob_fire_mage", "mob_ice_mage", "mob_earth_mage", "mob_magic_swordsman"],
-    "magic_elite": ["elite_fire_mage", "elite_magic_swordsman", "elite_ice_mage"]
+    "magic_elite": ["elite_fire_mage", "elite_magic_swordsman", "elite_ice_mage"],
+    "fiery_duelist_boss": ["apprentice_fire_adept", "apprentice_shadow_scout", "apprentice_berserker"]
   },
   "definitions": {
     "mob_1": {
@@ -119,6 +120,45 @@
         "min": 1,
         "max": 1,
         "pool": ["ice_orb"]
+      }
+    },
+    "apprentice_fire_adept": {
+      "id": "apprentice_fire_adept",
+      "name": "见习火灵使",
+      "hpMin": 100,
+      "hpMax": 100,
+      "deck": ["lakshir_ritual", "cloth_light_armor", "flame_arrow", "flame_arrow", "flame_arrow", "flame_arrow_ring", "flame_arrow_ring", "flame_arrow_ring", "resist_fire_ring", "fireball", "fireball", "fireball"],
+      "dropTable": {
+        "chance": 1.0,
+        "min": 1,
+        "max": 1,
+        "pool": ["duelist_proof"]
+      }
+    },
+    "apprentice_shadow_scout": {
+      "id": "apprentice_shadow_scout",
+      "name": "见习暗影斥候",
+      "hpMin": 100,
+      "hpMax": 100,
+      "deck": ["lakshir_ritual", "leather_half_armor", "shadow_claw", "shadow_claw", "shadow_claw", "shadow_step", "shadow_step", "shadow_step", "shadow_beam", "shadow_beam", "shadow_beam", "shadow_form"],
+      "dropTable": {
+        "chance": 1.0,
+        "min": 1,
+        "max": 1,
+        "pool": ["duelist_proof"]
+      }
+    },
+    "apprentice_berserker": {
+      "id": "apprentice_berserker",
+      "name": "见习狂战士",
+      "hpMin": 100,
+      "hpMax": 100,
+      "deck": ["lakshir_ritual", "steel_full_armor", "duel_slash", "duel_slash", "duel_slash", "powerful_cleave", "powerful_cleave", "powerful_cleave", "sledgehammer", "sledgehammer", "sledgehammer", "temporary_ceasefire"],
+      "dropTable": {
+        "chance": 1.0,
+        "min": 1,
+        "max": 1,
+        "pool": ["duelist_proof"]
       }
     }
   }
