@@ -190,8 +190,13 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
         </div>
 
         <div className="mt-8 p-4 bg-slate-900/50 rounded border border-slate-800">
-            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.1)</h3>
+            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.2)</h3>
             <ul className="list-disc list-inside text-sm text-slate-400 mb-4">
+                <li>buff重构</li>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.1)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>大重构！</li>
             </ul>
 

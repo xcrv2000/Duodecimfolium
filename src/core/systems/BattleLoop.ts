@@ -222,6 +222,18 @@ export class BattleLoop {
     
     // === 回合结束结算流程 ===
     // 这个阶段结算本回合残留的状态并准备下一回合
+    // 
+    // 执行顺序（确保buff生命周期与速度计算一致）：
+    // 1. duration递减
+    // 2. buff清除（duration <= 0）
+    // 3. 重新计算速度（应用仍然存活的buff）
+    // 
+    // 【例：眩晕buff的完整生命周期】
+    // T1回合：【摔】卡执行 → addUnitBuff({id: 'stun', duration: 2, level: 2})
+    //        duration=2时，recalculateCardSpeed检查`buff.duration === 1`不满足 → 不应用速度修正
+    // T1回合结束：duration递减 2→1，buff保留（duration > 0）→ 下一回合应用速度修正
+    // T2回合：recalculateCardSpeed检查`buff.duration === 1`满足 → 应用速度修正(+2.0)
+    // T2回合结束：duration递减 1→0，buff删除（duration <= 0）→ 速度修正解除
     this.state.units.forEach(unit => {
       // 1. 清除护甲
       // 根据战斗系统修正文档 §4.2：
@@ -229,22 +241,25 @@ export class BattleLoop {
       // 护甲不会跨回合保留，每回合玩家和敌人都需重新积累防御
       unit.armor = 0;
       
-      // 2. 結算单位 buff
-      // 触发回合结束回调
+      // 2. 結算单位 buff（UnitBuff）
+      // 【顺序很重要】先触发回调，再递减duration
       unit.buffs.forEach(buff => {
         if (buff.onTurnEnd) buff.onTurnEnd(unit, this.state);
-        buff.duration--;
+        buff.duration--;  // ← 关键：在这里递减，之后的recalculateCardSpeed会读到新的duration值
       });
+      
       // 清除已过期的单位 buff（duration <= 0）
+      // 眩晕buff在此处移除（当duration从1递减至0）
       unit.buffs = unit.buffs.filter(b => b.duration > 0);
       
-      // 3. 重置卡实例
-      // 清除本回合的临时 buff，为下一回合做准备
-      // Reset CardInstanceBuffs (清除 duration <= 0 的卡实例 buff)
-      // 重新计算卡速度（因为工厂级 buff 可能已改变）
+      // 3. 重置卡实例并重算速度
+      // CardInstanceBuff清除（这些是本回合临时buff，如"下一张卡速度+X"）
+      // 然后重新计算速度，此时：
+      //   - unit.buffs已更新（duration已递减，已删除多余的）
+      //   - 新的recalculateCardSpeed会读到最新的buff状态
       unit.cards.forEach(card => {
-          card.buffs = []; // Clear round-based buffs
-          this.recalculateCardSpeed(unit, card);
+          card.buffs = []; // Clear CardInstanceBuffs (清除本回合临时buff)
+          this.recalculateCardSpeed(unit, card); // 重新计算速度，应用仍然存活的UnitBuff
       });
     });
 
@@ -256,6 +271,17 @@ export class BattleLoop {
           card.currentSpeed10 = null;
           return;
       }
+      
+      // === 速度计算说明 ===
+      // 底层逻辑全部使用 speed10 单位（整数0-130）
+      // UI层显示时除以10得到玩家可见的速度（浮点0-13）
+      //
+      // speed10 = baseSpeed10 + permanentSpeedModifier + modifiers_speedMod + UnitBuffs + CardBuffs + deckPenalty
+      //
+      // 【单位转换规则】
+      // 玩家看到的速度值：         底层speed10：
+      // 0.1 → 1,   0.9 → 9,   2.0 → 20,   2.8 → 28
+      // （所有计算保留整数，避免浮点误差）
       
       // baseSpeed10 not null here, so start with a numeric speed
       let speed: number | null = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
@@ -301,14 +327,17 @@ export class BattleLoop {
       }
 
       // Apply Unit Buffs that affect speed
-      // Charge: +10 speed (immediate)
-      // Stun: +Level speed (next turn only, i.e., duration === 1)
+      // Charge: +10 speed10 (immediate) → +1.0 speed
+      // Stun: +level*10 speed10 (next turn only, i.e., duration === 1) → speed increase by level
+      //
+      // 【眩晕】例：level=2 意味着目标卡速度+2.0，转换为speed10则为+20
       unit.buffs.forEach(buff => {
           if (buff.id === 'charge') {
-              numericSpeed += 10; // +1.0 speed
+              numericSpeed += 10; // +1.0 speed（蓄势：下一次攻击前加速1.0）
           }
+          // 【眩晕】在duration===1时才应用，此时buff已在上一个回合结束时由duration从2递减至1
           if (buff.id === 'stun' && buff.duration === 1) {
-              numericSpeed += buff.level;
+              numericSpeed += buff.level * 10; // ✅ FIX: 乘以10转换为speed10单位（level:2 → +20 speed10 → +2.0 speed）
           }
       });
       
@@ -646,6 +675,21 @@ export class BattleLoop {
     }
     unit.buffs.push(buff);
     this.log(unit, unit, `获得Buff: ${buff.name} (等级 ${buff.level})`, 'buff');
+    
+    // === Buff应用时机说明 ===
+    // 立即生效buff（如【蓄势】Charge）：
+    //   - duration通常为1，在添加时立即应用到下一张卡
+    //   - addUnitBuff后的recalculateCardSpeed会检查buff.id === 'charge'
+    //
+    // 延迟生效buff（如【眩晕】Stun）：
+    //   - duration为2（当前回合+下一回合）
+    //   - 添加时duration=2，recalculateCardSpeed检查`buff.duration === 1`不满足 → 暂不应用
+    //   - 回合结束时duration递减至1 → 下一回合时应用速度修正
+    //   - 这样设计确保【眩晕】的减速效果在"下一回合开始"时才应用
+    //
+    // 对于speed相关的buff，记住：
+    //   - 速度值都用speed10单位（0-130），需要乘以10
+    //   - buff.level是效果等级，应用时需确认单位转换（例：level=2意味着+2.0速度，应加20到numericSpeed）
     
     // Recalculate speeds (e.g. for Charge)
     unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
