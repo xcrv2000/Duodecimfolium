@@ -4,6 +4,7 @@ export interface PlayerState {
   unlockedDungeons: string[]; // ID list
   clearedDungeons: string[]; // ID list of cleared dungeons
   unlockedPacks: string[]; // ID list
+  openedPacks: string[]; // ID list of packs that have been opened at least once
   collection: Record<string, number>; // cardId -> count
   decks: Deck[];
   

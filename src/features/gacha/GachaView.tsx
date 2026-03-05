@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { usePlayerStore } from '../../stores/playerStore';
 import packsData from '../../data/packs.json';
 import cardsData from '../../data/cards.json';
+import tokensData from '../../data/tokens.json';
 import { ShoppingBag, Sparkles, Box } from 'lucide-react';
 import { Card } from '../../core/domain/Card';
 import CardDisplay from '../common/CardDisplay';
@@ -12,9 +13,10 @@ import { Dungeon } from '../../core/domain/Dungeon';
 const packs = packsData as any[];
 const cards = cardsData as Card[];
 const dungeons = dungeonsData as Dungeon[];
+const tokenNameMap = Object.fromEntries((tokensData as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]));
 
 const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
-  const { gold, unlockedPacks, addGold, addCards, tokens, removeToken } = usePlayerStore();
+  const { gold, unlockedPacks, addGold, addCards, tokens, removeToken, markPackOpened } = usePlayerStore();
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const [openingPack, setOpeningPack] = useState<any[] | null>(null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
@@ -75,6 +77,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     
     // Add to collection in batch
     addCards(drawnIds);
+    markPackOpened(packId);
 
     setOpeningPack(drawnCards);
     setRevealedIndices([]); // Reset revealed
@@ -262,7 +265,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 <div className="flex justify-between items-start mb-4">
                     <h2 className="text-xl font-bold text-white">{pack.name}</h2>
                     <div className="bg-slate-900 px-3 py-1 rounded text-yellow-400 font-bold">
-                        {pack.price} G{pack.requiredTokenId ? ` + ${pack.requiredTokenCount || 1} ${pack.requiredTokenId}` : ''} / 5张
+                        {pack.price} G{pack.requiredTokenId ? ` + ${pack.requiredTokenCount || 1} ${tokenNameMap[pack.requiredTokenId] || pack.requiredTokenId}` : ''} / 5张
                     </div>
                 </div>
                 

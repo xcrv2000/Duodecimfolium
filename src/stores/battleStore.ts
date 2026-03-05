@@ -9,12 +9,14 @@ import dungeonsData from '../data/dungeons.json';
 import enemiesData from '../data/enemies.json';
 import cardsData from '../data/cards.json';
 import modifiersData from '../data/modifiers.json';
+import tokensData from '../data/tokens.json';
 
 // Type assertion for JSON data
 const dungeons = dungeonsData as any[];
 const enemies = (enemiesData as any).definitions;
 const cards = cardsData as any[];
 const modifiers = modifiersData as any[];
+const tokenIds = new Set((tokensData as Array<{ id: string }>).map((t) => t.id));
 
 interface BattleStore {
   state: BattleState | null;
@@ -442,12 +444,21 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
                     }
                     
                     if (newDrops.length > 0) {
+                        const droppedTokens = newDrops.filter((id) => tokenIds.has(id));
+                        const droppedModifiers = newDrops.filter((id) => !tokenIds.has(id));
+
+                        droppedTokens.forEach((tokenId) => {
+                            usePlayerStore.getState().addToken(tokenId, 1);
+                        });
+
+                        if (droppedModifiers.length > 0) {
                         set(state => ({
                             collectedLoot: {
                                 ...state.collectedLoot,
-                                modifiers: [...state.collectedLoot.modifiers, ...newDrops]
+                                modifiers: [...state.collectedLoot.modifiers, ...droppedModifiers]
                             }
                         }));
+                        }
                         // We could log this drop in battle log too if we want
                          // But loop.log is internal.
                          // For now, console log.

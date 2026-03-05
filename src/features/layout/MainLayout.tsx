@@ -8,8 +8,10 @@ import CollectionView from '../collection/CollectionView';
 import { usePlayerStore } from '../../stores/playerStore';
 import SettingsView from '../settings/SettingsView';
 import CompendiumView from '../compendium/CompendiumView';
+import tokensData from '../../data/tokens.json';
 
 type Tab = 'home' | 'battle' | 'dungeon' | 'collection' | 'gacha' | 'settings' | 'compendium';
+const tokenNameMap = Object.fromEntries((tokensData as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]));
 
 const MainLayout: React.FC = () => {
   const { state: battleState } = useBattleStore();
@@ -22,6 +24,7 @@ const MainLayout: React.FC = () => {
   // For now, let's keep it manual or user-initiated.
   
   const isBattleRunning = !!battleState;
+  const visibleTokens = Object.entries(tokens).filter(([, count]) => count > 0);
 
   // Notification Logic
   useEffect(() => {
@@ -112,6 +115,12 @@ const MainLayout: React.FC = () => {
         <div className="min-h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 py-2 sm:px-6">
             <div className="text-slate-400 text-xs sm:text-sm">Duodecimfolium</div>
             <div className="flex items-center gap-3 sm:gap-6">
+            {visibleTokens.length > 0 && (
+                <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                    <span>代币:</span>
+                    <span>{visibleTokens.map(([id, count]) => `${tokenNameMap[id] || id}×${count}`).join('，')}</span>
+                </div>
+            )}
             <div className="flex items-center gap-2 text-yellow-400 font-bold">
                 <span>Gold:</span>
                 <span>{gold}</span>
@@ -120,12 +129,6 @@ const MainLayout: React.FC = () => {
                 <span>Dust:</span>
                 <span>{dust}</span>
             </div>
-            {Object.keys(tokens).length > 0 && (
-                <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                    <span>Tokens:</span>
-                    <span>{Object.entries(tokens).map(([id, count]) => `${id}:${count}`).join(', ')}</span>
-                </div>
-            )}
             </div>
         </div>
 
@@ -199,8 +202,14 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
         </div>
 
         <div className="mt-8 p-4 bg-slate-900/50 rounded border border-slate-800">
-            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.3.0)</h3>
+            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.3.1)</h3>
             <ul className="list-disc list-inside text-sm text-slate-400 mb-4">
+                <li>修理一些显眼的bug</li>
+                <br></br>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.3.0)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>新地牢！新卡包！</li>
                 <br></br>
             </ul>

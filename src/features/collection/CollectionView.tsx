@@ -5,6 +5,7 @@ import modifiersData from '../../data/modifiers.json';
 import { Layers, Plus, Minus, Trash2, Edit2, Download, Upload, Check, X, Gem } from 'lucide-react';
 import { Card } from '../../core/domain/Card';
 import CardDisplay from '../common/CardDisplay';
+import { decodeDeckCode, encodeDeckCode } from '../../utils/deckCode';
 
 const cards = cardsData as Card[];
 const modifiers = modifiersData as any[];
@@ -52,7 +53,11 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   // How to know if pack is unlocked?
   // We don't have `unlockedPacks` in playerStore in this file scope.
   // Let's check `usePlayerStore`.
-  const unlockedPacks = usePlayerStore(state => state.unlockedPacks);
+  const openedPacks = usePlayerStore(state => state.openedPacks);
+  const visiblePackIds = new Set([
+    ...openedPacks,
+    ...cards.filter((card) => (collection[card.id] || 0) > 0).map((card) => card.packId)
+  ]);
   
   const visibleCards = cards.filter(card => {
       const count = collection[card.id] || 0;
@@ -61,7 +66,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
       // Basic cards might not have a packId or be in 'basic' pack?
       // Check data/cards.json: "packId": "basic_swordsmanship" etc.
       if (!card.packId) return true; // Always show base cards?
-      return unlockedPacks.includes(card.packId);
+      return visiblePackIds.has(card.packId);
   });
 
   const currentDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
@@ -169,44 +174,41 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   };
 
   const handleExport = () => {
+    if (!currentDeck) return;
     if (currentDeck.cardIds.length < 8 || currentDeck.cardIds.length > 12) {
         alert("无法导出：卡组必须包含8到12张卡牌。");
         return;
     }
-    // Obfuscate deck data
-    const obfuscated = {
-      c: currentDeck.cardIds,
-      m: currentDeck.modifierSlots,
-      n: currentDeck.name
-    };
-    const data = btoa(JSON.stringify(obfuscated));
-    navigator.clipboard.writeText(data).then(() => alert('Deck copied to clipboard!'));
+    const data = encodeDeckCode({
+      cardIds: currentDeck.cardIds,
+      modifierSlots: currentDeck.modifierSlots || {},
+      name: currentDeck.name
+    });
+    navigator.clipboard.writeText(data)
+      .then(() => alert('卡组码已复制到剪贴板'))
+      .catch(() => {
+        window.prompt('无法访问剪贴板，请手动复制卡组码：', data);
+      });
   };
 
   const handleImport = async () => {
     try {
-      const text = await navigator.clipboard.readText();
-      let deck;
+      let text = '';
       try {
-        // Try to parse as obfuscated
-        const decoded = JSON.parse(atob(text));
-        deck = {
-          cardIds: decoded.c,
-          modifierSlots: decoded.m,
-          name: decoded.n
-        };
+        text = await navigator.clipboard.readText();
       } catch {
-        // Fallback to plain JSON
-        deck = JSON.parse(text);
+        text = window.prompt('请粘贴卡组码：') || '';
       }
+
+      const deck = decodeDeckCode(text);
       if (deck && deck.cardIds) {
         importDeck(deck);
-        alert('Deck imported!');
+        alert('卡组导入成功');
       } else {
-        alert('Invalid deck data');
+        alert('无效的卡组数据');
       }
     } catch (e) {
-      alert('Failed to import: ' + e);
+      alert(`导入失败: ${e instanceof Error ? e.message : String(e)}`);
     }
   };
 

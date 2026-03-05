@@ -8,6 +8,7 @@ interface PlayerStore extends PlayerState {
   unlockDungeon: (id: string) => void;
   clearDungeon: (id: string) => void;
   unlockPack: (id: string) => void;
+  markPackOpened: (id: string) => void;
   addCard: (id: string, count?: number) => void;
   addCards: (ids: string[]) => void;
   removeCard: (id: string, count?: number) => void;
@@ -37,6 +38,7 @@ const initialState: PlayerState = {
   unlockedDungeons: ['training_ground', 'sandbox_training'],
   clearedDungeons: [],
   unlockedPacks: ['basic_swordsmanship'],
+  openedPacks: [],
   collection: {},
   decks: [
     {
@@ -94,6 +96,11 @@ export const usePlayerStore = create<PlayerStore>()(
       unlockPack: (id) => set((state) => {
         if (state.unlockedPacks.includes(id)) return state;
         return { unlockedPacks: [...state.unlockedPacks, id] };
+      }),
+
+      markPackOpened: (id) => set((state) => {
+        if (state.openedPacks.includes(id)) return state;
+        return { openedPacks: [...state.openedPacks, id] };
       }),
       
       addCard: (id, count = 1) => set((state) => {
@@ -245,16 +252,26 @@ export const usePlayerStore = create<PlayerStore>()(
     {
       name: 'duodecimfolium-player-storage-v1', // unique name with version
       storage: createJSONStorage(() => localStorage), // Explicitly use localStorage
-      version: 1,
+      version: 2,
+      migrate: (persistedState: any, version) => {
+        if (!persistedState || version >= 2) return persistedState;
+        return {
+          ...persistedState,
+          openedPacks: persistedState.openedPacks || [],
+          tokens: persistedState.tokens || {}
+        };
+      },
       partialize: (state) => ({
         gold: state.gold,
         dust: state.dust,
         unlockedDungeons: state.unlockedDungeons,
         clearedDungeons: state.clearedDungeons,
         unlockedPacks: state.unlockedPacks,
+        openedPacks: state.openedPacks,
         collection: state.collection,
         decks: state.decks,
-        modifiers: state.modifiers
+        modifiers: state.modifiers,
+        tokens: state.tokens
       }),
       onRehydrateStorage: () => (state) => {
         console.log('Storage rehydrated:', state);

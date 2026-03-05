@@ -12,7 +12,7 @@ const packs = packsData as any[];
 const modifiers = modifiersData as any[];
 
 const CompendiumView: React.FC = () => {
-  const { collection, dust, unlockedPacks, craftCard, modifiers: ownedModifiers } = usePlayerStore();
+  const { collection, dust, openedPacks, craftCard, modifiers: ownedModifiers } = usePlayerStore();
   const [activeTab, setActiveTab] = useState<'cards' | 'modifiers'>('cards');
   const [selectedPack, setSelectedPack] = useState<string>('all');
   const [selectedCost, setSelectedCost] = useState<string>('all');
@@ -46,11 +46,18 @@ const CompendiumView: React.FC = () => {
     return Math.ceil(total / card.rarity);
   };
 
+  const visiblePackIds = useMemo(() => {
+    const seenByCollection = cards
+      .filter((card) => (collection[card.id] || 0) > 0)
+      .map((card) => card.packId);
+    return new Set([...openedPacks, ...seenByCollection]);
+  }, [openedPacks, collection]);
+
   // Filtering Logic
   const filteredCards = useMemo(() => {
     return cards.filter(card => {
-      // Unlocked Pack Check (Requirement: Only show cards from unlocked packs)
-      if (!unlockedPacks.includes(card.packId)) return false;
+      // Only show cards from packs that have been opened at least once.
+      if (!visiblePackIds.has(card.packId)) return false;
 
       // Pack Filter
       if (selectedPack !== 'all' && card.packId !== selectedPack) return false;
@@ -78,10 +85,10 @@ const CompendiumView: React.FC = () => {
 
       return true;
     });
-  }, [selectedPack, selectedCost, selectedTag, searchQuery, unlockedPacks]);
+  }, [selectedPack, selectedCost, selectedTag, searchQuery, visiblePackIds]);
 
   // Statistics
-  const totalCards = cards.filter(c => unlockedPacks.includes(c.packId)).length;
+  const totalCards = cards.filter(c => visiblePackIds.has(c.packId)).length;
   const ownedCardsCount = Object.keys(collection).length; 
   const progress = totalCards > 0 ? Math.round((ownedCardsCount / totalCards) * 100) : 0;
 
@@ -174,7 +181,7 @@ const CompendiumView: React.FC = () => {
                     onChange={(e) => setSelectedPack(e.target.value)}
                 >
                     <option value="all">全部已解锁</option>
-                    {packs.filter(p => unlockedPacks.includes(p.id)).map(pack => (
+                    {packs.filter(p => visiblePackIds.has(p.id)).map(pack => (
                         <option key={pack.id} value={pack.id}>{pack.name}</option>
                     ))}
                 </select>
