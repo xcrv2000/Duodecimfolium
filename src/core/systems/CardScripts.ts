@@ -221,7 +221,7 @@ export const CardScripts: Record<string, CardScript> = {
           type: 'buff',
           // 在下一次物理攻击后触发，修改该卡的永久速度修正
           // 这是一个状态buff，需要在 BattleLoop 的 executeCard 中检查
-          onAttack: (unit, _target, damage, _state) => {
+          onAttack: (_unit, _target, damage, _state) => {
               // 仅物理攻击触发
               // 实际的速度修改需要在 BattleLoop.executeCard 中特殊处理
               return damage;
@@ -243,7 +243,7 @@ export const CardScripts: Record<string, CardScript> = {
           level: 1,
           type: 'buff',
           // 与 clear_oil 相同，需要在 executeCard 中特殊处理
-          onAttack: (unit, _target, damage, _state) => {
+          onAttack: (_unit, _target, damage, _state) => {
               return damage;
           }
       };
@@ -394,7 +394,7 @@ export const CardScripts: Record<string, CardScript> = {
   },
 
   // 25. Ration (便携干粮)
-  ration: (loop, _source, _targets) => {
+  ration: (_loop, _source, _targets) => {
      // 非回合卡，在战斗结束时触发
      // 战斗结束时，若生命值 < 70%，回复20点生命（限3次）
      // 这个逻辑应该由 BattleLoop.onBattleEnd() 处理，而不是在脚本中

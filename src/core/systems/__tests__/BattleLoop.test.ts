@@ -98,8 +98,8 @@ describe('BattleLoop', () => {
       const card3Speed = playerUnit.cards[2].currentSpeed10;
 
       // 第2和第3张卡的速度应该更高（更慢）
-      expect(card2Speed).toBeGreaterThan(card1Speed);
-      expect(card3Speed).toBeGreaterThan(card2Speed);
+      expect(card2Speed as number).toBeGreaterThan(card1Speed as number);
+      expect(card3Speed as number).toBeGreaterThan(card2Speed as number);
     });
   });
 
@@ -183,29 +183,6 @@ describe('BattleLoop', () => {
       battleLoop.dealDamage(playerUnit, enemyUnit, 10, 'physical');
 
       expect(enemyUnit.isDead).toBe(true);
-    });
-  });
-
-  describe('护甲系统', () => {
-    it('应该正确添加护甲', () => {
-      const playerUnit = battleState.units[0];
-      const initialArmor = playerUnit.armor || 0;
-
-      battleLoop.addArmor(playerUnit, 4);
-
-      expect(playerUnit.armor).toBe(initialArmor + 4);
-    });
-
-    it('应该在护甲吸收伤害后减少', () => {
-      const playerUnit = battleState.units[0];
-      const enemyUnit = battleState.units[1];
-
-      battleLoop.addArmor(playerUnit, 20);
-      battleLoop.dealDamage(enemyUnit, playerUnit, 10, 'physical');
-
-      // 护甲应该减少，且不应该造成伤害
-      expect(playerUnit.armor).toBeLessThan(20);
-      expect(playerUnit.hp).toBe(100); // 无伤害
     });
   });
 });

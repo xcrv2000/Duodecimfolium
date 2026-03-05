@@ -5,7 +5,6 @@ describe('playerStore', () => {
   beforeEach(() => {
     // Reset store to initial state before each test
     // Note: In a real setup, you'd want to properly isolate store state between tests
-    const store = usePlayerStore.getState();
     usePlayerStore.setState({
       gold: 100,
       dust: 0,
@@ -33,7 +32,6 @@ describe('playerStore', () => {
   describe('粉尘合成系统', () => {
     it('应该能够合成卡牌（粉尘足够）', () => {
       const store = usePlayerStore.getState();
-      const initialDust = store.dust;
       const initialCount = store.collection['thrust'] || 0;
       const craftCost = 50;
 
@@ -321,10 +319,10 @@ describe('playerStore', () => {
       store.updateDeck('deck_1', ['thrust', 'thrust', 'thrust']);
 
       const newStore = usePlayerStore.getState();
-      const penalties = newStore.decks[0].cardSpeedPenalties;
-      expect(penalties['0']).toBe(0); // 第 1 张无惩罚
-      expect(penalties['1']).toBe(9); // 第 2 张 +0.9 x10
-      expect(penalties['2']).toBe(28); // 第 3 张 +2.8 x10
+      const penalties = newStore.decks[0]?.cardSpeedPenalties;
+      expect(penalties?.['0']).toBe(0); // 第 1 张无惩罚
+      expect(penalties?.['1']).toBe(9); // 第 2 张 +0.9 x10
+      expect(penalties?.['2']).toBe(28); // 第 3 张 +2.8 x10
     });
   });
 });
