@@ -225,14 +225,14 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   };
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden lg:flex-row">
       {/* Left: Collection */}
-      <div className="flex-1 p-8 overflow-y-auto border-r border-slate-700">
-        <h1 className="text-3xl font-bold mb-8 text-emerald-400 flex items-center gap-2">
+      <div className="order-2 flex-1 p-3 sm:p-4 md:p-6 lg:order-1 lg:p-8 overflow-y-auto lg:border-r lg:border-slate-700">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 md:mb-8 text-emerald-400 flex items-center gap-2">
           <Layers /> 卡组编辑 (Deck Builder)
         </h1>
         
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-20">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 pb-20">
           {visibleCards.map(card => {
             const count = collection[card.id] || 0;
             const inDeck = getDeckCardCount(card.id);
@@ -254,22 +254,22 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
       </div>
 
       {/* Right: Deck View */}
-      <div className="w-80 bg-slate-900 p-4 flex flex-col border-l border-slate-700 shadow-xl">
+      <div className="order-1 w-full bg-slate-900 p-3 sm:p-4 flex flex-col border-b border-slate-700 lg:order-2 lg:w-80 lg:border-l lg:border-b-0 shadow-xl max-h-[48vh] lg:max-h-none">
         {/* Deck Controls */}
         <div className="mb-6 flex flex-col gap-2">
-            <div className="flex items-center justify-between mb-2">
+            <div className="flex items-start justify-between gap-2 mb-2">
                 <label className="text-slate-400 text-xs font-bold">当前卡组 (CURRENT DECK)</label>
                 <div className="flex flex-col items-end">
                     <div className={`text-xs font-bold ${isDeckValid ? 'text-emerald-400' : 'text-red-400'}`}>
                         {currentDeck.cardIds.length} 张
                     </div>
                     {!isDeckSizeValid && (
-                         <div className="text-[10px] text-red-400 whitespace-nowrap">
+                         <div className="text-[10px] text-red-400 text-right">
                             卡组需8-12张 (当前{currentDeck.cardIds.length})
                         </div>
                     )}
                     {!isConsumableValid && (
-                        <div className="text-[10px] text-red-400 whitespace-nowrap">
+                        <div className="text-[10px] text-red-400 text-right">
                             补给品最多3张 (当前{consumableCount})
                         </div>
                     )}
@@ -310,14 +310,14 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                 </div>
             )}
 
-            <div className="flex justify-between mt-2 gap-2">
+            <div className="flex flex-wrap justify-between mt-2 gap-2">
                 <button onClick={handleImport} className="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1 rounded flex items-center justify-center gap-1 text-slate-300">
                     <Download size={12} /> 导入
                 </button>
                 <button onClick={handleExport} className="flex-1 bg-slate-700 hover:bg-slate-600 text-xs py-1 rounded flex items-center justify-center gap-1 text-slate-300">
                     <Upload size={12} /> 导出
                 </button>
-                <button onClick={handleDelete} className="bg-red-900/50 hover:bg-red-800 text-red-400 p-1 rounded disabled:opacity-30" disabled={decks.length <= 1} title="删除卡组">
+                <button onClick={handleDelete} className="bg-red-900/50 hover:bg-red-800 text-red-400 p-1 rounded disabled:opacity-30 ml-auto" disabled={decks.length <= 1} title="删除卡组">
                     <Trash2 size={14} />
                 </button>
             </div>
@@ -326,13 +326,13 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
             <div className="flex gap-2">
                 <button 
                     onClick={() => sortDeck('id')}
-                    className="flex-1 bg-slate-800 border border-slate-700 hover:border-emerald-500 text-[10px] py-1 rounded text-slate-400 hover:text-white transition-colors"
+                    className="flex-1 bg-slate-800 border border-slate-700 hover:border-emerald-500 text-[10px] py-1.5 rounded text-slate-400 hover:text-white transition-colors"
                 >
                     按ID排序
                 </button>
                 <button 
                     onClick={() => sortDeck('speed')}
-                    className="flex-1 bg-slate-800 border border-slate-700 hover:border-emerald-500 text-[10px] py-1 rounded text-slate-400 hover:text-white transition-colors"
+                    className="flex-1 bg-slate-800 border border-slate-700 hover:border-emerald-500 text-[10px] py-1.5 rounded text-slate-400 hover:text-white transition-colors"
                 >
                     按速度排序
                 </button>
@@ -408,7 +408,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                                             
                                             {/* Modifier Dropdown */}
                                             {modifierTargetIndex === index && (
-                                                <div className="absolute right-0 top-8 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 p-2 max-h-60 overflow-y-auto">
+                                                <div className="absolute left-0 sm:left-auto sm:right-0 top-8 w-40 sm:w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-50 p-2 max-h-60 overflow-y-auto">
                                                     <div className="text-xs font-bold text-slate-400 mb-2 px-1">选择修饰珠</div>
                                                     <button 
                                                         className="w-full text-left px-2 py-1 text-xs text-red-400 hover:bg-slate-700 rounded mb-1"
@@ -440,7 +440,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                                             )}
                                         </div>
 
-                                        <button onClick={() => removeFromDeck(index)} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick={() => removeFromDeck(index)} className="text-red-500 opacity-80 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                                             <Minus size={14} />
                                         </button>
                                     </div>

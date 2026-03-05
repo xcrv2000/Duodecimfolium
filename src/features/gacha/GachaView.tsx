@@ -143,8 +143,8 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   };
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-emerald-400 flex items-center gap-2">
+    <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-emerald-400 flex items-center gap-2">
         <ShoppingBag /> 商店
       </h1>
 
@@ -153,18 +153,18 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
             className="fixed inset-0 bg-black/95 flex flex-col items-center justify-center z-50 p-4 overflow-y-auto cursor-pointer"
             onClick={handleOverlayClick}
           >
-              <h2 className="text-4xl font-bold mb-12 text-white animate-pulse pointer-events-none">
+              <h2 className="text-2xl sm:text-4xl font-bold mb-6 sm:mb-12 text-white animate-pulse pointer-events-none text-center">
                 {isAutoRevealing ? 'Revealing...' : `Draw Results (${page + 1}/${Math.ceil(openingPack.length / PAGE_SIZE)})`}
               </h2>
               
-              <div className="relative flex justify-center w-full max-w-[95vw] pointer-events-auto cursor-default min-h-[500px] items-center">
+              <div className="relative flex justify-center w-full max-w-[95vw] pointer-events-auto cursor-default min-h-[320px] sm:min-h-[500px] items-center">
                   <div className={`
-                    grid grid-cols-5 gap-4
+                    grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4
                   `}>
                       {currentCards.map((card, i) => {
                           const absoluteIndex = startIdx + i;
                           return (
-                            <div key={absoluteIndex} className="w-40 transition-all duration-500">
+                            <div key={absoluteIndex} className="w-[42vw] sm:w-40 max-w-40 transition-all duration-500">
                                 <CardDisplay 
                                     card={card} 
                                     isFaceDown={!revealedIndices.includes(absoluteIndex)}
@@ -172,7 +172,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                                     enableRevealAnimation={true}
                                     onFlip={() => handleManualFlip(absoluteIndex)}
                                     compact={true} // Enable compact mode to prevent overflow
-                                    className="h-56" // Fixed height
+                                    className="h-44 sm:h-56" // Fixed height
                                 />
                             </div>
                           );
@@ -181,7 +181,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
 
                   {/* Next Page Arrow - Always show if next page exists (even if auto revealing, though technically auto revealing handles flow, but arrow allows manual skip) */}
                   {(page + 1) * PAGE_SIZE < openingPack.length && (
-                      <div className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-[calc(100%-2rem)] pointer-events-auto">
+                      <div className="absolute right-0 top-1/2 -translate-y-1/2 sm:translate-x-[calc(100%-2rem)] pointer-events-auto">
                         <button 
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -209,7 +209,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
               )}
           </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {packs.map(pack => {
             // Check explicit unlock status
             let isUnlocked = unlockedPacks.includes(pack.id);

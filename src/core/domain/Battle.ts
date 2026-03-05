@@ -15,7 +15,6 @@ export interface BattleUnit {
   name: string;
   hp: number;
   maxHp: number;
-  armor: number; // 护甲，回合结束清空
   initialDeckSize: number; // 初始卡组大小，用于同速排序
   team: TeamType;
   cards: CardInstance[];
@@ -27,6 +26,7 @@ export interface BaseBuff {
   id: string;
   name: string;
   description: string;
+  type: 'buff' | 'debuff';  // 统一类型字段，所有buff都应该有
   duration: number; // 剩余回合数. 默认 1 (本回合结束). 
   stackRule: 'stackable' | 'nonStackable';
   level: number; // 等级/层数
@@ -44,11 +44,13 @@ export interface UnitBuff extends BaseBuff {
 }
 
 export interface CardInstanceBuff extends BaseBuff {
+    type: 'buff' | 'debuff';
     // Specific to Card Instances (e.g. speed modification)
     speedModification?: number; // 速度修正值 (x10)
 }
 
 export interface CardFactoryBuff extends BaseBuff {
+    type: 'buff' | 'debuff';
     // Specific to Card Factories (e.g. permanent speed modification)
     speedModification?: number; // 速度修正值 (x10)
 }

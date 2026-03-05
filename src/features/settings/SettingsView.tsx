@@ -19,8 +19,8 @@ const SettingsView: React.FC = () => {
   const isConfirmValid = confirmText === 'Duodecimfolium';
 
   return (
-    <div className="p-8 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold mb-8 text-emerald-400">Settings</h1>
+    <div className="p-4 sm:p-6 md:p-8 max-w-2xl mx-auto">
+      <h1 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-emerald-400">Settings</h1>
       
       <div className="bg-slate-800 p-6 rounded-lg border border-slate-700">
         <h2 className="text-xl font-bold mb-4 text-red-400 flex items-center gap-2">

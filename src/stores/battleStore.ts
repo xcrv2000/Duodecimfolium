@@ -119,7 +119,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
               name: config.name,
               hp: config.hp,
               maxHp: config.hp,
-              armor: 0,
               initialDeckSize: cardIds.length,
               team: config.team,
               cards: cardIds.map((id, idx) => {
@@ -285,7 +284,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       name: 'Player',
       hp: initialHp,
       maxHp: 100,
-      armor: 0,
       initialDeckSize: playerCardIds.length,
       team: 'player',
       cards: playerCardIds.map((id: string, idx: number) => {
@@ -341,7 +339,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       name: enemyDef.name,
       hp: enemyDef.hpMax, // Start at max
       maxHp: enemyDef.hpMax,
-      armor: 0,
       initialDeckSize: enemyCardIds.length,
       team: 'enemy',
       cards: enemyCardIds.map((id: string, idx: number) => {

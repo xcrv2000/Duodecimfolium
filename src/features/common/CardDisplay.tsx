@@ -171,7 +171,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   if (internalFaceDown) {
     return (
       <div 
-        className={`relative bg-slate-900 border-2 border-slate-700 rounded-lg p-3 flex items-center justify-center h-48 transition-all duration-300 cursor-help ${className}`}
+      className={`relative bg-slate-900 border-2 border-slate-700 rounded-lg p-3 flex items-center justify-center h-44 sm:h-48 transition-all duration-300 cursor-help ${className}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
@@ -184,7 +184,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
 
   return (
     <div 
-      className={`relative bg-slate-800 border-2 rounded-lg p-3 flex flex-col justify-between h-48 transition-all duration-200 group ${finalBorderClass} ${interactiveClass} ${opacityClass} ${className} ${animateJump ? 'animate-bounce' : ''}`}
+      className={`relative bg-slate-800 border-2 rounded-lg p-2 sm:p-3 flex flex-col justify-between h-44 sm:h-48 transition-all duration-200 group ${finalBorderClass} ${interactiveClass} ${opacityClass} ${className} ${animateJump ? 'animate-bounce' : ''}`}
       onClick={!disabled ? onClick : undefined}
       title={isInstance(card) ? `Instance ID: ${card.instanceId}\n${speedTooltip}` : speedTooltip}
       onMouseEnter={handleMouseEnter}
@@ -222,15 +222,15 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
 
       <div>
         <div className="flex justify-between items-start mb-1">
-          <span className="font-bold text-lg text-slate-200 leading-tight truncate">{getName(card)}</span>
+          <span className="font-bold text-sm sm:text-lg text-slate-200 leading-tight truncate">{getName(card)}</span>
           
           {/* Speed Bubble */}
           {currentSpeed !== null && (
             <div 
-              className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-slate-900 border-2 border-slate-600 flex items-center justify-center shadow-lg z-10 group-hover:scale-110 transition-transform"
+              className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-slate-600 flex items-center justify-center shadow-lg z-10 group-hover:scale-110 transition-transform"
               title={speedTooltip}
             >
-              <span className="text-yellow-400 font-bold text-lg">{displaySpeed}</span>
+              <span className="text-yellow-400 font-bold text-sm sm:text-lg">{displaySpeed}</span>
             </div>
           )}
         </div>
@@ -246,7 +246,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
             </div>
         )}
         
-        <div className="text-xs text-slate-400 line-clamp-4 leading-relaxed h-20 overflow-hidden flex flex-col gap-1">
+        <div className="text-[10px] sm:text-xs text-slate-400 line-clamp-4 leading-relaxed h-20 overflow-hidden flex flex-col gap-1">
             {/* Show description (flavor/rules) in italic if present */}
             {getDescription(card) && (
                 <span className="italic text-slate-500 text-[10px] mb-1 border-b border-slate-700/50 pb-1">

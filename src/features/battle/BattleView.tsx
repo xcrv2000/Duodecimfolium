@@ -5,6 +5,7 @@ import { Play, Pause, FastForward, SkipForward, Repeat, Eye } from 'lucide-react
 import { CardInstance } from '../../core/domain/Card';
 import { BattleUnit, UnitBuff } from '../../core/domain/Battle';
 import { getCardRarityBorderClass } from '../../utils/cardUtils';
+import { formatBuffDescription } from '../../utils/buffUtils';
 
 const BattleView: React.FC = () => {
   const { state, tick, isPaused, togglePause, speedMultiplier, setSpeed, exitBattle, isLooping, toggleLoop, currentDungeonId, isBossStage } = useBattleStore();
@@ -50,10 +51,10 @@ const BattleView: React.FC = () => {
   const enemyUnits = state.units.filter(u => u.team === 'enemy');
 
   return (
-    <div className="flex flex-col h-full bg-slate-900 text-white p-4 gap-4 relative">
+    <div className="flex flex-col h-full bg-slate-900 text-white p-2 sm:p-4 gap-3 sm:gap-4 relative">
       {/* Top Bar: Controls & Timeline */}
-      <div className="flex items-center justify-between bg-slate-800 p-2 rounded">
-        <div className="flex gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between bg-slate-800 p-2 rounded">
+        <div className="flex flex-wrap gap-2">
           <button onClick={togglePause} className="p-2 hover:bg-slate-700 rounded" disabled={state.isOver}>
             {isPaused || state.isOver ? <Play size={20} /> : <Pause size={20} />}
           </button>
@@ -69,8 +70,8 @@ const BattleView: React.FC = () => {
             </>
           )}
         </div>
-        <div className="text-xl font-bold">Turn: {state.turn} | Tick: {state.tick}/12</div>
-        <button onClick={exitBattle} className="bg-red-600 px-4 py-2 rounded hover:bg-red-700">Exit</button>
+        <div className="text-sm sm:text-xl font-bold">Turn: {state.turn} | Tick: {state.tick}/12</div>
+        <button onClick={exitBattle} className="bg-red-600 px-3 sm:px-4 py-2 rounded hover:bg-red-700 self-end sm:self-auto">Exit</button>
       </div>
 
       {/* Timeline Visualizer (Simple) */}
@@ -86,16 +87,16 @@ const BattleView: React.FC = () => {
       </div>
 
       {/* Battle Area */}
-      <div className="flex-1 flex justify-between items-center gap-4 overflow-hidden">
+      <div className="flex-1 flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3 sm:gap-4 overflow-hidden min-h-0">
         {/* Player Side */}
-        <div className="flex flex-col gap-2 overflow-y-auto h-full p-2 no-scrollbar">
+        <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto h-auto lg:h-full p-1 sm:p-2 no-scrollbar lg:w-[320px]">
             {playerUnits.map(unit => (
                 <UnitFrame key={unit.id} unit={unit} onCardHover={setHoveredCard} onBuffHover={setHoveredBuff} />
             ))}
         </div>
         
         {/* Battle Log (Center) */}
-        <div className="flex-1 h-full max-h-[80vh] bg-slate-950 rounded p-2 overflow-y-auto font-mono text-sm opacity-80 min-w-[200px]">
+        <div className="flex-1 min-h-[180px] lg:h-full lg:max-h-[80vh] bg-slate-950 rounded p-2 overflow-y-auto font-mono text-xs sm:text-sm opacity-80 min-w-0">
           {state.log.slice().reverse().map((entry, i) => ( // Show newest first
             <div key={i} className={`mb-1 ${entry.type === 'attack' ? 'text-red-400' : entry.type === 'death' ? 'text-purple-500 font-bold' : 'text-slate-300'}`}>
               [{entry.tick}] {entry.message}
@@ -104,7 +105,7 @@ const BattleView: React.FC = () => {
         </div>
 
         {/* Enemy Side */}
-        <div className="flex flex-col gap-2 overflow-y-auto h-full p-2 no-scrollbar">
+        <div className="flex lg:flex-col gap-2 overflow-x-auto lg:overflow-y-auto h-auto lg:h-full p-1 sm:p-2 no-scrollbar lg:w-[320px]">
             {enemyUnits.map(unit => (
                 <UnitFrame key={unit.id} unit={unit} isEnemy onCardHover={setHoveredCard} onBuffHover={setHoveredBuff} />
             ))}
@@ -113,27 +114,31 @@ const BattleView: React.FC = () => {
 
       {/* Card Hover Overlay */}
       {hoveredCard && (
+        <div className="hidden md:block">
         <CardHoverOverlay 
             card={hoveredCard.card} 
             unit={hoveredCard.unit} 
             rect={hoveredCard.rect} 
         />
+        </div>
       )}
 
       {/* Buff Hover Overlay */}
       {hoveredBuff && (
+        <div className="hidden md:block">
         <BuffHoverOverlay 
             buff={hoveredBuff.buff} 
             rect={hoveredBuff.rect} 
         />
+        </div>
       )}
 
       {/* Result Overlay */}
       {isResultOverlayVisible && (
         <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-          <div className="bg-slate-800 p-8 rounded shadow-xl text-center border border-slate-700 max-w-md w-full relative">
+          <div className="bg-slate-800 p-4 sm:p-8 rounded shadow-xl text-center border border-slate-700 max-w-md w-full relative mx-2">
             
-            <h2 className={`text-4xl font-bold mb-4 ${state.winner === 'player' ? 'text-emerald-400' : 'text-red-500'}`}>
+            <h2 className={`text-2xl sm:text-4xl font-bold mb-4 ${state.winner === 'player' ? 'text-emerald-400' : 'text-red-500'}`}>
                 {state.winner === 'player' ? 'Victory!' : 'Defeat!'}
             </h2>
             
@@ -177,14 +182,14 @@ const UnitFrame: React.FC<{
     onCardHover?: (data: { card: CardInstance, unit: BattleUnit, rect: DOMRect } | null) => void,
     onBuffHover?: (data: { buff: UnitBuff, rect: DOMRect } | null) => void
 }> = ({ unit, onCardHover, onBuffHover }) => {
-  if (!unit) return <div className="w-64 h-96 bg-slate-800/50 rounded flex items-center justify-center">Empty</div>;
+  if (!unit) return <div className="w-[280px] sm:w-[320px] h-80 bg-slate-800/50 rounded flex items-center justify-center shrink-0">Empty</div>;
 
   return (
-    <div className={`w-80 bg-slate-800 rounded-lg p-4 border-2 ${unit.isDead ? 'border-red-900 opacity-50' : 'border-slate-600'}`}>
-      <h3 className="text-2xl font-bold mb-2">{unit.name}</h3>
+    <div className={`w-[280px] sm:w-[320px] bg-slate-800 rounded-lg p-3 sm:p-4 border-2 shrink-0 ${unit.isDead ? 'border-red-900 opacity-50' : 'border-slate-600'}`}>
+      <h3 className="text-xl sm:text-2xl font-bold mb-2">{unit.name}</h3>
       <div className="flex justify-between mb-2">
         <span className="text-green-400">HP: {unit.hp}/{unit.maxHp}</span>
-        <span className="text-blue-400">Armor: {unit.armor}</span>
+        <span className="text-blue-400">Armor: {unit.buffs.find(b => b.id === 'armor')?.level || 0}</span>
       </div>
       {/* Health Bar */}
       <div className="w-full h-4 bg-slate-700 rounded-full mb-4 overflow-hidden">
@@ -351,7 +356,7 @@ const BuffHoverOverlay: React.FC<{ buff: UnitBuff, rect: DOMRect }> = ({ buff, r
     return (
         <div className="bg-slate-800 border border-slate-500 p-3 rounded shadow-xl text-xs w-48 pointer-events-none" style={style}>
             <div className="font-bold text-emerald-400 mb-1">{buff.name}</div>
-            <div className="text-slate-200 leading-relaxed">{buff.description}</div>
+            <div className="text-slate-200 leading-relaxed">{formatBuffDescription(buff.description, buff.level)}</div>
             <div className="text-slate-500 mt-2 text-[10px]">
                 {buff.duration < 999 ? `Expires in ${buff.duration} turn(s)` : 'Permanent'}
             </div>

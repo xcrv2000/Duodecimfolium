@@ -34,12 +34,7 @@ export const CardScripts: Record<string, CardScript> = {
       
       const buff: UnitBuff = {
           id: 'charge',
-          name: '蓄势',
-          description: '下一次攻击造成的伤害翻倍，且速度+1。',
-          duration: 1, // Until turn end
-          stackRule: 'nonStackable',
           level: 1,
-          type: 'buff',
           onAttack: (unit, _t, damage, _battle) => {
               // Double damage
               // Remove buff manually (consume)
@@ -60,12 +55,7 @@ export const CardScripts: Record<string, CardScript> = {
       // Bleed Logic is handled in BattleLoop.dealDamage, we just apply the buff.
       const bleed: UnitBuff = {
           id: 'bleed',
-          name: '流血',
-          description: '受到未被护甲抵消的物理伤害增加{level}点。',
-          duration: 1,
-          stackRule: 'stackable',
-          level: 1,
-          type: 'debuff'
+          level: 1
       };
       loop.addUnitBuff(target, bleed);
   },
@@ -114,12 +104,7 @@ export const CardScripts: Record<string, CardScript> = {
       
       const stun: UnitBuff = {
           id: 'stun',
-          name: '眩晕',
-          description: '下回合所有卡牌速度+{level}。',
-          duration: 2, // Current + Next
-          stackRule: 'nonStackable',
-          level: 2, // +2.0 Speed (x10)
-          type: 'debuff'
+          level: 2 // +2.0 Speed (x10)
       };
       loop.addUnitBuff(target, stun);
   },
@@ -129,12 +114,7 @@ export const CardScripts: Record<string, CardScript> = {
       const target = targets[0] || source;
       const focus: UnitBuff = {
           id: 'focus',
-          name: '专注',
-          description: '下一次攻击伤害增加50%。',
-          duration: 1,
-          stackRule: 'nonStackable',
           level: 1,
-          type: 'buff',
           onAttack: (unit, _t, dmg) => {
               // +50%
               // Remove self

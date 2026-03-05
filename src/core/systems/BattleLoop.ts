@@ -3,6 +3,7 @@ import { CardInstance } from '../domain/Card';
 import { CardScripts } from './CardScripts';
 
 import { RNG } from '../../utils/rng';
+import buffsData from '../../data/buffs.json';
 
 export class BattleLoop {
   private state: BattleState;
@@ -12,6 +13,11 @@ export class BattleLoop {
   constructor(state: BattleState, rng: RNG) {
     this.state = state;
     this.rng = rng;
+  }
+
+  // Helper function to format buff descriptions with level
+  private formatBuffDescription(template: string, level: number): string {
+    return template.replace(/{level}/g, level.toString());
   }
 
   public spawnCard(source: BattleUnit, cardId: string, baseSpeed10: number): void {
@@ -118,6 +124,11 @@ export class BattleLoop {
 
   public nextTick(): BattleState {
     if (this.state.isOver) return this.state;
+
+    // 如果是新回合开始（tick == 0），调用onTurnStart回调
+    if (this.state.tick === 0) {
+      this.startTurn();
+    }
 
     this.processTick(this.state.tick);
 
@@ -235,13 +246,7 @@ export class BattleLoop {
     // T2回合：recalculateCardSpeed检查`buff.duration === 1`满足 → 应用速度修正(+2.0)
     // T2回合结束：duration递减 1→0，buff删除（duration <= 0）→ 速度修正解除
     this.state.units.forEach(unit => {
-      // 1. 清除护甲
-      // 根据战斗系统修正文档 §4.2：
-      // "所有护甲在回合结束时清空"
-      // 护甲不会跨回合保留，每回合玩家和敌人都需重新积累防御
-      unit.armor = 0;
-      
-      // 2. 結算单位 buff（UnitBuff）
+      // 1. 结算单位 buff（UnitBuff）
       // 【顺序很重要】先触发回调，再递减duration
       unit.buffs.forEach(buff => {
         if (buff.onTurnEnd) buff.onTurnEnd(unit, this.state);
@@ -249,7 +254,7 @@ export class BattleLoop {
       });
       
       // 清除已过期的单位 buff（duration <= 0）
-      // 眩晕buff在此处移除（当duration从1递减至0）
+      // 包括护甲buff在内的所有buff都会在此处根据duration自动清除
       unit.buffs = unit.buffs.filter(b => b.duration > 0);
       
       // 3. 重置卡实例并重算速度
@@ -264,6 +269,18 @@ export class BattleLoop {
     });
 
     this.log(null, null, "--- 回合结束 ---", 'info');
+  }
+
+  private startTurn(): void {
+    // === 回合开始处理 ===
+    // 调用所有UnitBuff的onTurnStart回调
+    this.state.units.forEach(unit => {
+      unit.buffs.forEach(buff => {
+        if (buff.onTurnStart) {
+          buff.onTurnStart(unit, this.state);
+        }
+      });
+    });
   }
 
   private recalculateCardSpeed(unit: BattleUnit, card: CardInstance): void {
@@ -594,11 +611,17 @@ export class BattleLoop {
     
     let unmitigated = false;
     if (effectiveType === 'physical') {
-      if (target.armor > 0) {
-        const armorDamage = Math.min(target.armor, damage);
-        target.armor -= armorDamage;
+      const armorBuff = target.buffs.find(b => b.id === 'armor');
+      if (armorBuff && armorBuff.level > 0) {
+        const armorDamage = Math.min(armorBuff.level, damage);
+        armorBuff.level -= armorDamage;
         damage -= armorDamage;
         this.log(source, target, `护甲吸收了 ${armorDamage} 点伤害。`, 'info');
+        // Remove armor buff if depleted
+        if (armorBuff.level <= 0) {
+          const idx = target.buffs.findIndex(b => b.id === 'armor');
+          if (idx !== -1) target.buffs.splice(idx, 1);
+        }
       }
       if (damage > 0) unmitigated = true;
     }
@@ -645,11 +668,24 @@ export class BattleLoop {
   }
 
   public addArmor(unit: BattleUnit, amount: number): void {
-    unit.armor += amount;
-    this.log(unit, unit, `获得了 ${amount} 点护甲。`, 'buff', amount);
+    const armorBuff: UnitBuff = {
+      id: 'armor',
+      level: amount
+    };
+    this.addUnitBuff(unit, armorBuff);
   }
 
   public addUnitBuff(unit: BattleUnit, buff: UnitBuff): void {
+    // 从buffs.json查找定义，如果存在则使用定义中的信息
+    const buffDef = buffsData.find(b => b.id === buff.id);
+    if (buffDef) {
+      buff.name = buffDef.name;
+      buff.description = this.formatBuffDescription(buffDef.description, buff.level);
+      buff.type = buffDef.type;
+      buff.stackRule = buffDef.stackRule;
+      buff.duration = buffDef.duration; // 使用定义中的默认duration，除非明确指定
+    }
+
     if (buff.stackRule === 'stackable') {
         const existing = unit.buffs.find(b => b.id === buff.id);
         if (existing) {
