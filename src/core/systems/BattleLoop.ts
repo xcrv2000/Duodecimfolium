@@ -86,14 +86,17 @@ export class BattleLoop {
   // --- Helper Methods ---
 
   private initializeCardTags(card: CardInstance): void {
-      // Initialize tagsRuntime with base tags + modifier-added tags
-      card.tagsRuntime = [...(card.tags || [])];
+      // === 初始化卡的运行时标签 ===
+      // tagsRuntime = factory.tags（基础标签）+ 修饰珠添加的标签
+      // 
+      // 基础标签来自卡的定义（例如 "攻击/物理", "辅助", "防御"）
+      // 修饰珠可以添加额外标签（例如火灵珠添加 "魔法/火"）
+      card.tagsRuntime = [...(card.factory.tags || [])];
       
-      // Apply attr_add modifiers to tags
+      // 应用 attr_add 修饰珠效果
       card.modifiers.forEach(mod => {
           if (mod.effectId === 'attr_add') {
-              // Convert modifier value to tag path
-              // e.g., 'fire' -> add ["魔法", "火"] or similar
+              // 根据 modifier.value 添加相应的标签路径
               if (mod.value === 'fire') {
                   if (!card.tagsRuntime!.includes('魔法/火')) {
                       card.tagsRuntime!.push('魔法/火');
@@ -135,17 +138,17 @@ export class BattleLoop {
         const cardNameCount = new Map<string, number>();
         
         unit.cards.forEach(card => {
-            const count = cardNameCount.get(card.id) ?? 0;
-            cardNameCount.set(card.id, count + 1);
+            const count = cardNameCount.get(card.factory.id) ?? 0;
+            cardNameCount.set(card.factory.id, count + 1);
             
             if (count === 1) {
                 // Second occurrence: +0.9 speed = +9 speed10
                 card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 9;
-                this.log(unit, null, `${card.name} (第2张): 速度惩罚 +0.9`, 'info');
+                this.log(unit, null, `${card.factory.name} (第2张): 速度惩罚 +0.9`, 'info');
             } else if (count === 2) {
                 // Third occurrence: +2.8 speed = +28 speed10
                 card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 28;
-                this.log(unit, null, `${card.name} (第3张): 速度惩罚 +2.8`, 'info');
+                this.log(unit, null, `${card.factory.name} (第3张): 速度惩罚 +2.8`, 'info');
             }
         });
     });
@@ -154,9 +157,17 @@ export class BattleLoop {
     this.state.units.forEach(unit => {
         unit.cards.forEach(card => {
             this.initializeCardTags(card);
+            
             // Initialize factoryBuffs if not already present
             if (!card.factoryBuffs) {
                 card.factoryBuffs = [];
+            }
+            
+            // Apply baseline factory buffs from CardFactory definition
+            if (card.factory.baselineFactoryBuffs) {
+                card.factory.baselineFactoryBuffs.forEach(buff => {
+                    this.addCardFactoryBuff(card, buff);
+                });
             }
         });
     });
@@ -187,7 +198,7 @@ export class BattleLoop {
     this.state.units.forEach(unit => {
       unit.cards.forEach(card => {
         // Handle Whetstone separately
-        if (card.scriptId === 'whetstone') {
+        if (card.factory.scriptId === 'whetstone') {
              if (isEliteOrBoss) {
                  this.executeCard(unit, card);
              }
@@ -195,7 +206,7 @@ export class BattleLoop {
         }
         
         // Skip Ration (handled at end)
-        if (card.scriptId === 'ration') return;
+        if (card.factory.scriptId === 'ration') return;
         
         // Execute other passives
         if (card.baseSpeed10 === null) {
@@ -209,18 +220,28 @@ export class BattleLoop {
     this.state.turn++;
     this.state.tick = 0;
     
-    // Clear armor, update buffs
+    // === 回合结束结算流程 ===
+    // 这个阶段结算本回合残留的状态并准备下一回合
     this.state.units.forEach(unit => {
+      // 1. 清除护甲
+      // 根据战斗系统修正文档 §4.2：
+      // "所有护甲在回合结束时清空"
+      // 护甲不会跨回合保留，每回合玩家和敌人都需重新积累防御
       unit.armor = 0;
       
-      // Update Unit Buffs
+      // 2. 結算单位 buff
+      // 触发回合结束回调
       unit.buffs.forEach(buff => {
         if (buff.onTurnEnd) buff.onTurnEnd(unit, this.state);
         buff.duration--;
       });
+      // 清除已过期的单位 buff（duration <= 0）
       unit.buffs = unit.buffs.filter(b => b.duration > 0);
       
-      // Reset Card Instances (Clear Buffs, Recalculate Speed)
+      // 3. 重置卡实例
+      // 清除本回合的临时 buff，为下一回合做准备
+      // Reset CardInstanceBuffs (清除 duration <= 0 的卡实例 buff)
+      // 重新计算卡速度（因为工厂级 buff 可能已改变）
       unit.cards.forEach(card => {
           card.buffs = []; // Clear round-based buffs
           this.recalculateCardSpeed(unit, card);
@@ -236,20 +257,25 @@ export class BattleLoop {
           return;
       }
       
-      let speed = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
+      let speed: number | null = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
       
-      // Apply beads (modifiers)
-      // Assuming modifiers.value is numeric string or number.
-      // Need to convert to speed10 integer.
-      // Example: value "0.5" -> 5
+      // === 应用修饰珠效果 ===
+      // 修饰珠系统支持两种效果：
+      // 1. speed_mod: 修改卡的速度 (微风珠 -0.5, 黑铁珠 +0.5)
+      // 2. attr_add: 添加属性标签 (火灵珠 "火", 冰灵珠 "冰", 岩灵珠 "岩")
+      //
+      // 速度修饰是在这里应用的，属性修饰在 initializeCardTags() 中应用
       if (card.modifiers) {
         card.modifiers.forEach(mod => {
             if (mod.effectId === 'speed_mod') {
                 const val = Number(mod.value);
                 if (!isNaN(val)) {
+                    // value 在 modifiers.json 中是浮点数，需要转为 x10
                     speed += Math.round(val * 10);
                 }
             }
+            // attr_add 效果在 initializeCardTags() 中处理
+        });
         });
       }
 
@@ -286,11 +312,23 @@ export class BattleLoop {
       // Apply Deck Speed Penalty
       speed += (card.deckSpeedPenalty || 0);
       
-      // Ensure speed is not below 0
-      // "所有卡的减速效果，除非有额外描述，不应该将其减速至0以下。"
-      // speed 0 means it executes at tick 0.
-      // Negative speed is invalid in this system as tick starts at 0.
+      // === 速度边界值处理 ===
+      // 
+      // 下限（<0）：根据战斗系统修正文档 §1.3
+      // "speed < 0 invalid" - 速度不能为负
+      // 含义：卡不能放在时间轴之前，minimum speed = 0（tick 0）
       if (speed < 0) speed = 0;
+      
+      // 上限（≥130）：根据战斗系统修正文档 §1.3
+      // "speed ≥ 13 invalid" - 这里指的是 0.1 精度的速度值
+      // 约等于 currentSpeed10 >= 130（即 >= 13.0，超出时间轴范围）
+      // 含义：卡被加速过度，超出时间轴最大值 12.9，无法在战斗中触发
+      // 
+      // 处理方案：标记为"失效"，不会在 tick 循环中触发
+      // TODO: 在 UI 中显示失效卡，鼠标悬停告知理由
+      if (speed >= 130) {
+        speed = null; // 无效速度，不会被触发
+      }
       
       card.currentSpeed10 = speed;
   }
@@ -350,21 +388,21 @@ export class BattleLoop {
 
   private executeCard(source: BattleUnit, card: CardInstance): void {
     this.currentCard = card;
-    this.log(source, null, `${source.name} 发动了 ${card.name}!`, 'info', undefined, card.name);
+    this.log(source, null, `${source.name} 发动了 ${card.factory.name}!`, 'info', undefined, card.factory.name);
 
     // Find targets
     const targets = this.findTargets(source, card);
     
     // Execute Script
-    const script = CardScripts[card.scriptId];
+    const script = CardScripts[card.factory.scriptId];
     if (script) {
       try {
           // Check for Calm Mind buff on source
           const calmMindBuff = source.buffs.find(b => b.id === 'calm_mind');
-          const isMagicAttack = card.tags?.includes('魔法') && card.tags?.includes('攻击');
+          const isMagicAttack = card.tagsRuntime?.includes('魔法') && card.tagsRuntime?.includes('攻击');
 
           if (calmMindBuff && isMagicAttack) {
-              this.log(source, null, `触发气定神闲: ${card.name} 重复结算5次!`, 'buff');
+              this.log(source, null, `触发气定神闲: ${card.factory.name} 重复结算5次!`, 'buff');
               
               // Execute 5 times
               for(let i=0; i<5; i++) {
@@ -396,11 +434,11 @@ export class BattleLoop {
               script(this, source, targets);
           }
       } catch (e) {
-          console.error(`Error executing script ${card.scriptId}`, e);
-          this.log(source, null, `执行卡牌 ${card.name} 失败: ${e}`, 'info');
+          console.error(`Error executing script ${card.factory.scriptId}`, e);
+          this.log(source, null, `执行卡牌 ${card.factory.name} 失败: ${e}`, 'info');
       }
     } else {
-      this.log(source, null, `找不到脚本 ${card.scriptId}!`, 'info');
+      this.log(source, null, `找不到脚本 ${card.factory.scriptId}!`, 'info');
     }
 
     this.currentCard = null;
@@ -411,10 +449,10 @@ export class BattleLoop {
 
   private findTargets(source: BattleUnit, card: CardInstance): BattleUnit[] {
     // Targeting Logic
-    const isSupport = card.tags?.includes('辅助');
-    const isDefense = card.tags?.includes('防御');
+    const isSupport = card.tagsRuntime?.includes('辅助');
+    const isDefense = card.tagsRuntime?.includes('防御');
     
-    if (isSupport || isDefense || card.scriptId === 'concentrate') {
+    if (isSupport || isDefense || card.factory.scriptId === 'concentrate') {
         return [source];
     }
     
@@ -456,7 +494,7 @@ export class BattleLoop {
     this.state.units.forEach(unit => {
         if (unit.team === 'player' && !unit.isDead) {
              unit.cards.forEach(card => {
-                 if (card.scriptId === 'ration') {
+                 if (card.factory.scriptId === 'ration') {
                      const hpPercent = unit.hp / unit.maxHp;
                      if (hpPercent < 0.7) {
                          // Need to track usage. CardInstance is recreated per battle from BattleStore usually?

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { BattleState, BattleUnit } from '../core/domain/Battle';
+import { CardFactory, CardInstance } from '../core/domain/Card';
 import { BattleLoop } from '../core/systems/BattleLoop';
 import { usePlayerStore } from './playerStore';
 import { useReplayStore } from './replayStore';
@@ -248,7 +249,13 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
 
     const isBossStage = stage.type === 'boss';
 
-    // Create Player Unit
+    // Create Player Unit(s)
+    // MVP: Single player, single deck
+    // TODO [多英雄支持]: 修改为接收 deckIds: string[] 参数
+    // - stage.allowedTeamSize 标记该地牢允许多少英雄
+    // - 从 playerStore 中取多个卡组构建多个 playerUnit
+    // - 阵容排列规则（负责排序）由地牢配置决定
+    
     const { activeDeck } = get();
     if (!activeDeck) return;
     const playerCardIds = activeDeck.cardIds;
@@ -304,16 +311,21 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         }
 
         return {
-          ...cardDef,
+          // Factory reference (不再展开)
+          factory: cardDef as CardFactory,
+          
+          // Instance fields
           instanceId: `p_card_${idx}`,
+          ownerId: 'player',
           baseSpeed10: baseSpeed10,
           currentSpeed10: null, 
           deckSpeedPenalty: penalty,
           permanentSpeedModifier: 0,
-          ownerId: 'player',
+          tagsRuntime: [...(cardDef.tags || [])],
           modifiers: cardModifiers,
-          buffs: []
-        };
+          buffs: [],
+          factoryBuffs: []  // 运行时工厂级 buff
+        } as CardInstance;
       }).filter((c: any) => c), // Filter undefined
       buffs: [],
       isDead: false
@@ -347,16 +359,21 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         const npcSpeedMod = 0; // Will be added in BattleLoop executeStartOfBattleEffects
 
         return {
-          ...cardDef,
+          // Factory reference (不再展开)
+          factory: cardDef as CardFactory,
+          
+          // Instance fields
           instanceId: `e_card_${idx}`,
+          ownerId: enemyDef.id,
           baseSpeed10: baseSpeed10,
           currentSpeed10: null,
           deckSpeedPenalty: penalty,
           permanentSpeedModifier: npcSpeedMod,
-          ownerId: enemyDef.id,
+          tagsRuntime: [...(cardDef.tags || [])],
           modifiers: [],
-          buffs: []
-        };
+          buffs: [],
+          factoryBuffs: []  // 运行时工厂级 buff
+        } as CardInstance;
       }).filter((c: any) => c),
       buffs: [],
       isDead: false

@@ -234,17 +234,31 @@ const CardMini: React.FC<{ card: CardInstance, onMouseEnter?: (rect: DOMRect) =>
         }
     };
     
-    // Tooltip logic removed (using Overlay)
-
+    // 判断卡是否失效（速度超出范围）
+    const isCardInvalid = card.currentSpeed10 === null || card.currentSpeed10 >= 130;
+    const speedDisplay = card.currentSpeed10 !== null && card.currentSpeed10 < 130 
+        ? (card.currentSpeed10 / 10).toFixed(1) 
+        : (card.currentSpeed10 === null ? '✗' : '∞');
+    
+    // 判断卡是否有实例 buff
+    const hasBuffs = card.buffs && card.buffs.length > 0;
+    
     return (
         <div 
             ref={ref}
-            className={`w-12 h-16 bg-slate-700 border-2 rounded flex flex-col items-center justify-center text-xs relative ${borderClass} cursor-help hover:scale-110 transition-transform`} 
+            className={`w-12 h-16 bg-slate-700 border-2 rounded flex flex-col items-center justify-center text-xs relative ${borderClass} cursor-help hover:scale-110 transition-transform ${isCardInvalid ? 'opacity-50' : ''}`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={onMouseLeave}
+            title={isCardInvalid ? `卡已失效 (${card.currentSpeed10 === null ? '无效速度' : '>= 13.0'})` : ''}
         >
-            <span className="font-bold">{card.name[0]}</span>
-            <span className="absolute bottom-0 right-1 text-[10px] text-yellow-400">{card.currentSpeed10 !== null ? (card.currentSpeed10 / 10).toFixed(1) : '-'}</span>
+            <span className="font-bold">{card.factory.name[0]}</span>
+            {/* 显示卡实例 buff 标志 */}
+            {hasBuffs && (
+                <span className="absolute top-0 right-0 w-2 h-2 bg-yellow-400 rounded-full"></span>
+            )}
+            <span className={`absolute bottom-0 right-1 text-[10px] ${isCardInvalid ? 'text-red-400 font-bold' : 'text-yellow-400'}`}>
+                {speedDisplay}
+            </span>
         </div>
     )
 }

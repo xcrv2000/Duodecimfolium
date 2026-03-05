@@ -56,7 +56,19 @@ export interface CardFactoryBuff extends BaseBuff {
 export interface BattleState {
   tick: number; // 0-12
   turn: number;
+  
+  /**
+   * 当前战斗的所有单位
+   * MVP: [playerUnit, enemyUnit] (单英雄)
+   * 
+   * 预留多英雄支持：
+   * - playerUnits: BattleUnit[] (已来 2-4 个玩家角色)
+   * - enemyUnits: BattleUnit[] (1-多个敌人)
+   * 
+   * 时间轴排序逻辑已支持多单位，只需拆分此字段
+   */
   units: BattleUnit[];
+  
   log: BattleLogEntry[];
   isOver: boolean;
   winner: TeamType | null;
