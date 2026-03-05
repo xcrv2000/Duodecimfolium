@@ -157,7 +157,7 @@ export const usePlayerStore = create<PlayerStore>()(
           const cardCounts: Record<string, number> = {};
           const penalties: Record<string, number> = {};
           
-          cardIds.forEach((cardId, idx) => {
+          cardIds.forEach((cardId: string, idx: number) => {
             const count = (cardCounts[cardId] || 0) + 1;
             cardCounts[cardId] = count;
             
@@ -189,7 +189,7 @@ export const usePlayerStore = create<PlayerStore>()(
         const cardCounts: Record<string, number> = {};
         const penalties: Record<string, number> = {};
         
-        cardIds.forEach((cardId, idx) => {
+        cardIds.forEach((cardId: string, idx: number) => {
           const count = (cardCounts[cardId] || 0) + 1;
           cardCounts[cardId] = count;
           

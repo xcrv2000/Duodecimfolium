@@ -293,7 +293,7 @@ const CardHoverOverlay: React.FC<{ card: CardInstance, unit: BattleUnit, rect: D
                 className={`absolute w-64 h-96 bg-slate-800 border-4 rounded-xl p-6 shadow-2xl flex flex-col gap-4 ${borderClass}`}
                 style={cardEntityStyle}
             >
-                <div className="text-2xl font-bold text-center border-b border-slate-600 pb-2">{card.name}</div>
+                <div className="text-2xl font-bold text-center border-b border-slate-600 pb-2">{card.factory.name}</div>
                 
                 <div className="flex justify-between text-lg">
                     <span className="text-yellow-400">Speed: {card.currentSpeed10 !== null ? (card.currentSpeed10 / 10).toFixed(1) : '-'}</span>
@@ -306,16 +306,16 @@ const CardHoverOverlay: React.FC<{ card: CardInstance, unit: BattleUnit, rect: D
                     {/* In BattleLoop.spawnCard, we set name, description, effectDescription to 'Token' for tokens. */}
                     {/* We need to update BattleLoop to provide real description for tokens. */}
                     {/* But here, we just display what is in card.effectDescription. */}
-                    {card.effectDescription || "No effect description."}
+                    {card.factory.effectDescription || "No effect description."}
                 </div>
                 
                 <div className="text-sm text-slate-500 italic text-center">
-                    {card.description}
+                    {card.factory.description}
                 </div>
                 
                 {/* Tags */}
                 <div className="flex gap-2 justify-center">
-                    {card.tags.map(tag => (
+                    {card.tagsRuntime?.map(tag => (
                         <span key={tag} className="bg-slate-700 px-2 py-1 rounded text-xs">{tag}</span>
                     ))}
                 </div>

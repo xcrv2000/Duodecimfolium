@@ -207,7 +207,7 @@ export const CardScripts: Record<string, CardScript> = {
       const targetCards = target.cards.filter(c => 
           c.currentSpeed10 !== null && 
           c.currentSpeed10 > (currentTick * 10) &&
-          c.tags.includes('攻击')
+          c.tagsRuntime?.includes('攻击')
       );
       
       targetCards.forEach(c => {
@@ -508,7 +508,7 @@ export const CardScripts: Record<string, CardScript> = {
       const nextCard = target.cards.find(c => 
           c.currentSpeed10 !== null && 
           c.currentSpeed10 > (currentTick * 10) &&
-          c.tags.includes('攻击')
+          c.tagsRuntime?.includes('攻击')
       );
       
       if (nextCard) {

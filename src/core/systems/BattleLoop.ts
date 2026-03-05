@@ -257,7 +257,11 @@ export class BattleLoop {
           return;
       }
       
+      // baseSpeed10 not null here, so start with a numeric speed
       let speed: number | null = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
+
+      // we know speed is a number right now; later boundary checks may set it to null
+      let numericSpeed: number = speed as number;
       
       // === 应用修饰珠效果 ===
       // 修饰珠系统支持两种效果：
@@ -271,7 +275,7 @@ export class BattleLoop {
                 const val = Number(mod.value);
                 if (!isNaN(val)) {
                     // value 在 modifiers.json 中是浮点数，需要转为 x10
-                    speed += Math.round(val * 10);
+                    numericSpeed += Math.round(val * 10);
                 }
             }
             // attr_add 效果在 initializeCardTags() 中处理
@@ -282,7 +286,7 @@ export class BattleLoop {
       if (card.factoryBuffs) {
         card.factoryBuffs.forEach(buff => {
             if (buff.speedModification) {
-                speed += buff.speedModification;
+                numericSpeed += buff.speedModification;
             }
         });
       }
@@ -291,7 +295,7 @@ export class BattleLoop {
       if (card.buffs) {
         card.buffs.forEach(buff => {
             if (buff.speedModification) {
-                speed += buff.speedModification;
+                numericSpeed += buff.speedModification;
             }
         });
       }
@@ -301,22 +305,24 @@ export class BattleLoop {
       // Stun: +Level speed (next turn only, i.e., duration === 1)
       unit.buffs.forEach(buff => {
           if (buff.id === 'charge') {
-              speed += 10; // +1.0 speed
+              numericSpeed += 10; // +1.0 speed
           }
           if (buff.id === 'stun' && buff.duration === 1) {
-              speed += buff.level;
+              numericSpeed += buff.level;
           }
       });
       
       // Apply Deck Speed Penalty
-      speed += (card.deckSpeedPenalty || 0);
+      numericSpeed += (card.deckSpeedPenalty || 0);
       
       // === 速度边界值处理 ===
+      // now assign back to speed variable so boundary logic can set null if needed
+      speed = numericSpeed;
       // 
       // 下限（<0）：根据战斗系统修正文档 §1.3
       // "speed < 0 invalid" - 速度不能为负
       // 含义：卡不能放在时间轴之前，minimum speed = 0（tick 0）
-      if (speed < 0) speed = 0;
+      if (speed !== null && speed < 0) speed = 0;
       
       // 上限（≥130）：根据战斗系统修正文档 §1.3
       // "speed ≥ 13 invalid" - 这里指的是 0.1 精度的速度值
@@ -325,7 +331,7 @@ export class BattleLoop {
       // 
       // 处理方案：标记为"失效"，不会在 tick 循环中触发
       // TODO: 在 UI 中显示失效卡，鼠标悬停告知理由
-      if (speed >= 130) {
+      if (speed !== null && speed >= 130) {
         speed = null; // 无效速度，不会被触发
       }
       
@@ -414,7 +420,7 @@ export class BattleLoop {
               const cardIdx = source.cards.findIndex(c => c.instanceId === card.instanceId);
               if (cardIdx !== -1) {
                   source.cards.splice(cardIdx, 1);
-                  this.log(source, null, `移除攻击卡: ${card.name}`, 'info');
+                  this.log(source, null, `移除攻击卡: ${card.factory.name}`, 'info');
               }
               
               // Remove the Calm Mind card from source deck (using sourceInstanceId from buff)
@@ -423,7 +429,7 @@ export class BattleLoop {
                   if (cmIdx !== -1) {
                       const cmCard = source.cards[cmIdx];
                       source.cards.splice(cmIdx, 1);
-                      this.log(source, null, `移除气定神闲卡: ${cmCard.name}`, 'info');
+                      this.log(source, null, `移除气定神闲卡: ${cmCard.factory.name}`, 'info');
                   }
               }
               

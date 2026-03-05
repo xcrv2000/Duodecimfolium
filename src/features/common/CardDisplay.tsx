@@ -51,12 +51,18 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
     }
   }, [isFaceDown, card, enableRevealAnimation]); // Depend on card to re-calc rarity if needed
 
-  const isInstance = (c: any): c is CardInstance => 'instanceId' in c;
-  
+  const isInstance = (c: any): c is CardInstance => c && typeof c === 'object' && 'instanceId' in c;
+
+  // utility getters that work for both CardFactory and CardInstance
+  const getName = (c: Card | CardInstance) => isInstance(c) ? c.factory.name : c.name;
+  const getDescription = (c: Card | CardInstance) => isInstance(c) ? c.factory.description : c.description;
+  const getEffectDescription = (c: Card | CardInstance) => isInstance(c) ? c.factory.effectDescription : c.effectDescription;
+  const getTags = (c: Card | CardInstance) => isInstance(c) ? (c.tagsRuntime || c.factory.tags) : c.tags;
+
   // Determine Speed
   const baseSpeed = isInstance(card) ? (card.baseSpeed10 !== null ? card.baseSpeed10 / 10 : null) : card.speed;
   const currentSpeed = isInstance(card) ? (card.currentSpeed10 !== null ? card.currentSpeed10 / 10 : null) : card.speed;
-  
+
   // Round for display
   // Use toFixed(1) for float speeds
   const displaySpeed = currentSpeed !== null && currentSpeed !== undefined ? Number(currentSpeed).toFixed(1).replace(/\.0$/, '') : '-';
@@ -189,13 +195,13 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
           <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 w-64 z-[100] shadow-2xl">
               <div className={`bg-slate-900 border-2 rounded-lg p-4 flex flex-col gap-2 ${borderClass}`}>
                   <div className="flex justify-between items-start">
-                    <span className="font-bold text-xl text-white">{card.name}</span>
+                    <span className="font-bold text-xl text-white">{getName(card)}</span>
                     <span className="text-yellow-400 font-bold text-lg bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600">
                         {displaySpeed}</span>
                   </div>
-                  {card.tags && (
+                  {getTags(card) && getTags(card)!.length > 0 && (
                     <div className="flex flex-wrap gap-1">
-                        {card.tags.map(tag => (
+                        {getTags(card)!.map(tag => (
                             <span key={tag} className="text-xs bg-slate-800 text-cyan-300 px-1 rounded border border-slate-700">
                                 {tag}
                             </span>
@@ -203,11 +209,11 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
                     </div>
                   )}
                   <div className="text-sm text-slate-300 mt-2">
-                    {formatText(card.effectDescription)}
+                    {formatText(getEffectDescription(card))}
                   </div>
-                  {card.description && (
+                  {getDescription(card) && (
                     <div className="text-xs text-slate-500 italic mt-2 pt-2 border-t border-slate-700">
-                        {card.description}
+                        {getDescription(card)}
                     </div>
                   )}
               </div>
@@ -216,7 +222,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
 
       <div>
         <div className="flex justify-between items-start mb-1">
-          <span className="font-bold text-lg text-slate-200 leading-tight truncate">{card.name}</span>
+          <span className="font-bold text-lg text-slate-200 leading-tight truncate">{getName(card)}</span>
           
           {/* Speed Bubble */}
           {currentSpeed !== null && (
@@ -230,9 +236,9 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
         </div>
 
         {/* Tags - Hide in compact mode if overflowing, or keep small */}
-        {card.tags && card.tags.length > 0 && (
+        {getTags(card) && getTags(card)!.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-1">
-                {card.tags.map(tag => (
+                {getTags(card)!.map(tag => (
                     <span key={tag} className="text-[10px] bg-slate-700/80 text-cyan-300 px-1 rounded border border-slate-600/50">
                         {tag}
                     </span>
@@ -242,14 +248,14 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
         
         <div className="text-xs text-slate-400 line-clamp-4 leading-relaxed h-20 overflow-hidden flex flex-col gap-1">
             {/* Show description (flavor/rules) in italic if present */}
-            {card.description && (
+            {getDescription(card) && (
                 <span className="italic text-slate-500 text-[10px] mb-1 border-b border-slate-700/50 pb-1">
-                    {card.description}
+                    {getDescription(card)}
                 </span>
             )}
             {/* Show actual effect description */}
             <span className="text-slate-300">
-                {formatText(card.effectDescription)}
+                {formatText(getEffectDescription(card))}
             </span>
         </div>
       </div>
