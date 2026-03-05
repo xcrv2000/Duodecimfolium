@@ -276,7 +276,6 @@ export class BattleLoop {
             }
             // attr_add 效果在 initializeCardTags() 中处理
         });
-        });
       }
 
       // Apply CardFactoryBuffs
