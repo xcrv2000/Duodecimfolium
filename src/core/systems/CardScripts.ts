@@ -533,7 +533,7 @@ export const CardScripts: Record<string, CardScript> = {
     loop.addUnitBuff(target, buff);
   },
 
-  temporary_ceasefire: (loop, source, targets) => {
+  temporary_ceasefire: (loop, _source, _targets) => {
     // Speed +1 to all unplayed attack cards of all characters this tick
     const currentTick = loop.getCurrentTick();
     const tickStart = currentTick * 10;
@@ -543,8 +543,7 @@ export const CardScripts: Record<string, CardScript> = {
         if (card.currentSpeed10 !== null &&
             card.currentSpeed10 >= tickStart &&
             card.currentSpeed10 < tickEnd &&
-            card.tagsRuntime?.includes('攻击') &&
-            !card.executed) { // Assuming executed flag
+            card.tagsRuntime?.includes('攻击')) {
           loop.modifyCardSpeed(card, 10);
         }
       });

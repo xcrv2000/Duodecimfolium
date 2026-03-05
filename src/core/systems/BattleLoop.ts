@@ -554,7 +554,7 @@ export class BattleLoop {
                         const isAllOut = card.factory.tags.includes('全力');
                         if (isAllOut && allOutUnits.has(unit.id)) {
                             // Skip this All-Out card
-                            continue;
+                            return;
                         }
                         candidates.push({ unit, card });
                     }
@@ -752,7 +752,13 @@ export class BattleLoop {
 
   // --- API for Scripts ---
 
-  public dealDamage(source: BattleUnit, target: BattleUnit, amount: number, type: 'physical' | 'magical'): void {
+  public dealDamage(
+    source: BattleUnit,
+    target: BattleUnit,
+    amount: number,
+    type: 'physical' | 'magical',
+    extraTags?: string[]
+  ): void {
     // 1. Apply Source Buffs (onAttack)
     let damage = amount;
     source.buffs.forEach(buff => {
@@ -765,7 +771,9 @@ export class BattleLoop {
     // Use card.tagsRuntime to determine damage type (includes modifier-added tags)
     let effectiveType = type;
     
-    const cardTags = this.currentCard?.tagsRuntime || [];
+    const cardTags = Array.from(
+      new Set([...(this.currentCard?.tagsRuntime || []), ...(extraTags || [])])
+    );
     // Check if card has magic tags
     const hasMagicTag = cardTags.some(tag => tag.includes('魔法'));
     
@@ -833,6 +841,15 @@ export class BattleLoop {
     // Optimization: only if source buffs changed? But we don't know easily.
     // Just recalc.
     source.cards.forEach(c => this.recalculateCardSpeed(source, c));
+  }
+
+  public directHpChange(unit: BattleUnit, delta: number): void {
+    unit.hp += delta;
+    if (delta < 0) {
+      this.log(unit, unit, `${unit.name} loses ${Math.abs(delta)} HP`, 'attack', Math.abs(delta));
+    } else if (delta > 0) {
+      this.log(unit, unit, `${unit.name} recovers ${delta} HP`, 'buff', delta);
+    }
   }
 
   public addArmor(unit: BattleUnit, amount: number): void {

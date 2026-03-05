@@ -14,7 +14,7 @@ const cards = cardsData as Card[];
 const dungeons = dungeonsData as Dungeon[];
 
 const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
-  const { gold, unlockedPacks, addGold, addCards, tokens, addToken, removeToken } = usePlayerStore();
+  const { gold, unlockedPacks, addGold, addCards, tokens, removeToken } = usePlayerStore();
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const [openingPack, setOpeningPack] = useState<any[] | null>(null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
