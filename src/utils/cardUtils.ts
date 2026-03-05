@@ -17,12 +17,15 @@ cards.forEach(card => {
  * < 36%: Blue
  * Rest: Green
  */
-export const getCardRarityBorderClass = (card: Card): string => {
-    const totalWeight = packWeights[card.packId];
+export const getCardRarityBorderClass = (card: Card | import('../core/domain/Card').CardInstance): string => {
+    // Support CardInstance by dereferencing factory if necessary
+    const packId = 'packId' in card ? card.packId : card.factory.packId;
+    const rarity = 'rarity' in card ? card.rarity : card.factory.rarity;
+    const totalWeight = packWeights[packId];
     // If pack not found or total weight is 0, default to Green (Common)
     if (!totalWeight) return 'border-emerald-500';
 
-    const percentage = card.rarity / totalWeight;
+    const percentage = rarity / totalWeight;
 
     if (percentage < 0.01) return 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.4)]'; // Gold with glow
     if (percentage < 0.12) return 'border-purple-500'; // Purple
@@ -33,11 +36,13 @@ export const getCardRarityBorderClass = (card: Card): string => {
 /**
  * Get the text color class based on rarity.
  */
-export const getCardRarityTextClass = (card: Card): string => {
-    const totalWeight = packWeights[card.packId];
+export const getCardRarityTextClass = (card: Card | import('../core/domain/Card').CardInstance): string => {
+    const packId = 'packId' in card ? card.packId : card.factory.packId;
+    const rarity = 'rarity' in card ? card.rarity : card.factory.rarity;
+    const totalWeight = packWeights[packId];
     if (!totalWeight) return 'text-emerald-400';
 
-    const percentage = card.rarity / totalWeight;
+    const percentage = rarity / totalWeight;
 
     if (percentage < 0.01) return 'text-yellow-400';
     if (percentage < 0.12) return 'text-purple-400';

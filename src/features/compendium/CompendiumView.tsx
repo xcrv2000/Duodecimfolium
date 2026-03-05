@@ -119,14 +119,14 @@ const CompendiumView: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full p-8 overflow-hidden">
+    <div className="flex flex-col h-full p-4 sm:p-6 md:p-8 overflow-hidden">
       {/* Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col gap-4 lg:flex-row lg:justify-between lg:items-end mb-6 sm:mb-8">
         <div>
-            <h1 className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-emerald-400 flex items-center gap-2">
             <Book /> 图鉴 (Compendium)
             </h1>
-            <div className="text-slate-400 text-sm mt-2 flex gap-4">
+            <div className="text-slate-400 text-xs sm:text-sm mt-2 flex flex-wrap gap-2 sm:gap-4">
                 <span>收集进度: {ownedCardsCount} / {totalCards} ({progress}%)</span>
                 <span className="text-purple-400 font-bold flex items-center gap-1">
                     <Hammer size={14} /> 粉尘: {dust}
@@ -152,14 +152,14 @@ const CompendiumView: React.FC = () => {
         
         {/* Filters - Only for cards tab */}
         {activeTab === 'cards' && (
-        <div className="flex gap-4 items-end">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-end">
             {/* Search */}
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                 <input 
                     type="text" 
                     placeholder="Search cards..." 
-                    className="bg-slate-800 border border-slate-700 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:border-emerald-500 outline-none w-48"
+                    className="bg-slate-800 border border-slate-700 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:border-emerald-500 outline-none w-full sm:w-48"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -214,9 +214,9 @@ const CompendiumView: React.FC = () => {
       </div>
 
       {/* Grid */}
-      <div className="flex-1 overflow-y-auto pr-2">
+      <div className="flex-1 overflow-y-auto pr-0 sm:pr-2">
         {activeTab === 'cards' ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pb-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 pb-8">
                 {filteredCards.map(card => {
                     const count = collection[card.id] || 0;
                     const cost = getCraftingCost(card);
@@ -263,7 +263,7 @@ const CompendiumView: React.FC = () => {
                 )}
             </div>
         ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pb-8">
                 {modifiers.map(mod => {
                     const count = ownedModifiers[mod.id] || 0;
                     const style = getModifierStyle(mod.id);

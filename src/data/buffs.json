@@ -38,5 +38,13 @@
     "type": "buff",
     "stackRule": "nonStackable",
     "duration": 1
+  },
+  {
+    "id": "armor",
+    "name": "护甲",
+    "description": "减少受到的物理伤害{level}点。",
+    "type": "buff",
+    "stackRule": "stackable",
+    "duration": 1
   }
 ]

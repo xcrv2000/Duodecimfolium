@@ -144,7 +144,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   // Replay List View
   if (viewMode === 'replay') {
       return (
-          <div className="p-8 max-w-5xl mx-auto">
+          <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
               <div className="flex justify-between items-center mb-6">
                   <button 
                     onClick={() => setViewMode('dungeon')}
@@ -166,7 +166,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                       const date = new Date(replay.timestamp).toLocaleString();
                       
                       return (
-                          <div key={replay.id} className="bg-slate-800 p-4 rounded flex justify-between items-center border border-slate-700 hover:border-slate-500 transition-colors">
+                          <div key={replay.id} className="bg-slate-800 p-4 rounded flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-center border border-slate-700 hover:border-slate-500 transition-colors">
                               <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
                                       <span className="font-bold text-lg text-white">{dungeonName}</span>
@@ -176,7 +176,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                   <div className="text-xs text-slate-500">{date}</div>
                               </div>
                               
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2 sm:gap-4">
                                   <button 
                                     onClick={() => toggleFavorite(replay.id)}
                                     className={`p-2 rounded hover:bg-slate-700 ${replay.isFavorite ? 'text-yellow-400' : 'text-slate-600'}`}
@@ -216,7 +216,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
       const dungeon = dungeons.find(d => d.id === selectedDungeonId);
       
       return (
-          <div className="p-8 max-w-5xl mx-auto">
+          <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
               <button 
                 onClick={() => setSelectedDungeonId(null)}
                 className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white"
@@ -245,7 +245,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                   {/* Deck Selection */}
                   <div className="flex-1">
                       <h3 className="text-xl font-bold mb-4">选择出战卡组</h3>
-                      <div className="grid grid-cols-1 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+                      <div className="grid grid-cols-1 gap-3 sm:gap-4 max-h-[60vh] overflow-y-auto pr-0 sm:pr-2">
                           {decks.map((deck, index) => {
                               const isValid = deck.cardIds.length >= 8 && deck.cardIds.length <= 12;
                               return (
@@ -288,12 +288,12 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   }
 
   return (
-    <div className="p-8 max-w-5xl mx-auto relative">
+    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto relative">
       {/* Sandbox Modal */}
       {sandboxConfig.isOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
             {/* ... Keep Sandbox Modal UI ... */}
-            <div className="bg-slate-800 p-6 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="bg-slate-800 p-4 sm:p-6 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <h2 className="text-2xl font-bold mb-4">训练场配置</h2>
                 {/* ... (Sandbox UI content same as before, abbreviated for brevity in this specific write, but I should output full content) ... */}
                 {/* To save tokens and time, I will just copy paste the sandbox UI structure */}
@@ -390,8 +390,8 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-emerald-400 flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-emerald-400 flex items-center gap-2">
             <Skull /> 选择地牢
           </h1>
           <button 
@@ -413,7 +413,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
           return (
             <div 
               key={dungeon.id}
-              className={`relative p-6 rounded-lg border-2 transition-all group overflow-hidden ${
+              className={`relative p-4 sm:p-6 rounded-lg border-2 transition-all group overflow-hidden ${
                 isUnlocked 
                   ? 'bg-slate-800 border-slate-700 hover:border-emerald-500 cursor-pointer' 
                   : 'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'

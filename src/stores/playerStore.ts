@@ -39,7 +39,8 @@ const initialState: PlayerState = {
       id: 'default_deck',
       name: '初始卡组',
       cardIds: [],
-      modifierSlots: {}
+      modifierSlots: {},
+      cardSpeedPenalties: {}
     }
   ],
   modifiers: {
@@ -62,6 +63,7 @@ export const usePlayerStore = create<PlayerStore>()(
         modifiers: { ...state.modifiers, [id]: (state.modifiers[id] || 0) + count }
       })),
 
+      /** @deprecated 修饰珠不会被消耗，只用于数据修复 */
       removeModifier: (id, count = 1) => set((state) => ({
         modifiers: { ...state.modifiers, [id]: Math.max(0, (state.modifiers[id] || 0) - count) }
       })),
@@ -132,7 +134,8 @@ export const usePlayerStore = create<PlayerStore>()(
           id: `deck_${Date.now()}`,
           name,
           cardIds: [],
-          modifierSlots: {}
+          modifierSlots: {},
+          cardSpeedPenalties: {}
         };
         return { decks: [...state.decks, newDeck] };
       }),
@@ -147,22 +150,65 @@ export const usePlayerStore = create<PlayerStore>()(
       })),
 
       updateDeck: (deckId, cardIds, modifierSlots) => set((state) => ({
-        decks: state.decks.map(d => d.id === deckId ? { 
-            ...d, 
-            cardIds, 
-            modifierSlots: modifierSlots || d.modifierSlots 
-        } : d)
+        decks: state.decks.map(d => {
+          if (d.id !== deckId) return d;
+          
+          // Calculate speed penalties for duplicate cards
+          const cardCounts: Record<string, number> = {};
+          const penalties: Record<string, number> = {};
+          
+          cardIds.forEach((cardId: string, idx: number) => {
+            const count = (cardCounts[cardId] || 0) + 1;
+            cardCounts[cardId] = count;
+            
+            let penalty = 0;
+            if (count === 2) {
+              penalty = 9; // 0.9 x10
+            } else if (count >= 3) {
+              penalty = 28; // 2.8 x10
+            }
+            
+            penalties[idx.toString()] = penalty;
+          });
+          
+          return {
+            ...d,
+            cardIds,
+            modifierSlots: modifierSlots || d.modifierSlots,
+            cardSpeedPenalties: penalties
+          };
+        })
       })),
 
       importDeck: (deck) => set((state) => {
         // Validate deck structure
         if (!deck || !Array.isArray(deck.cardIds)) return state;
         
+        // Calculate speed penalties for duplicate cards
+        const cardIds = deck.cardIds || [];
+        const cardCounts: Record<string, number> = {};
+        const penalties: Record<string, number> = {};
+        
+        cardIds.forEach((cardId: string, idx: number) => {
+          const count = (cardCounts[cardId] || 0) + 1;
+          cardCounts[cardId] = count;
+          
+          let penalty = 0;
+          if (count === 2) {
+            penalty = 9; // 0.9 x10
+          } else if (count >= 3) {
+            penalty = 28; // 2.8 x10
+          }
+          
+          penalties[idx.toString()] = penalty;
+        });
+        
         // Create new deck with new ID
         const newDeck = {
             ...deck,
             id: `deck_imported_${Date.now()}`,
-            name: deck.name || `Imported Deck`
+            name: deck.name || `Imported Deck`,
+            cardSpeedPenalties: penalties
         };
         
         // Check limits

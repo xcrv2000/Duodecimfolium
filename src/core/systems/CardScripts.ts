@@ -32,14 +32,9 @@ export const CardScripts: Record<string, CardScript> = {
   charge: (loop, source, targets) => {
       const target = targets[0] || source;
       
-      const buff: UnitBuff = {
+      const buff = {
           id: 'charge',
-          name: '蓄势',
-          description: '下一次攻击造成的伤害翻倍，且速度+1。',
-          duration: 1, // Until turn end
-          stackRule: 'nonStackable',
           level: 1,
-          type: 'buff',
           onAttack: (unit, _t, damage, _battle) => {
               // Double damage
               // Remove buff manually (consume)
@@ -47,8 +42,8 @@ export const CardScripts: Record<string, CardScript> = {
               if (idx !== -1) unit.buffs.splice(idx, 1);
               return damage * 2;
           }
-      };
-      loop.addUnitBuff(target, buff);
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, buff as UnitBuff);
   },
   
   // 4. Stab (刺)
@@ -58,16 +53,11 @@ export const CardScripts: Record<string, CardScript> = {
       loop.dealDamage(source, target, 3, 'physical');
       
       // Bleed Logic is handled in BattleLoop.dealDamage, we just apply the buff.
-      const bleed: UnitBuff = {
+      const bleed = {
           id: 'bleed',
-          name: '流血',
-          description: '受到未被护甲抵消的物理伤害增加{level}点。',
-          duration: 1,
-          stackRule: 'stackable',
-          level: 1,
-          type: 'debuff'
-      };
-      loop.addUnitBuff(target, bleed);
+          level: 1
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, bleed as UnitBuff);
   },
   
   // 5. Slash (斩)
@@ -112,29 +102,19 @@ export const CardScripts: Record<string, CardScript> = {
       if (!target) return;
       loop.dealDamage(source, target, 5, 'physical');
       
-      const stun: UnitBuff = {
+      const stun = {
           id: 'stun',
-          name: '眩晕',
-          description: '下回合所有卡牌速度+{level}。',
-          duration: 2, // Current + Next
-          stackRule: 'nonStackable',
-          level: 20, // +2.0 Speed (x10)
-          type: 'debuff'
-      };
-      loop.addUnitBuff(target, stun);
+          level: 2 // +2.0 Speed (x10)
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, stun as UnitBuff);
   },
   
   // 10. Concentrate (凝)
   concentrate: (loop, source, targets) => {
       const target = targets[0] || source;
-      const focus: UnitBuff = {
+      const focus = {
           id: 'focus',
-          name: '专注',
-          description: '下一次攻击伤害增加50%。',
-          duration: 1,
-          stackRule: 'nonStackable',
           level: 1,
-          type: 'buff',
           onAttack: (unit, _t, dmg) => {
               // +50%
               // Remove self
@@ -142,8 +122,8 @@ export const CardScripts: Record<string, CardScript> = {
               if (idx !== -1) unit.buffs.splice(idx, 1);
               return Math.floor(dmg * 1.5);
           }
-      };
-      loop.addUnitBuff(target, focus);
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, focus as UnitBuff);
   },
 
   // 11. Fireball (火球)
@@ -207,7 +187,7 @@ export const CardScripts: Record<string, CardScript> = {
       const targetCards = target.cards.filter(c => 
           c.currentSpeed10 !== null && 
           c.currentSpeed10 > (currentTick * 10) &&
-          c.tags.includes('攻击')
+          c.tagsRuntime?.includes('攻击')
       );
       
       targetCards.forEach(c => {
@@ -299,11 +279,13 @@ export const CardScripts: Record<string, CardScript> = {
           stackRule: 'nonStackable',
           level: 1,
           type: 'debuff',
-          onReceiveDamage: (_unit, _src, dmg, _state) => {
-              // We need to know damage type. onReceiveDamage signature update needed?
-              // For now assuming we can't distinguish type in buff easily without update.
-              // I will update BattleLoop to pass type to onReceiveDamage.
-              return dmg; 
+          onReceiveDamage: (_unit, damageInfo, _state) => {
+              // Only double magical damage
+              const hasMagicTag = damageInfo.tags.some(tag => tag.includes('魔法'));
+              if (hasMagicTag) {
+                  return damageInfo.amount * 2;
+              }
+              return damageInfo.amount;
           }
       };
       loop.addUnitBuff(target, debuff);
@@ -322,7 +304,15 @@ export const CardScripts: Record<string, CardScript> = {
           duration: 1,
           stackRule: 'nonStackable',
           level: 1,
-          type: 'debuff'
+          type: 'debuff',
+          onReceiveDamage: (_unit, damageInfo, _state) => {
+              // Only double physical damage (not magical)
+              const hasMagicTag = damageInfo.tags.some(tag => tag.includes('魔法'));
+              if (!hasMagicTag && damageInfo.type === 'physical') {
+                  return damageInfo.amount * 2;
+              }
+              return damageInfo.amount;
+          }
       };
       loop.addUnitBuff(target, debuff);
   },
@@ -498,7 +488,7 @@ export const CardScripts: Record<string, CardScript> = {
       const nextCard = target.cards.find(c => 
           c.currentSpeed10 !== null && 
           c.currentSpeed10 > (currentTick * 10) &&
-          c.tags.includes('攻击')
+          c.tagsRuntime?.includes('攻击')
       );
       
       if (nextCard) {

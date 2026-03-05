@@ -1,8 +1,18 @@
-import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff } from '../domain/Battle';
+import { BattleState, BattleUnit, BattleLogEntry, UnitBuff, CardInstanceBuff, CardFactoryBuff, DamageInfo } from '../domain/Battle';
 import { CardInstance } from '../domain/Card';
 import { CardScripts } from './CardScripts';
 
 import { RNG } from '../../utils/rng';
+import buffsData from '../../data/buffs.json';
+
+interface BuffDefinition {
+  id: string;
+  name: string;
+  description: string;
+  type: 'buff' | 'debuff';
+  stackRule: 'stackable' | 'nonStackable';
+  duration: number;
+}
 
 export class BattleLoop {
   private state: BattleState;
@@ -12,6 +22,11 @@ export class BattleLoop {
   constructor(state: BattleState, rng: RNG) {
     this.state = state;
     this.rng = rng;
+  }
+
+  // Helper function to format buff descriptions with level
+  private formatBuffDescription(template: string, level: number): string {
+    return template.replace(/{level}/g, level.toString());
   }
 
   public spawnCard(source: BattleUnit, cardId: string, baseSpeed10: number): void {
@@ -56,9 +71,11 @@ export class BattleLoop {
           permanentSpeedModifier: 0,
           ownerId: source.id,
           modifiers: [],
+          factoryBuffs: [],
           buffs: []
       };
       
+      this.initializeCardTags(newCard);
       source.cards.push(newCard);
       this.recalculateCardSpeed(source, newCard);
       this.log(source, null, `Spawned ${newCard.name}!`, 'info');
@@ -81,10 +98,46 @@ export class BattleLoop {
       return this.state.units;
   }
 
+  // --- Helper Methods ---
+
+  private initializeCardTags(card: CardInstance): void {
+      // === 初始化卡的运行时标签 ===
+      // tagsRuntime = factory.tags（基础标签）+ 修饰珠添加的标签
+      // 
+      // 基础标签来自卡的定义（例如 "攻击/物理", "辅助", "防御"）
+      // 修饰珠可以添加额外标签（例如火灵珠添加 "魔法/火"）
+      card.tagsRuntime = [...(card.factory.tags || [])];
+      
+      // 应用 attr_add 修饰珠效果
+      card.modifiers.forEach(mod => {
+          if (mod.effectId === 'attr_add') {
+              // 根据 modifier.value 添加相应的标签路径
+              if (mod.value === 'fire') {
+                  if (!card.tagsRuntime!.includes('魔法/火')) {
+                      card.tagsRuntime!.push('魔法/火');
+                  }
+              } else if (mod.value === 'ice') {
+                  if (!card.tagsRuntime!.includes('魔法/冰')) {
+                      card.tagsRuntime!.push('魔法/冰');
+                  }
+              } else if (mod.value === 'rock') {
+                  if (!card.tagsRuntime!.includes('物理/岩')) {
+                      card.tagsRuntime!.push('物理/岩');
+                  }
+              }
+          }
+      });
+  }
+
   // --- Main Loop Methods ---
 
   public nextTick(): BattleState {
     if (this.state.isOver) return this.state;
+
+    // 如果是新回合开始（tick == 0），调用onTurnStart回调
+    if (this.state.tick === 0) {
+      this.startTurn();
+    }
 
     this.processTick(this.state.tick);
 
@@ -98,6 +151,46 @@ export class BattleLoop {
 
   public executeStartOfBattleEffects(): void {
     this.log(null, null, "--- 战斗开始 ---", 'info');
+    
+    // 0. Apply Duplicate Card Speed Penalty
+    // "同名卡第2张速度+0.9，第3张速度+2.8"
+    this.state.units.forEach(unit => {
+        const cardNameCount = new Map<string, number>();
+        
+        unit.cards.forEach(card => {
+            const count = cardNameCount.get(card.factory.id) ?? 0;
+            cardNameCount.set(card.factory.id, count + 1);
+            
+            if (count === 1) {
+                // Second occurrence: +0.9 speed = +9 speed10
+                card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 9;
+                this.log(unit, null, `${card.factory.name} (第2张): 速度惩罚 +0.9`, 'info');
+            } else if (count === 2) {
+                // Third occurrence: +2.8 speed = +28 speed10
+                card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 28;
+                this.log(unit, null, `${card.factory.name} (第3张): 速度惩罚 +2.8`, 'info');
+            }
+        });
+    });
+
+    // 0.5. Initialize Card Tags (including modifier-added tags) and Factory Buffs
+    this.state.units.forEach(unit => {
+        unit.cards.forEach(card => {
+            this.initializeCardTags(card);
+            
+            // Initialize factoryBuffs if not already present
+            if (!card.factoryBuffs) {
+                card.factoryBuffs = [];
+            }
+            
+            // Apply baseline factory buffs from CardFactory definition
+            if (card.factory.baselineFactoryBuffs) {
+                card.factory.baselineFactoryBuffs.forEach(buff => {
+                    this.addCardFactoryBuff(card, buff);
+                });
+            }
+        });
+    });
     
     // 1. Initialize Speeds & Apply NPC Bonus
     this.state.units.forEach(unit => {
@@ -125,7 +218,7 @@ export class BattleLoop {
     this.state.units.forEach(unit => {
       unit.cards.forEach(card => {
         // Handle Whetstone separately
-        if (card.scriptId === 'whetstone') {
+        if (card.factory.scriptId === 'whetstone') {
              if (isEliteOrBoss) {
                  this.executeCard(unit, card);
              }
@@ -133,7 +226,7 @@ export class BattleLoop {
         }
         
         // Skip Ration (handled at end)
-        if (card.scriptId === 'ration') return;
+        if (card.factory.scriptId === 'ration') return;
         
         // Execute other passives
         if (card.baseSpeed10 === null) {
@@ -147,25 +240,56 @@ export class BattleLoop {
     this.state.turn++;
     this.state.tick = 0;
     
-    // Clear armor, update buffs
+    // === 回合结束结算流程 ===
+    // 这个阶段结算本回合残留的状态并准备下一回合
+    // 
+    // 执行顺序（确保buff生命周期与速度计算一致）：
+    // 1. duration递减
+    // 2. buff清除（duration <= 0）
+    // 3. 重新计算速度（应用仍然存活的buff）
+    // 
+    // 【例：眩晕buff的完整生命周期】
+    // T1回合：【摔】卡执行 → addUnitBuff({id: 'stun', duration: 2, level: 2})
+    //        duration=2时，recalculateCardSpeed检查`buff.duration === 1`不满足 → 不应用速度修正
+    // T1回合结束：duration递减 2→1，buff保留（duration > 0）→ 下一回合应用速度修正
+    // T2回合：recalculateCardSpeed检查`buff.duration === 1`满足 → 应用速度修正(+2.0)
+    // T2回合结束：duration递减 1→0，buff删除（duration <= 0）→ 速度修正解除
     this.state.units.forEach(unit => {
-      unit.armor = 0;
-      
-      // Update Unit Buffs
+      // 1. 结算单位 buff（UnitBuff）
+      // 【顺序很重要】先触发回调，再递减duration
       unit.buffs.forEach(buff => {
         if (buff.onTurnEnd) buff.onTurnEnd(unit, this.state);
-        buff.duration--;
+        buff.duration--;  // ← 关键：在这里递减，之后的recalculateCardSpeed会读到新的duration值
       });
+      
+      // 清除已过期的单位 buff（duration <= 0）
+      // 包括护甲buff在内的所有buff都会在此处根据duration自动清除
       unit.buffs = unit.buffs.filter(b => b.duration > 0);
       
-      // Reset Card Instances (Clear Buffs, Recalculate Speed)
+      // 3. 重置卡实例并重算速度
+      // CardInstanceBuff清除（这些是本回合临时buff，如"下一张卡速度+X"）
+      // 然后重新计算速度，此时：
+      //   - unit.buffs已更新（duration已递减，已删除多余的）
+      //   - 新的recalculateCardSpeed会读到最新的buff状态
       unit.cards.forEach(card => {
-          card.buffs = []; // Clear round-based buffs
-          this.recalculateCardSpeed(unit, card);
+          card.buffs = []; // Clear CardInstanceBuffs (清除本回合临时buff)
+          this.recalculateCardSpeed(unit, card); // 重新计算速度，应用仍然存活的UnitBuff
       });
     });
 
     this.log(null, null, "--- 回合结束 ---", 'info');
+  }
+
+  private startTurn(): void {
+    // === 回合开始处理 ===
+    // 调用所有UnitBuff的onTurnStart回调
+    this.state.units.forEach(unit => {
+      unit.buffs.forEach(buff => {
+        if (buff.onTurnStart) {
+          buff.onTurnStart(unit, this.state);
+        }
+      });
+    });
   }
 
   private recalculateCardSpeed(unit: BattleUnit, card: CardInstance): void {
@@ -174,19 +298,47 @@ export class BattleLoop {
           return;
       }
       
-      let speed = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
+      // === 速度计算说明 ===
+      // 底层逻辑全部使用 speed10 单位（整数0-130）
+      // UI层显示时除以10得到玩家可见的速度（浮点0-13）
+      //
+      // speed10 = baseSpeed10 + permanentSpeedModifier + modifiers_speedMod + UnitBuffs + CardBuffs + deckPenalty
+      //
+      // 【单位转换规则】
+      // 玩家看到的速度值：         底层speed10：
+      // 0.1 → 1,   0.9 → 9,   2.0 → 20,   2.8 → 28
+      // （所有计算保留整数，避免浮点误差）
       
-      // Apply beads (modifiers)
-      // Assuming modifiers.value is numeric string or number.
-      // Need to convert to speed10 integer.
-      // Example: value "0.5" -> 5
+      // baseSpeed10 not null here, so start with a numeric speed
+      let speed: number | null = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
+
+      // we know speed is a number right now; later boundary checks may set it to null
+      let numericSpeed: number = speed as number;
+      
+      // === 应用修饰珠效果 ===
+      // 修饰珠系统支持两种效果：
+      // 1. speed_mod: 修改卡的速度 (微风珠 -0.5, 黑铁珠 +0.5)
+      // 2. attr_add: 添加属性标签 (火灵珠 "火", 冰灵珠 "冰", 岩灵珠 "岩")
+      //
+      // 速度修饰是在这里应用的，属性修饰在 initializeCardTags() 中应用
       if (card.modifiers) {
         card.modifiers.forEach(mod => {
             if (mod.effectId === 'speed_mod') {
                 const val = Number(mod.value);
                 if (!isNaN(val)) {
-                    speed += Math.round(val * 10);
+                    // value 在 modifiers.json 中是浮点数，需要转为 x10
+                    numericSpeed += Math.round(val * 10);
                 }
+            }
+            // attr_add 效果在 initializeCardTags() 中处理
+        });
+      }
+
+      // Apply CardFactoryBuffs
+      if (card.factoryBuffs) {
+        card.factoryBuffs.forEach(buff => {
+            if (buff.speedModification) {
+                numericSpeed += buff.speedModification;
             }
         });
       }
@@ -195,31 +347,48 @@ export class BattleLoop {
       if (card.buffs) {
         card.buffs.forEach(buff => {
             if (buff.speedModification) {
-                speed += buff.speedModification;
+                numericSpeed += buff.speedModification;
             }
         });
       }
 
       // Apply Unit Buffs that affect speed
-      // Charge: +10 speed (immediate)
-      // Stun: +Level speed (next turn only, i.e., duration === 1)
+      // Charge: +10 speed10 (immediate) → +1.0 speed
+      // Stun: +level*10 speed10 (next turn only, i.e., duration === 1) → speed increase by level
+      //
+      // 【眩晕】例：level=2 意味着目标卡速度+2.0，转换为speed10则为+20
       unit.buffs.forEach(buff => {
           if (buff.id === 'charge') {
-              speed += 10; // +1.0 speed
+              numericSpeed += 10; // +1.0 speed（蓄势：下一次攻击前加速1.0）
           }
+          // 【眩晕】在duration===1时才应用，此时buff已在上一个回合结束时由duration从2递减至1
           if (buff.id === 'stun' && buff.duration === 1) {
-              speed += buff.level;
+              numericSpeed += buff.level * 10; // ✅ FIX: 乘以10转换为speed10单位（level:2 → +20 speed10 → +2.0 speed）
           }
       });
       
       // Apply Deck Speed Penalty
-      speed += (card.deckSpeedPenalty || 0);
+      numericSpeed += (card.deckSpeedPenalty || 0);
       
-      // Ensure speed is not below 0
-      // "所有卡的减速效果，除非有额外描述，不应该将其减速至0以下。"
-      // speed 0 means it executes at tick 0.
-      // Negative speed is invalid in this system as tick starts at 0.
-      if (speed < 0) speed = 0;
+      // === 速度边界值处理 ===
+      // now assign back to speed variable so boundary logic can set null if needed
+      speed = numericSpeed;
+      // 
+      // 下限（<0）：根据战斗系统修正文档 §1.3
+      // "speed < 0 invalid" - 速度不能为负
+      // 含义：卡不能放在时间轴之前，minimum speed = 0（tick 0）
+      if (speed !== null && speed < 0) speed = 0;
+      
+      // 上限（≥130）：根据战斗系统修正文档 §1.3
+      // "speed ≥ 13 invalid" - 这里指的是 0.1 精度的速度值
+      // 约等于 currentSpeed10 >= 130（即 >= 13.0，超出时间轴范围）
+      // 含义：卡被加速过度，超出时间轴最大值 12.9，无法在战斗中触发
+      // 
+      // 处理方案：标记为"失效"，不会在 tick 循环中触发
+      // TODO: 在 UI 中显示失效卡，鼠标悬停告知理由
+      if (speed !== null && speed >= 130) {
+        speed = null; // 无效速度，不会被触发
+      }
       
       card.currentSpeed10 = speed;
   }
@@ -279,21 +448,21 @@ export class BattleLoop {
 
   private executeCard(source: BattleUnit, card: CardInstance): void {
     this.currentCard = card;
-    this.log(source, null, `${source.name} 发动了 ${card.name}!`, 'info', undefined, card.name);
+    this.log(source, null, `${source.name} 发动了 ${card.factory.name}!`, 'info', undefined, card.factory.name);
 
     // Find targets
     const targets = this.findTargets(source, card);
     
     // Execute Script
-    const script = CardScripts[card.scriptId];
+    const script = CardScripts[card.factory.scriptId];
     if (script) {
       try {
           // Check for Calm Mind buff on source
           const calmMindBuff = source.buffs.find(b => b.id === 'calm_mind');
-          const isMagicAttack = card.tags?.includes('魔法') && card.tags?.includes('攻击');
+          const isMagicAttack = card.tagsRuntime?.includes('魔法') && card.tagsRuntime?.includes('攻击');
 
           if (calmMindBuff && isMagicAttack) {
-              this.log(source, null, `触发气定神闲: ${card.name} 重复结算5次!`, 'buff');
+              this.log(source, null, `触发气定神闲: ${card.factory.name} 重复结算5次!`, 'buff');
               
               // Execute 5 times
               for(let i=0; i<5; i++) {
@@ -306,7 +475,7 @@ export class BattleLoop {
               const cardIdx = source.cards.findIndex(c => c.instanceId === card.instanceId);
               if (cardIdx !== -1) {
                   source.cards.splice(cardIdx, 1);
-                  this.log(source, null, `移除攻击卡: ${card.name}`, 'info');
+                  this.log(source, null, `移除攻击卡: ${card.factory.name}`, 'info');
               }
               
               // Remove the Calm Mind card from source deck (using sourceInstanceId from buff)
@@ -315,7 +484,7 @@ export class BattleLoop {
                   if (cmIdx !== -1) {
                       const cmCard = source.cards[cmIdx];
                       source.cards.splice(cmIdx, 1);
-                      this.log(source, null, `移除气定神闲卡: ${cmCard.name}`, 'info');
+                      this.log(source, null, `移除气定神闲卡: ${cmCard.factory.name}`, 'info');
                   }
               }
               
@@ -325,11 +494,11 @@ export class BattleLoop {
               script(this, source, targets);
           }
       } catch (e) {
-          console.error(`Error executing script ${card.scriptId}`, e);
-          this.log(source, null, `执行卡牌 ${card.name} 失败: ${e}`, 'info');
+          console.error(`Error executing script ${card.factory.scriptId}`, e);
+          this.log(source, null, `执行卡牌 ${card.factory.name} 失败: ${e}`, 'info');
       }
     } else {
-      this.log(source, null, `找不到脚本 ${card.scriptId}!`, 'info');
+      this.log(source, null, `找不到脚本 ${card.factory.scriptId}!`, 'info');
     }
 
     this.currentCard = null;
@@ -340,10 +509,10 @@ export class BattleLoop {
 
   private findTargets(source: BattleUnit, card: CardInstance): BattleUnit[] {
     // Targeting Logic
-    const isSupport = card.tags?.includes('辅助');
-    const isDefense = card.tags?.includes('防御');
+    const isSupport = card.tagsRuntime?.includes('辅助');
+    const isDefense = card.tagsRuntime?.includes('防御');
     
-    if (isSupport || isDefense || card.scriptId === 'concentrate') {
+    if (isSupport || isDefense || card.factory.scriptId === 'concentrate') {
         return [source];
     }
     
@@ -385,7 +554,7 @@ export class BattleLoop {
     this.state.units.forEach(unit => {
         if (unit.team === 'player' && !unit.isDead) {
              unit.cards.forEach(card => {
-                 if (card.scriptId === 'ration') {
+                 if (card.factory.scriptId === 'ration') {
                      const hpPercent = unit.hp / unit.maxHp;
                      if (hpPercent < 0.7) {
                          // Need to track usage. CardInstance is recreated per battle from BattleStore usually?
@@ -433,63 +602,56 @@ export class BattleLoop {
         }
     });
     
-    // Explicitly handle "Strength" buff if not handled by onAttack (or to be safe)
-    // Actually, we implemented onAttack in the Whetstone script.
-    // But let's verify if onAttack is called correctly.
-    // Yes, above loop calls it.
-    
-    // 2. Apply Target Buffs (onReceiveDamage)
-    target.buffs.forEach(buff => {
-        if (buff.onReceiveDamage) {
-            damage = buff.onReceiveDamage(target, source, damage, this.state);
-        }
-    });
-    
     // 3. Apply Armor (if physical)
-    // Assume Physical unless specified magical
+    // Use card.tagsRuntime to determine damage type (includes modifier-added tags)
     let effectiveType = type;
     
-    // Check for Magic Attribute (fire, ice, etc.)
-    // If card has attr_add modifiers, we might change damage type OR just add tags.
-    // For now, if "fire" or "ice", treat as magical for armor purposes?
-    // Docs say: "fire_orb: 攻击附加【魔法/火】属性"
-    // "rock_orb: 攻击附加【物理/冰】属性" (Weird, but okay. Rock usually Physical.)
-    // "ice_orb: 攻击附加【魔法/冰】属性"
+    const cardTags = this.currentCard?.tagsRuntime || [];
+    // Check if card has magic tags
+    const hasMagicTag = cardTags.some(tag => tag.includes('魔法'));
     
-    // Logic: 
-    // If base type is physical:
-    //   - fire_orb -> adds magic -> mixed? Armor applies?
-    //   - rock_orb -> adds physical/ice -> still physical -> Armor applies.
-    //   - ice_orb -> adds magic/ice -> mixed?
-    
-    // Simplified Logic for now:
-    // If ANY modifier makes it 'Magical' (Fire, Ice), we treat as Magical for Armor bypass?
-    // BUT Rock is 'Physical/Ice'.
-    // Let's check the modifier values.
-    const modifiers = this.currentCard?.modifiers || [];
-    
-    if (modifiers.some(m => m.effectId === 'attr_add' && (m.value === 'fire' || m.value === 'ice'))) {
+    if (hasMagicTag && type === 'physical') {
+        // Mixed damage - treat as magical for armor purposes
         effectiveType = 'magical';
+    } else if (cardTags.some(tag => tag === '物理/岩')) {
+        // Rock explicitly marked as physical
+        effectiveType = 'physical';
     }
-    // Rock is Physical/Ice, so it stays Physical (Armor works).
     
     let unmitigated = false;
     if (effectiveType === 'physical') {
-      if (target.armor > 0) {
-        const armorDamage = Math.min(target.armor, damage);
-        target.armor -= armorDamage;
+      const armorBuff = target.buffs.find(b => b.id === 'armor');
+      if (armorBuff && armorBuff.level > 0) {
+        const armorDamage = Math.min(armorBuff.level, damage);
+        armorBuff.level -= armorDamage;
         damage -= armorDamage;
         this.log(source, target, `护甲吸收了 ${armorDamage} 点伤害。`, 'info');
+        // Remove armor buff if depleted
+        if (armorBuff.level <= 0) {
+          const idx = target.buffs.findIndex(b => b.id === 'armor');
+          if (idx !== -1) target.buffs.splice(idx, 1);
+        }
       }
-      // If damage remains (or armor was 0), it pierced armor partially?
-      // Bleed usually means "if HP damage is taken" or "if armor didn't block ALL"?
-      // "unmitigated by armor" usually means if armor was 0 or bypassed.
-      // But here: "target received unmitigated physical damage" -> "受到未被护甲抵消的..."
-      // This usually means the PORTION of damage that went through.
-      // "Every time target takes physical damage NOT blocked by armor..."
-      // So if damage > 0 after armor, it triggers.
       if (damage > 0) unmitigated = true;
     }
+    
+    // 2. Apply Target Buffs (onReceiveDamage)
+    // Build DamageInfo structure
+    const damageInfo: DamageInfo = {
+        amount: damage,
+        sourceUnit: source,
+        targetUnit: target,
+        type: effectiveType,
+        tags: cardTags
+    };
+    
+    target.buffs.forEach(buff => {
+        if (buff.onReceiveDamage) {
+            damage = buff.onReceiveDamage(target, damageInfo, this.state);
+            // Update damageInfo for next callbacks
+            damageInfo.amount = damage;
+        }
+    });
     
     // 4. Apply Bleed (Hardcoded mechanic)
     if (effectiveType === 'physical' && unmitigated) {
@@ -515,11 +677,24 @@ export class BattleLoop {
   }
 
   public addArmor(unit: BattleUnit, amount: number): void {
-    unit.armor += amount;
-    this.log(unit, unit, `获得了 ${amount} 点护甲。`, 'buff', amount);
+    const armorBuff = {
+      id: 'armor',
+      level: amount
+    } as Partial<UnitBuff>;
+    this.addUnitBuff(unit, armorBuff as UnitBuff);
   }
 
   public addUnitBuff(unit: BattleUnit, buff: UnitBuff): void {
+    // 从buffs.json查找定义，如果存在则使用定义中的信息
+    const buffDef = (buffsData as BuffDefinition[]).find(b => b.id === buff.id);
+    if (buffDef) {
+      buff.name = buffDef.name;
+      buff.description = this.formatBuffDescription(buffDef.description, buff.level);
+      buff.type = buffDef.type as 'buff' | 'debuff';
+      buff.stackRule = buffDef.stackRule as 'stackable' | 'nonStackable';
+      buff.duration = buffDef.duration; // 使用定义中的默认duration，除非明确指定
+    }
+
     if (buff.stackRule === 'stackable') {
         const existing = unit.buffs.find(b => b.id === buff.id);
         if (existing) {
@@ -546,6 +721,21 @@ export class BattleLoop {
     unit.buffs.push(buff);
     this.log(unit, unit, `获得Buff: ${buff.name} (等级 ${buff.level})`, 'buff');
     
+    // === Buff应用时机说明 ===
+    // 立即生效buff（如【蓄势】Charge）：
+    //   - duration通常为1，在添加时立即应用到下一张卡
+    //   - addUnitBuff后的recalculateCardSpeed会检查buff.id === 'charge'
+    //
+    // 延迟生效buff（如【眩晕】Stun）：
+    //   - duration为2（当前回合+下一回合）
+    //   - 添加时duration=2，recalculateCardSpeed检查`buff.duration === 1`不满足 → 暂不应用
+    //   - 回合结束时duration递减至1 → 下一回合时应用速度修正
+    //   - 这样设计确保【眩晕】的减速效果在"下一回合开始"时才应用
+    //
+    // 对于speed相关的buff，记住：
+    //   - 速度值都用speed10单位（0-130），需要乘以10
+    //   - buff.level是效果等级，应用时需确认单位转换（例：level=2意味着+2.0速度，应加20到numericSpeed）
+    
     // Recalculate speeds (e.g. for Charge)
     unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
   }
@@ -565,6 +755,7 @@ export class BattleLoop {
           id: 'speed_mod_dynamic',
           name: 'Speed Mod',
           description: '',
+          type: 'buff',
           duration: 1, // This turn
           stackRule: 'stackable',
           level: delta10,
@@ -576,6 +767,17 @@ export class BattleLoop {
   public addCardInstanceBuff(card: CardInstance, buff: CardInstanceBuff): void {
       if (!card.buffs) card.buffs = [];
       card.buffs.push(buff);
+      
+      const unit = this.state.units.find(u => u.id === card.ownerId);
+      if (unit) {
+          this.recalculateCardSpeed(unit, card);
+      }
+  }
+
+  // API: Add Card Factory Buff (持续到战斗结束)
+  public addCardFactoryBuff(card: CardInstance, buff: CardFactoryBuff): void {
+      if (!card.factoryBuffs) card.factoryBuffs = [];
+      card.factoryBuffs.push(buff);
       
       const unit = this.state.units.find(u => u.id === card.ownerId);
       if (unit) {

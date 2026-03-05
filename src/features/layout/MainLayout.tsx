@@ -75,14 +75,14 @@ const MainLayout: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen bg-slate-950 text-white overflow-hidden font-sans relative">
+    <div className="flex h-[100dvh] bg-slate-950 text-white overflow-hidden font-sans relative">
       {/* Sidebar */}
-      <div className="w-20 bg-slate-900 flex flex-col items-center py-4 border-r border-slate-800 z-10">
-        <div className="mb-8 p-2 bg-emerald-600 rounded-full">
+      <div className="fixed inset-x-0 bottom-0 h-16 bg-slate-900 border-t border-slate-800 z-20 md:static md:h-auto md:w-20 md:border-r md:border-t-0 md:flex md:flex-col md:items-center md:py-4">
+        <div className="mb-8 p-2 bg-emerald-600 rounded-full hidden md:block">
             <span className="font-bold text-xl">12</span>
         </div>
         
-        <nav className="flex flex-col gap-4 w-full">
+        <nav className="flex h-full w-full items-stretch justify-around md:h-auto md:flex-col md:justify-start md:gap-4">
           <NavItem icon={<Home />} label="主页" isActive={activeTab === 'home'} onClick={() => setActiveTab('home')} />
           <NavItem icon={<Swords />} label="地牢" isActive={activeTab === 'dungeon'} onClick={() => setActiveTab('dungeon')} />
           <NavItem icon={<Layers />} label="卡组" isActive={activeTab === 'collection'} onClick={() => setActiveTab('collection')} />
@@ -90,7 +90,7 @@ const MainLayout: React.FC = () => {
           <NavItem icon={<Book />} label="图鉴" isActive={activeTab === 'compendium'} onClick={() => setActiveTab('compendium')} />
           
           {isBattleRunning && (
-              <div className="mt-2 pt-2 border-t border-slate-800 w-full">
+              <div className="w-full md:mt-2 md:border-t md:border-slate-800 md:pt-2">
                  <NavItem 
                     icon={<PlayCircle className="text-red-500 animate-pulse" />} 
                     label="战斗中" 
@@ -100,16 +100,18 @@ const MainLayout: React.FC = () => {
               </div>
           )}
 
-          <div className="mt-auto">
+          <div className="md:mt-auto">
              <NavItem icon={<Settings />} label="设置" isActive={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           </div>
         </nav>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden pb-16 md:pb-0">
         {/* Header (Resources) */}
-        <div className="h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-end px-6 gap-6">
+        <div className="min-h-14 bg-slate-900 border-b border-slate-800 flex items-center justify-between px-3 py-2 sm:px-6">
+            <div className="text-slate-400 text-xs sm:text-sm">Duodecimfolium</div>
+            <div className="flex items-center gap-3 sm:gap-6">
             <div className="flex items-center gap-2 text-yellow-400 font-bold">
                 <span>Gold:</span>
                 <span>{gold}</span>
@@ -117,6 +119,7 @@ const MainLayout: React.FC = () => {
             <div className="flex items-center gap-2 text-purple-400 font-bold">
                 <span>Dust:</span>
                 <span>{dust}</span>
+            </div>
             </div>
         </div>
 
@@ -128,7 +131,7 @@ const MainLayout: React.FC = () => {
 
       {/* Notification Popup */}
       {notification && (
-          <div className="absolute top-4 right-4 w-80 bg-slate-800 border border-slate-700 shadow-xl rounded-lg overflow-hidden z-50 animate-in slide-in-from-right">
+          <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-auto sm:right-4 sm:w-80 bg-slate-800 border border-slate-700 shadow-xl rounded-lg overflow-hidden z-50 animate-in slide-in-from-right">
               <div className={`p-3 flex justify-between items-center ${notification.type === 'success' ? 'bg-emerald-600' : 'bg-red-600'}`}>
                   <span className="font-bold">{notification.title}</span>
                   <button onClick={() => setNotification(null)} className="hover:bg-white/20 rounded p-1">
@@ -159,18 +162,18 @@ const NavItem: React.FC<{ icon: React.ReactNode, label: string, isActive: boolea
   <button 
     onClick={onClick} 
     disabled={disabled}
-    className={`w-full p-3 flex flex-col items-center gap-1 transition-colors ${
-        isActive ? 'text-emerald-400 bg-slate-800/50 border-r-2 border-emerald-400' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+    className={`h-full min-w-0 px-1 py-1 flex flex-col items-center justify-center gap-0.5 text-[10px] transition-colors md:h-auto md:w-full md:gap-1 md:p-3 ${
+        isActive ? 'text-emerald-400 bg-slate-800/50 border-t-2 border-emerald-400 md:border-r-2 md:border-t-0' : 'text-slate-400 hover:text-white hover:bg-slate-800'
     } ${disabled ? 'opacity-30 cursor-not-allowed' : ''}`}
   >
     {icon}
-    <span className="text-[10px]">{label}</span>
+    <span className="text-[10px] leading-none">{label}</span>
   </button>
 );
 
 const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) => (
-    <div className="p-8 max-w-4xl mx-auto">
-        <h1 className="text-4xl font-bold mb-6 text-emerald-400">十二叶草 (Duodecimfolium)</h1>
+    <div className="p-4 sm:p-6 md:p-8 max-w-4xl mx-auto">
+        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-6 text-emerald-400">十二叶草 (Duodecimfolium)</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="bg-slate-800 p-6 rounded-lg border border-slate-700 hover:border-emerald-500 cursor-pointer transition-all group" onClick={() => onNavigate('dungeon')}>
@@ -190,13 +193,32 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
         </div>
 
         <div className="mt-8 p-4 bg-slate-900/50 rounded border border-slate-800">
-            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.0)</h3>
+            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.3)</h3>
             <ul className="list-disc list-inside text-sm text-slate-400 mb-4">
+                <li>手机适配</li>
+                <li></li>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.2)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
+                <li>buff重构</li>
+                <li></li>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.1)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
+                <li>大重构！</li>
+                <li></li>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.0)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>新地牢：魔法学院来客</li>
                 <li>新卡包：剑与魔法（30+ 新卡牌）</li>
                 <li>新增修饰珠系统：火灵珠、冰灵珠、岩灵珠</li>
                 <li>战斗系统重构：基于 0.1 精度的动态时间轴</li>
                 <li>新增状态效果：燃烧、冰冻、眩晕、剑油等</li>
+                <li></li>
             </ul>
 
             <h3 className="font-bold text-slate-500 mb-2 text-xs">历史版本 (v0.1.0)</h3>
@@ -204,6 +226,7 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
                 <li>基础战斗系统实装</li>
                 <li>训练场地牢开放</li>
                 <li>基础剑术卡包上架</li>
+                <li></li>
             </ul>
         </div>
     </div>
