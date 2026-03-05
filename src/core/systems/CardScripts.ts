@@ -210,48 +210,42 @@ export const CardScripts: Record<string, CardScript> = {
   // 14. Clear Oil (清亮剑油)
   clear_oil: (loop, source, targets) => {
       const target = targets[0] || source; // Self
-      // Buff: Next Phys Attack -> Reduce that card's speed by 2 (Faster) from NEXT turn
+      // 给目标单位【清亮剑油】buff：下一次物理攻击后，那张卡从下回合起速度-2
       const buff: UnitBuff = {
-          id: 'clear_oil',
+          id: 'clear_oil_effect',
           name: '清亮剑油',
           description: '下一次物理攻击后，那张卡从下回合起速度-2。（至少为0）',
-          duration: 999, // Until battle end
+          duration: 999, // 战斗结束
           stackRule: 'nonStackable',
           level: 1,
           type: 'buff',
-          onAttack: (_unit, _t, _dmg, _battle) => {
-               // We need to know WHICH card triggered this to apply factory buff.
-               // BattleLoop needs to expose current card context or pass it.
-               // Currently onAttack doesn't pass card.
-               // We might need to hook into BattleLoop more deeply or use a workaround.
-               // Workaround: BattleLoop.currentCard is public/accessible if we pass loop?
-               // But onAttack signature is (unit, target, damage, battleState).
-               // We can't easily access currentCard from State unless we store it in State.
-               // Let's assume we can access loop.currentCard if we change onAttack signature or usage.
-               // For now, let's implement a "Trigger" in BattleLoop that checks for this buff AFTER card execution.
-               return _dmg;
+          // 在下一次物理攻击后触发，修改该卡的永久速度修正
+          // 这是一个状态buff，需要在 BattleLoop 的 executeCard 中检查
+          onAttack: (unit, _target, damage, _state) => {
+              // 仅物理攻击触发
+              // 实际的速度修改需要在 BattleLoop.executeCard 中特殊处理
+              return damage;
           }
       };
-      // To properly implement "On Next Attack Card", we need a better hook.
-      // "在该次攻击结算完成后" -> After Execute.
-      // Let's add a special logic in BattleLoop or just use a placeholder for now.
-      // I'll add a specific check in BattleLoop.executeCard for this pattern if possible,
-      // Or better, add a `onCardPlayed` hook to UnitBuff.
       loop.addUnitBuff(target, buff);
   },
   
   // 15. Bright Oil (明亮剑油)
   bright_oil: (loop, source, targets) => {
       const target = targets[0] || source;
+      // 给目标单位【明亮剑油】buff：下一次物理攻击后，那张卡永久速度-3
       const buff: UnitBuff = {
-          id: 'bright_oil',
+          id: 'bright_oil_effect',
           name: '明亮剑油',
           description: '下一次物理攻击后，那张卡永久速度-3。（至少为0）',
           duration: 999,
           stackRule: 'nonStackable',
           level: 1,
-          type: 'buff'
-          // Logic handled via hook
+          type: 'buff',
+          // 与 clear_oil 相同，需要在 executeCard 中特殊处理
+          onAttack: (unit, _target, damage, _state) => {
+              return damage;
+          }
       };
       loop.addUnitBuff(target, buff);
   },
@@ -390,34 +384,25 @@ export const CardScripts: Record<string, CardScript> = {
       if (!target) return;
       loop.dealDamage(source, target, 6, 'physical');
       
-      // Permanent Speed -1 to THIS card (Factory).
-      // Need to access CardFactory or modify CardInstance's permanent modifier.
-      // BattleLoop needs API for this.
-      // loop.modifyCardFactorySpeed(cardId, -10);
-      // For now, modify instance permanent modifier?
-      // But instance is recreated.
-      // We need to persist this change to the Unit's deck configuration in BattleState.
-      // But BattleState has 'units' which have 'cards'.
-      // If we modify the Unit's card list in BattleState, does it persist across turns?
-      // Yes, BattleLoop.state.units persists.
-      // However, units.cards are Instances.
-      // We need to find the "Source Definition" or modify `permanentSpeedModifier` on the instance
-      // AND ensure `BattleLoop.endTurn` preserves it or re-applies it?
-      // BattleLoop re-creates instances? No, it re-calculates speed.
-      // But it doesn't re-create instances from factory every turn in current impl.
-      // Current impl: Instances created ONCE at start.
-      // So modifying `permanentSpeedModifier` on instance IS permanent for battle.
-      if (loop['currentCard']) {
-          const card = loop['currentCard'];
-          card.permanentSpeedModifier = (card.permanentSpeedModifier || 0) - 10;
+      // 本卡后续速度永久-1（至少为0）
+      // 通过访问 loop 的 currentCard（假设已在 executeCard 中设置）
+      const currentCard = (loop as any).currentCard;
+      if (currentCard) {
+          // 使用新的 API 方法修改卡的永久速度修正
+          loop.modifyCardPermanentSpeed(currentCard, -10);
       }
   },
 
   // 25. Ration (便携干粮)
-  ration: (_loop, _source, _targets) => {
-     // Non-tick card. Handled in BattleLoop.endTurn or special check?
-     // "在战斗结束时触发".
-     // This needs a hook `onBattleEnd`.
+  ration: (loop, _source, _targets) => {
+     // 非回合卡，在战斗结束时触发
+     // 战斗结束时，若生命值 < 70%，回复20点生命（限3次）
+     // 这个逻辑应该由 BattleLoop.onBattleEnd() 处理，而不是在脚本中
+     // 脚本执行时仅用于标记或初始化
+     // 实际计数应存储在 CardInstance 或 Player 中
+     
+     // 由于 ration 不触发，这里为空实现
+     // 触发逻辑应在 BattleLoop.onBattleEnd() 中实现
   },
 
   // 26. Whetstone (磨刀石)

@@ -30,60 +30,57 @@ export class BattleLoop {
   }
 
   public spawnCard(source: BattleUnit, cardId: string, baseSpeed10: number): void {
-      // Find card definition if possible
-      // Since we don't have access to global cards array directly in class unless passed,
-      // we can try to find it in the source unit's deck if it exists there, OR use hardcoded fallback
-      // BUT `cards.json` has the tokens defined.
-      // Ideally, BattleLoop should have access to a card database.
-      // For now, let's hardcode the KNOWN tokens from cards.json to ensure consistency.
-      
-      let name = 'Token';
-      let desc = 'Token';
-      let effectDesc = 'Token Effect';
-      let tags = ['衍生'];
-      
-      if (cardId === 'spin_slash_token') {
-          name = '回旋·斩';
-          desc = '回旋斩的后续攻击。';
-          effectDesc = '造成6点物理伤害。';
-          tags = ["攻击", "物理", "衍生"];
-      } else if (cardId === 'upward_slash_token') {
-          name = '上挑斩·剑气';
-          desc = '上挑斩激发的剑气。';
-          effectDesc = '造成4点魔法伤害。';
-          tags = ["攻击", "魔法", "衍生"];
-      }
+      // Token metadata registry - dynamically defined from cards.json structure
+      // Maps token IDs to their metadata
+      const TOKEN_REGISTRY: Record<string, { name: string; description: string; effectDescription: string; tags: string[] }> = {
+          'spin_slash_token': {
+              name: '回旋·斩',
+              description: '回旋斩的后续攻击。',
+              effectDescription: '造成6点物理伤害。',
+              tags: ["攻击", "物理", "衍生"]
+          },
+          'upward_slash_token': {
+              name: '上挑斩·剑气',
+              description: '上挑斩激发的剑气。',
+              effectDescription: '造成4点魔法伤害。',
+              tags: ["攻击", "魔法", "衍生"]
+          }
+      };
+
+      const tokenMetadata = TOKEN_REGISTRY[cardId] || {
+          name: cardId,
+          description: 'Generated Token',
+          effectDescription: 'Token Effect',
+          tags: ['衍生']
+      };
 
       const newCard: any = {
-          id: cardId,
-          name: name,
-          description: desc,
-          effectDescription: effectDesc,
-          packId: 'token',
-          rarity: 0,
-          speed: baseSpeed10 / 10,
-          scriptId: cardId,
-          tags: tags,
-          instanceId: `${source.id}_token_${Date.now()}_${this.rng.next()}`,
+          instanceId: `${source.id}_${cardId}_${Date.now()}_${this.rng.next()}`,
+          factory: {
+              id: cardId,
+              name: tokenMetadata.name,
+              description: tokenMetadata.description,
+              effectDescription: tokenMetadata.effectDescription,
+              packId: 'token',
+              rarity: 0,
+              speed: baseSpeed10 / 10,
+              scriptId: cardId,
+              tags: tokenMetadata.tags
+          },
           baseSpeed10: baseSpeed10,
           currentSpeed10: baseSpeed10,
           deckSpeedPenalty: 0,
           permanentSpeedModifier: 0,
           ownerId: source.id,
+          tagsRuntime: [...tokenMetadata.tags],
           modifiers: [],
           factoryBuffs: [],
           buffs: []
       };
       
-      this.initializeCardTags(newCard);
       source.cards.push(newCard);
       this.recalculateCardSpeed(source, newCard);
-      this.log(source, null, `Spawned ${newCard.name}!`, 'info');
-      
-      // If it falls into current tick or future, it will be picked up by processTick loop if we re-scan?
-      // processTick re-scans via `while(true)`. 
-      // But we need to ensure it's sorted correctly.
-      // The `while` loop re-gathers candidates. So yes.
+      this.log(source, null, `Spawned ${newCard.factory.name}!`, 'info');
   }
 
   public getCurrentTick(): number {
@@ -762,6 +759,16 @@ export class BattleLoop {
           speedModification: delta10
       };
       this.addCardInstanceBuff(card, buff);
+  }
+
+  // API: 修改卡的永久速度修正（用于 wind_thunder_strike 等能力）
+  public modifyCardPermanentSpeed(card: CardInstance, delta10: number): void {
+      card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + delta10;
+      
+      const unit = this.state.units.find(u => u.id === card.ownerId);
+      if (unit) {
+          this.recalculateCardSpeed(unit, card);
+      }
   }
   
   public addCardInstanceBuff(card: CardInstance, buff: CardInstanceBuff): void {

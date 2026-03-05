@@ -145,15 +145,17 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
                   }
                   
                   return {
-                      ...cardDef,
+                      factory: cardDef,
                       instanceId: `${config.team}_c_${index}_${idx}`,
                       baseSpeed10: baseSpeed10,
                       currentSpeed10: null, // Will be calc'd
                       deckSpeedPenalty: penalty,
                       permanentSpeedModifier: npcSpeedMod,
                       ownerId: `${config.team}_${index}`,
+                      tagsRuntime: [...(cardDef.tags || [])],
                       modifiers: cardModifiers,
-                      buffs: []
+                      buffs: [],
+                      factoryBuffs: []
                   };
               }).filter((c: any) => c) as any[],
               buffs: [],

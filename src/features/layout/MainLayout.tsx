@@ -193,22 +193,28 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
         </div>
 
         <div className="mt-8 p-4 bg-slate-900/50 rounded border border-slate-800">
-            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.3)</h3>
+            <h3 className="font-bold text-slate-300 mb-2">更新日志 (v0.2.5)</h3>
             <ul className="list-disc list-inside text-sm text-slate-400 mb-4">
+                <li>0.2.5 完整重构</li>
+                <br></br>
+            </ul>
+
+            <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.3)</h3>
+            <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>手机适配，codex也不错</li>
-                <li></li>
+                <br></br>
             </ul>
 
             <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.2)</h3>
             <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>buff重构</li>
-                <li></li>
+                <br></br>
             </ul>
 
             <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.1)</h3>
             <ul className="list-disc list-inside text-xs text-slate-600">
                 <li>大重构！copilot也很好用！</li>
-                <li></li>
+                <br></br>
             </ul>
 
             <h3 className="font-bold text-slate-500 mb-2">更新日志 (v0.2.0)</h3>
@@ -218,7 +224,7 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
                 <li>新增修饰珠系统：火灵珠、冰灵珠、岩灵珠</li>
                 <li>战斗系统重构：基于 0.1 精度的动态时间轴</li>
                 <li>新增状态效果：燃烧、冰冻、眩晕、剑油等</li>
-                <li></li>
+                <br></br>
             </ul>
 
             <h3 className="font-bold text-slate-500 mb-2 text-xs">历史版本 (v0.1.0)</h3>
@@ -226,7 +232,7 @@ const HomeView: React.FC<{ onNavigate: (tab: Tab) => void }> = ({ onNavigate }) 
                 <li>基础战斗系统实装</li>
                 <li>训练场地牢开放</li>
                 <li>基础剑术卡包上架</li>
-                <li></li>
+                <br></br>
             </ul>
         </div>
     </div>
