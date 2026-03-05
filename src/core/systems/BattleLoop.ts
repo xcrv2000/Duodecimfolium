@@ -5,6 +5,15 @@ import { CardScripts } from './CardScripts';
 import { RNG } from '../../utils/rng';
 import buffsData from '../../data/buffs.json';
 
+interface BuffDefinition {
+  id: string;
+  name: string;
+  description: string;
+  type: 'buff' | 'debuff';
+  stackRule: 'stackable' | 'nonStackable';
+  duration: number;
+}
+
 export class BattleLoop {
   private state: BattleState;
   private currentCard: CardInstance | null = null;
@@ -668,21 +677,21 @@ export class BattleLoop {
   }
 
   public addArmor(unit: BattleUnit, amount: number): void {
-    const armorBuff: UnitBuff = {
+    const armorBuff = {
       id: 'armor',
       level: amount
-    };
-    this.addUnitBuff(unit, armorBuff);
+    } as Partial<UnitBuff>;
+    this.addUnitBuff(unit, armorBuff as UnitBuff);
   }
 
   public addUnitBuff(unit: BattleUnit, buff: UnitBuff): void {
     // 从buffs.json查找定义，如果存在则使用定义中的信息
-    const buffDef = buffsData.find(b => b.id === buff.id);
+    const buffDef = (buffsData as BuffDefinition[]).find(b => b.id === buff.id);
     if (buffDef) {
       buff.name = buffDef.name;
       buff.description = this.formatBuffDescription(buffDef.description, buff.level);
-      buff.type = buffDef.type;
-      buff.stackRule = buffDef.stackRule;
+      buff.type = buffDef.type as 'buff' | 'debuff';
+      buff.stackRule = buffDef.stackRule as 'stackable' | 'nonStackable';
       buff.duration = buffDef.duration; // 使用定义中的默认duration，除非明确指定
     }
 
@@ -746,6 +755,7 @@ export class BattleLoop {
           id: 'speed_mod_dynamic',
           name: 'Speed Mod',
           description: '',
+          type: 'buff',
           duration: 1, // This turn
           stackRule: 'stackable',
           level: delta10,

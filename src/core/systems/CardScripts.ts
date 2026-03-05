@@ -32,7 +32,7 @@ export const CardScripts: Record<string, CardScript> = {
   charge: (loop, source, targets) => {
       const target = targets[0] || source;
       
-      const buff: UnitBuff = {
+      const buff = {
           id: 'charge',
           level: 1,
           onAttack: (unit, _t, damage, _battle) => {
@@ -42,8 +42,8 @@ export const CardScripts: Record<string, CardScript> = {
               if (idx !== -1) unit.buffs.splice(idx, 1);
               return damage * 2;
           }
-      };
-      loop.addUnitBuff(target, buff);
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, buff as UnitBuff);
   },
   
   // 4. Stab (刺)
@@ -53,11 +53,11 @@ export const CardScripts: Record<string, CardScript> = {
       loop.dealDamage(source, target, 3, 'physical');
       
       // Bleed Logic is handled in BattleLoop.dealDamage, we just apply the buff.
-      const bleed: UnitBuff = {
+      const bleed = {
           id: 'bleed',
           level: 1
-      };
-      loop.addUnitBuff(target, bleed);
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, bleed as UnitBuff);
   },
   
   // 5. Slash (斩)
@@ -102,17 +102,17 @@ export const CardScripts: Record<string, CardScript> = {
       if (!target) return;
       loop.dealDamage(source, target, 5, 'physical');
       
-      const stun: UnitBuff = {
+      const stun = {
           id: 'stun',
           level: 2 // +2.0 Speed (x10)
-      };
-      loop.addUnitBuff(target, stun);
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, stun as UnitBuff);
   },
   
   // 10. Concentrate (凝)
   concentrate: (loop, source, targets) => {
       const target = targets[0] || source;
-      const focus: UnitBuff = {
+      const focus = {
           id: 'focus',
           level: 1,
           onAttack: (unit, _t, dmg) => {
@@ -122,8 +122,8 @@ export const CardScripts: Record<string, CardScript> = {
               if (idx !== -1) unit.buffs.splice(idx, 1);
               return Math.floor(dmg * 1.5);
           }
-      };
-      loop.addUnitBuff(target, focus);
+      } as Partial<UnitBuff>;
+      loop.addUnitBuff(target, focus as UnitBuff);
   },
 
   // 11. Fireball (火球)
