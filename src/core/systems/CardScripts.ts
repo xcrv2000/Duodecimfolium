@@ -500,7 +500,7 @@ export const CardScripts: Record<string, CardScript> = {
   },
 
   // New cards for pack 3
-  lakshir_ritual: (loop, source, targets) => {
+  lakshir_ritual: (loop, source, _targets) => {
     // Lose 12 HP (not damage, direct HP loss)
     loop.directHpChange(source, -12);
     // Gain 24 shield (armor)
