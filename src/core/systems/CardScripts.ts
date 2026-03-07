@@ -584,7 +584,10 @@ export const CardScripts: Record<string, CardScript> = {
       duration: -1,
       stackRule: 'stackable',
       level: 1,
-      type: 'debuff'
+      type: 'debuff',
+      onTurnEnd: (unit, _battle) => {
+        loop.directHpChange(unit, -1);
+      }
     };
     loop.addUnitBuff(target, scorchBuff);
   },
@@ -600,7 +603,10 @@ export const CardScripts: Record<string, CardScript> = {
       duration: -1,
       stackRule: 'stackable',
       level: 3,
-      type: 'debuff'
+      type: 'debuff',
+      onTurnEnd: (unit, _battle) => {
+        loop.directHpChange(unit, -3);
+      }
     };
     loop.addUnitBuff(target, scorchBuff);
   },

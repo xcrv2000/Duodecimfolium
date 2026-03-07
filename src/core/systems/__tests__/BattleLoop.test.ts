@@ -147,6 +147,46 @@ describe('BattleLoop', () => {
       // 简化的回合结束逻辑测试
       // 注：完整测试需要调用endTurn或相关方法
     });
+
+    it('duration=1 的 buff 应在回合结束后移除', () => {
+      const playerUnit = battleState.units[0];
+      const buff: UnitBuff = {
+        id: 'temp_buff',
+        name: '临时Buff',
+        description: '一回合后消失',
+        type: 'buff',
+        duration: 1,
+        stackRule: 'nonStackable',
+        level: 1
+      };
+
+      battleLoop.addUnitBuff(playerUnit, buff);
+      battleState.tick = 12;
+      battleLoop.nextTick();
+
+      expect(playerUnit.buffs.find((b) => b.id === 'temp_buff')).toBeUndefined();
+    });
+
+    it('duration=-1 的 buff 应跨回合保留', () => {
+      const playerUnit = battleState.units[0];
+      const buff: UnitBuff = {
+        id: 'persistent_buff',
+        name: '常驻Buff',
+        description: '战斗期间持续',
+        type: 'buff',
+        duration: -1,
+        stackRule: 'nonStackable',
+        level: 1
+      };
+
+      battleLoop.addUnitBuff(playerUnit, buff);
+      battleState.tick = 12;
+      battleLoop.nextTick();
+
+      const remained = playerUnit.buffs.find((b) => b.id === 'persistent_buff');
+      expect(remained).toBeDefined();
+      expect(remained?.duration).toBe(-1);
+    });
   });
 
   describe('卡速度计算', () => {

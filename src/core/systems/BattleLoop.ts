@@ -393,12 +393,15 @@ export class BattleLoop {
       // 【顺序很重要】先触发回调，再递减duration
       unit.buffs.forEach(buff => {
         if (buff.onTurnEnd) buff.onTurnEnd(unit, this.state);
-        buff.duration--;  // ← 关键：在这里递减，之后的recalculateCardSpeed会读到新的duration值
+        // duration < 0 视为战斗常驻，不自动递减
+        if (buff.duration >= 0) {
+          buff.duration--;  // ← 关键：在这里递减，之后的recalculateCardSpeed会读到新的duration值
+        }
       });
       
       // 清除已过期的单位 buff（duration <= 0）
       // 包括护甲buff在内的所有buff都会在此处根据duration自动清除
-      unit.buffs = unit.buffs.filter(b => b.duration > 0);
+      unit.buffs = unit.buffs.filter(b => b.duration > 0 || b.duration < 0);
       
       // 3. 重置卡实例并重算速度
       // CardInstanceBuff清除（这些是本回合临时buff，如"下一张卡速度+X"）
@@ -861,6 +864,8 @@ export class BattleLoop {
   }
 
   public addUnitBuff(unit: BattleUnit, buff: UnitBuff): void {
+    const hasExplicitDuration = typeof buff.duration === 'number';
+
     // 从buffs.json查找定义，如果存在则使用定义中的信息
     const buffDef = (buffsData as BuffDefinition[]).find(b => b.id === buff.id);
     if (buffDef) {
@@ -868,7 +873,9 @@ export class BattleLoop {
       buff.description = this.formatBuffDescription(buffDef.description, buff.level);
       buff.type = buffDef.type as 'buff' | 'debuff';
       buff.stackRule = buffDef.stackRule as 'stackable' | 'nonStackable';
-      buff.duration = buffDef.duration; // 使用定义中的默认duration，除非明确指定
+      if (!hasExplicitDuration) {
+        buff.duration = buffDef.duration; // 使用定义中的默认duration
+      }
     }
 
     if (buff.stackRule === 'stackable') {
