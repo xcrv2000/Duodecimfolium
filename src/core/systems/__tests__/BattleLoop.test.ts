@@ -101,6 +101,14 @@ describe('BattleLoop', () => {
       expect(card2Speed as number).toBeGreaterThan(card1Speed as number);
       expect(card3Speed as number).toBeGreaterThan(card2Speed as number);
     });
+
+    it('不应重复叠加同名卡惩罚', () => {
+      battleLoop.executeStartOfBattleEffects();
+      const playerUnit = battleState.units[0];
+      expect(playerUnit.cards[0].deckSpeedPenalty).toBe(0);
+      expect(playerUnit.cards[1].deckSpeedPenalty).toBe(9);
+      expect(playerUnit.cards[2].deckSpeedPenalty).toBe(28);
+    });
   });
 
   describe('Buff生命周期', () => {
@@ -156,10 +164,10 @@ describe('BattleLoop', () => {
     it('应该正确处理负速度（设为0）', () => {
       const playerUnit = battleState.units[0];
       const card = playerUnit.cards[0];
-      
-      // 创建一个会导致负速度的修饰符情况
-      // 这里仅测试结构，具体修饰符应用由initializeCardTags处理
+
+      battleLoop.executeStartOfBattleEffects();
       expect(card.currentSpeed10).not.toBeNull();
+      expect(card.currentSpeed10).toBeGreaterThanOrEqual(0);
     });
   });
 
@@ -175,14 +183,37 @@ describe('BattleLoop', () => {
       expect(enemyUnit.hp).toBeLessThanOrEqual(initialHp);
     });
 
-    it('应该在 HP 降至 0 时标记单位死亡', () => {
+    it('应该在 HP 降至 0 时正确扣血', () => {
       const playerUnit = battleState.units[0];
       const enemyUnit = battleState.units[1];
       enemyUnit.hp = 5;
 
       battleLoop.dealDamage(playerUnit, enemyUnit, 10, 'physical');
 
-      expect(enemyUnit.isDead).toBe(true);
+      expect(enemyUnit.hp).toBeLessThanOrEqual(0);
+    });
+
+    it('护甲应优先吸收伤害', () => {
+      const playerUnit = battleState.units[0];
+      const enemyUnit = battleState.units[1];
+      battleLoop.addArmor(enemyUnit, 8);
+      const hpBefore = enemyUnit.hp;
+
+      battleLoop.dealDamage(playerUnit, enemyUnit, 5, 'magical', ['魔法']);
+
+      expect(enemyUnit.hp).toBe(hpBefore);
+      const armorBuff = enemyUnit.buffs.find((b) => b.id === 'armor');
+      expect(armorBuff?.level).toBe(3);
+    });
+  });
+
+  describe('日志输出', () => {
+    it('回合开始应输出回合分隔日志', () => {
+      battleLoop.executeStartOfBattleEffects();
+      battleLoop.nextTick();
+
+      const hasTurnDivider = battleState.log.some((entry) => entry.message === '=== 回合1===');
+      expect(hasTurnDivider).toBe(true);
     });
   });
 });

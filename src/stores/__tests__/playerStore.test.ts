@@ -56,7 +56,7 @@ describe('playerStore', () => {
 
       const newStore = usePlayerStore.getState();
       expect(newStore.dust).toBe(initialDust); // 粉尘不变
-      expect(newStore.collection['thrust']).toBe(initialCount); // 卡牌数不变
+      expect(newStore.collection['thrust'] || 0).toBe(initialCount); // 卡牌数不变
     });
 
     it('应该拒绝合成（卡牌已满 3 张）', () => {

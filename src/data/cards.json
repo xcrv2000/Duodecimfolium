@@ -248,7 +248,7 @@
     "effectDescription": "下一次魔法攻击重复结算5次，随后移除该攻击卡和本卡。",
     "packId": "sword_and_magic",
     "rarity": 1,
-    "speed": 5,
+    "speed": 4,
     "scriptId": "calm_mind",
     "tags": ["辅助", "全力"]
   },
@@ -305,7 +305,7 @@
     "rarity": 3,
     "speed": 10,
     "scriptId": "moonlight_slash",
-    "tags": ["攻击", "物理", "魔法"]
+    "tags": ["攻击", "物理"]
   },
   {
     "id": "lakshir_ritual",
@@ -314,6 +314,7 @@
     "effectDescription": "失去12血，获得24护盾。",
     "packId": "pack_3_lakshir_ritual",
     "rarity": 3,
+    "maxCopies": 1,
     "speed": 2,
     "scriptId": "lakshir_ritual",
     "tags": []

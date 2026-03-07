@@ -19,6 +19,7 @@ export interface CardFactory {
   effectDescription: string; // 给玩家看的卡的效果文本
   packId: string; // 这张卡属于哪个卡包
   rarity: CardRarity; // 稀有度（卡包中的份数）
+  maxCopies?: number; // 单卡可携带上限，默认3
   speed: CardSpeed; // 基础速度 (0.1 精度，e.g. 2.1)
   scriptId: string; // 给系统看的卡的脚本 ID
   tags: string[]; // 属性标签 (e.g., "攻击/物理")

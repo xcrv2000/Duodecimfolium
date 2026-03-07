@@ -422,6 +422,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     if (!loop || isPaused || !state || state.isOver) return;
 
     const newState = loop.nextTick();
+    set({ state: newState });
     
     // Check for Battle End Trigger (Just happened)
     if (newState.isOver && !state.isOver) {
@@ -489,7 +490,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       }
     }
 
-    set({ state: newState });
   },
 
   togglePause: () => set(state => ({ isPaused: !state.isPaused })),

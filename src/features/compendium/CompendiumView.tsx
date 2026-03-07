@@ -226,8 +226,9 @@ const CompendiumView: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-4 pb-8">
                 {filteredCards.map(card => {
                     const count = collection[card.id] || 0;
+                    const maxCopies = card.maxCopies ?? 3;
                     const cost = getCraftingCost(card);
-                    const canCraft = dust >= cost && count < 3;
+                    const canCraft = dust >= cost && count < maxCopies;
                     
                     return (
                         <div key={card.id} className="flex flex-col gap-2 group relative">
@@ -238,7 +239,7 @@ const CompendiumView: React.FC = () => {
                             />
                             
                             {/* Crafting Button Overlay or Below */}
-                            {count < 3 && (
+                            {count < maxCopies && (
                                 <button 
                                     onClick={() => craftCard(card.id, cost)}
                                     disabled={!canCraft}
@@ -254,9 +255,9 @@ const CompendiumView: React.FC = () => {
                                     合成 ({cost})
                                 </button>
                             )}
-                            {count >= 3 && (
+                            {count >= maxCopies && (
                                 <div className="text-center text-xs text-emerald-500 font-bold py-1 bg-slate-900/50 rounded border border-emerald-900/30">
-                                    Max Limit
+                                    达到上限 ({maxCopies})
                                 </div>
                             )}
                         </div>

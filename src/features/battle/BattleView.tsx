@@ -8,7 +8,7 @@ import { getCardRarityBorderClass } from '../../utils/cardUtils';
 import { formatBuffDescription } from '../../utils/buffUtils';
 
 const BattleView: React.FC = () => {
-  const { state, tick, isPaused, togglePause, speedMultiplier, setSpeed, exitBattle, isLooping, toggleLoop, currentDungeonId, isBossStage } = useBattleStore();
+  const { state, tick, isPaused, togglePause, speedMultiplier, setSpeed, exitBattle, isLooping, toggleLoop, currentDungeonId, isBossStage, isReplayMode } = useBattleStore();
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const timerRef = useRef<number | null>(null);
 
@@ -60,7 +60,7 @@ const BattleView: React.FC = () => {
           </button>
           <button onClick={() => setSpeed(1)} className={`p-2 rounded ${speedMultiplier === 1 ? 'bg-blue-600' : 'hover:bg-slate-700'}`}>1x</button>
           
-          {isCleared && (
+          {(isCleared || isReplayMode) && (
             <>
               <button onClick={() => setSpeed(2)} className={`p-2 rounded ${speedMultiplier === 2 ? 'bg-blue-600' : 'hover:bg-slate-700'}`}><FastForward size={20} /></button>
               <button onClick={() => setSpeed(12)} className={`p-2 rounded ${speedMultiplier === 12 ? 'bg-blue-600' : 'hover:bg-slate-700'}`}><SkipForward size={20} /></button>

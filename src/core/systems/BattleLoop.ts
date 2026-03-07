@@ -160,11 +160,11 @@ export class BattleLoop {
             
             if (count === 1) {
                 // Second occurrence: +0.9 speed = +9 speed10
-                card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 9;
+              card.deckSpeedPenalty = 9;
                 this.log(unit, null, `${card.factory.name} (第2张): 速度惩罚 +0.9`, 'info');
             } else if (count === 2) {
                 // Third occurrence: +2.8 speed = +28 speed10
-                card.deckSpeedPenalty = (card.deckSpeedPenalty || 0) + 28;
+              card.deckSpeedPenalty = 28;
                 this.log(unit, null, `${card.factory.name} (第3张): 速度惩罚 +2.8`, 'info');
             }
         });
@@ -415,6 +415,8 @@ export class BattleLoop {
   }
 
   private startTurn(): void {
+    this.log(null, null, `=== 回合${this.state.turn}===`, 'info');
+
     // === 回合开始处理 ===
     // 调用所有UnitBuff的onTurnStart回调
     this.state.units.forEach(unit => {
@@ -785,22 +787,20 @@ export class BattleLoop {
         effectiveType = 'physical';
     }
     
-    let unmitigated = false;
-    if (effectiveType === 'physical') {
-      const armorBuff = target.buffs.find(b => b.id === 'armor');
-      if (armorBuff && armorBuff.level > 0) {
-        const armorDamage = Math.min(armorBuff.level, damage);
-        armorBuff.level -= armorDamage;
-        damage -= armorDamage;
-        this.log(source, target, `护甲吸收了 ${armorDamage} 点伤害。`, 'info');
-        // Remove armor buff if depleted
-        if (armorBuff.level <= 0) {
-          const idx = target.buffs.findIndex(b => b.id === 'armor');
-          if (idx !== -1) target.buffs.splice(idx, 1);
-        }
+    const armorBuff = target.buffs.find(b => b.id === 'armor');
+    if (armorBuff && armorBuff.level > 0) {
+      const armorDamage = Math.min(armorBuff.level, damage);
+      armorBuff.level -= armorDamage;
+      damage -= armorDamage;
+      this.log(source, target, `护甲吸收了 ${armorDamage} 点伤害。`, 'info');
+      // Remove armor buff if depleted
+      if (armorBuff.level <= 0) {
+        const idx = target.buffs.findIndex(b => b.id === 'armor');
+        if (idx !== -1) target.buffs.splice(idx, 1);
       }
-      if (damage > 0) unmitigated = true;
     }
+
+    const unmitigated = damage > 0;
     
     // 2. Apply Target Buffs (onReceiveDamage)
     // Build DamageInfo structure

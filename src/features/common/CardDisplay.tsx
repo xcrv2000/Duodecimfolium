@@ -68,6 +68,13 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   const getDescription = (c: Card | CardInstance) => (isInstance(c) ? c.factory.description : c.description);
   const getEffectDescription = (c: Card | CardInstance) => (isInstance(c) ? c.factory.effectDescription : c.effectDescription);
   const getTags = (c: Card | CardInstance) => (isInstance(c) ? c.tagsRuntime || c.factory.tags : c.tags);
+  const getMaxCopies = (c: Card | CardInstance) => (isInstance(c) ? c.factory.maxCopies : c.maxCopies);
+
+  const descriptionText = getDescription(card) || '';
+  const effectText = getEffectDescription(card) || '';
+  const maxCopies = getMaxCopies(card) ?? 3;
+  const isLongTextCard = `${descriptionText} ${effectText}`.length > 70;
+  const effectPreview = effectText.length > 28 ? `${effectText.slice(0, 28)}...` : effectText;
 
   const baseSpeed = isInstance(card) ? (card.baseSpeed10 !== null ? card.baseSpeed10 / 10 : null) : card.speed;
   const currentSpeed = isInstance(card) ? (card.currentSpeed10 !== null ? card.currentSpeed10 / 10 : null) : card.speed;
@@ -176,7 +183,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   const finalBorderClass = disabled ? 'border-slate-800' : borderClass;
 
   const handleMouseEnter = () => {
-    if (compact) setShowFullDetail(true);
+    if (compact || isLongTextCard) setShowFullDetail(true);
     if (internalFaceDown && !disableHoverFlip) {
       setInternalFaceDown(false);
       if (onFlip) onFlip();
@@ -188,7 +195,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   };
 
   const handleMouseLeave = () => {
-    if (compact) setShowFullDetail(false);
+    if (compact || isLongTextCard) setShowFullDetail(false);
   };
 
   if (internalFaceDown) {
@@ -213,7 +220,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {compact && showFullDetail && (
+      {(compact || isLongTextCard) && showFullDetail && (
         <div className="absolute left-1/2 bottom-full mb-2 -translate-x-1/2 w-64 z-[100] shadow-2xl">
           <div className={`bg-slate-900 border-2 rounded-lg p-4 flex flex-col gap-2 ${borderClass}`}>
             <div className="flex justify-between items-start">
@@ -263,10 +270,19 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
         )}
 
         <div className="text-[10px] sm:text-xs text-slate-400 line-clamp-4 leading-relaxed h-20 overflow-hidden flex flex-col gap-1">
-          {getDescription(card) && (
-            <span className="italic text-slate-500 text-[10px] mb-1 border-b border-slate-700/50 pb-1">{getDescription(card)}</span>
+          {isLongTextCard ? (
+            <>
+              <span className="text-slate-300">核心效果: {effectPreview}</span>
+              <span className="text-[10px] text-cyan-300 italic">悬停查看更多完整说明</span>
+            </>
+          ) : (
+            <>
+              {getDescription(card) && (
+                <span className="italic text-slate-500 text-[10px] mb-1 border-b border-slate-700/50 pb-1">{getDescription(card)}</span>
+              )}
+              <span className="text-slate-300">{formatText(getEffectDescription(card))}</span>
+            </>
           )}
-          <span className="text-slate-300">{formatText(getEffectDescription(card))}</span>
         </div>
       </div>
 
@@ -277,10 +293,15 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
               持有: {count}
             </div>
           )}
+          {count !== undefined && maxCopies !== 3 && (
+            <div className="absolute -left-2 bottom-0 bg-blue-600 text-white text-[10px] px-2 py-0.5 shadow-md transform -skew-x-12 origin-bottom-left font-bold z-20">
+              上限: {maxCopies}
+            </div>
+          )}
           <div className="flex-1"></div>
           {inDeck !== undefined && inDeck > 0 && (
             <div className="bg-emerald-900/50 text-emerald-400 px-2 py-0.5 rounded text-xs font-medium border border-emerald-900">
-              {inDeck}/3
+              {inDeck}/{maxCopies}
             </div>
           )}
         </div>

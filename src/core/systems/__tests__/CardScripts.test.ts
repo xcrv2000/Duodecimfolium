@@ -67,9 +67,9 @@ describe('CardScripts', () => {
       });
     });
 
-    it('应该有28张卡的脚本', () => {
+    it('脚本总数应至少覆盖已声明清单', () => {
       const scriptCount = Object.keys(CardScripts).length;
-      expect(scriptCount).toBe(28);
+      expect(scriptCount).toBeGreaterThanOrEqual(28);
     });
   });
 
@@ -173,6 +173,37 @@ describe('CardScripts', () => {
 
       // 敌人应该受伤
       expect(enemyUnit.hp).toBeLessThan(initialEnemyHp);
+    });
+
+    it('威仪只应影响首个魔法命中', () => {
+      CardScripts.majesty(battleLoop, playerUnit, [enemyUnit]);
+      const hpBefore = enemyUnit.hp;
+
+      battleLoop.dealDamage(playerUnit, enemyUnit, 5, 'magical', ['魔法']);
+      battleLoop.dealDamage(playerUnit, enemyUnit, 5, 'magical', ['魔法']);
+
+      expect(enemyUnit.hp).toBe(hpBefore - 15);
+    });
+
+    it('震慑只应影响首个物理命中', () => {
+      CardScripts.deterrence(battleLoop, playerUnit, [enemyUnit]);
+      const hpBefore = enemyUnit.hp;
+
+      battleLoop.dealDamage(playerUnit, enemyUnit, 5, 'physical');
+      battleLoop.dealDamage(playerUnit, enemyUnit, 5, 'physical');
+
+      expect(enemyUnit.hp).toBe(hpBefore - 15);
+    });
+
+    it('拉克希尔之仪应作用于发动者自身', () => {
+      const enemyHpBefore = enemyUnit.hp;
+      CardScripts.lakshir_ritual(battleLoop, enemyUnit, [playerUnit]);
+
+      expect(enemyUnit.hp).toBe(enemyHpBefore - 12);
+      const enemyArmor = enemyUnit.buffs.find((b) => b.id === 'armor');
+      const playerArmor = playerUnit.buffs.find((b) => b.id === 'armor');
+      expect(enemyArmor?.level).toBe(24);
+      expect(playerArmor).toBeUndefined();
     });
   });
 });

@@ -70,6 +70,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   });
 
   const currentDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
+    const getCardMaxCopies = (cardId: string) => cards.find((c) => c.id === cardId)?.maxCopies ?? 3;
 
   // Calculate Deck Stats
   const consumableCount = currentDeck ? currentDeck.cardIds.filter(id => {
@@ -85,7 +86,22 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   const isDeckSizeValid = currentDeck ? (currentDeck.cardIds.length >= 8 && currentDeck.cardIds.length <= 12) : false;
   const isConsumableValid = consumableCount <= 3;
   const isArmorValid = armorCount <= 1;
-  const isDeckValid = isDeckSizeValid && isConsumableValid && isArmorValid;
+    const deckCardCounts = currentDeck
+        ? currentDeck.cardIds.reduce((acc, id) => {
+                acc[id] = (acc[id] || 0) + 1;
+                return acc;
+            }, {} as Record<string, number>)
+        : {};
+    const overLimitEntries = Object.entries(deckCardCounts)
+        .filter(([cardId, count]) => count > getCardMaxCopies(cardId))
+        .map(([cardId, count]) => ({
+            cardId,
+            count,
+            limit: getCardMaxCopies(cardId),
+            cardName: cards.find((c) => c.id === cardId)?.name || cardId
+        }));
+    const isCopyLimitValid = overLimitEntries.length === 0;
+    const isDeckValid = isDeckSizeValid && isConsumableValid && isArmorValid && isCopyLimitValid;
 
   // Helper to count cards in deck
   const getDeckCardCount = (cardId: string) => {
@@ -95,9 +111,6 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
 
   const addToDeck = (cardId: string) => {
     if (!currentDeck) return;
-
-    // Check max copies (3)
-    if (getDeckCardCount(cardId) >= 3) return;
     
     // Check ownership
     const ownedCount = collection[cardId] || 0;
@@ -262,7 +275,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
           {visibleCards.map(card => {
             const count = collection[card.id] || 0;
             const inDeck = getDeckCardCount(card.id);
-            const canAdd = count > inDeck && inDeck < 3;
+                        const canAdd = count > inDeck;
 
             return (
               <CardDisplay
@@ -302,6 +315,11 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                     {!isArmorValid && (
                         <div className="text-[10px] text-red-400 text-right">
                             护具最多1张 (当前{armorCount})
+                        </div>
+                    )}
+                    {!isCopyLimitValid && (
+                        <div className="text-[10px] text-red-400 text-right">
+                            {overLimitEntries[0].cardName} 超出上限 {overLimitEntries[0].limit} (当前{overLimitEntries[0].count})
                         </div>
                     )}
                 </div>
@@ -399,6 +417,8 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                         let penaltyText = "";
                         if (count === 2) { penalty = 0.9; penaltyText = "+0.9"; }
                         if (count >= 3) { penalty = 2.8; penaltyText = "+2.8"; }
+                        const maxCopies = card.maxCopies ?? 3;
+                        const isCopyOverLimit = count > maxCopies;
                         
                         const finalSpeed = card.speed !== null ? Math.round(card.speed + penalty) : '-';
                         const displaySpeed = card.speed !== null ? card.speed : '-';
@@ -408,7 +428,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
 
                         return (
                             <div key={`${id}-${index}`} className={`relative p-2 rounded flex flex-col gap-2 group hover:border-red-500 transition-colors border ${
-                                (card.tags?.includes('补给品') && !isConsumableValid) ? 'border-red-500 bg-red-900/20' : 'bg-slate-800 border-slate-700'
+                                (card.tags?.includes('补给品') && !isConsumableValid) || isCopyOverLimit ? 'border-red-500 bg-red-900/20' : 'bg-slate-800 border-slate-700'
                             }`}>
                                 <div className="flex justify-between items-center">
                                     <div className="flex flex-col flex-1" onClick={() => removeFromDeck(index)}>
@@ -418,6 +438,16 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                                             {penalty > 0 && (
                                                 <span className="text-red-400 font-bold bg-red-900/30 px-1 rounded">
                                                     {penaltyText} ({finalSpeed})
+                                                </span>
+                                            )}
+                                            {maxCopies !== 3 && (
+                                                <span className="text-blue-300 font-bold bg-blue-900/40 px-1 rounded">
+                                                    上限 {maxCopies}
+                                                </span>
+                                            )}
+                                            {isCopyOverLimit && (
+                                                <span className="text-red-300 font-bold bg-red-900/40 px-1 rounded">
+                                                    不合法: {count}/{maxCopies}
                                                 </span>
                                             )}
                                         </div>

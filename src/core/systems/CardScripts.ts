@@ -264,6 +264,8 @@ export const CardScripts: Record<string, CardScript> = {
       const target = targets[0];
       if (!target) return;
       loop.dealDamage(source, target, 3, 'physical');
+
+      let consumed = false;
       
       const debuff: UnitBuff = {
           id: 'majesty',
@@ -276,7 +278,9 @@ export const CardScripts: Record<string, CardScript> = {
           onReceiveDamage: (_unit, damageInfo, _state) => {
               // Only double magical damage
               const hasMagicTag = damageInfo.tags.some(tag => tag.includes('魔法'));
-              if (hasMagicTag) {
+              if (!consumed && hasMagicTag) {
+                consumed = true;
+                debuff.duration = 0;
                   return damageInfo.amount * 2;
               }
               return damageInfo.amount;
@@ -290,6 +294,8 @@ export const CardScripts: Record<string, CardScript> = {
       const target = targets[0];
       if (!target) return;
       loop.dealDamage(source, target, 3, 'magical');
+
+      let consumed = false;
       
       const debuff: UnitBuff = {
           id: 'deterrence',
@@ -302,7 +308,9 @@ export const CardScripts: Record<string, CardScript> = {
           onReceiveDamage: (_unit, damageInfo, _state) => {
               // Only double physical damage (not magical)
               const hasMagicTag = damageInfo.tags.some(tag => tag.includes('魔法'));
-              if (!hasMagicTag && damageInfo.type === 'physical') {
+              if (!consumed && !hasMagicTag && damageInfo.type === 'physical') {
+                consumed = true;
+                debuff.duration = 0;
                   return damageInfo.amount * 2;
               }
               return damageInfo.amount;
@@ -493,11 +501,10 @@ export const CardScripts: Record<string, CardScript> = {
 
   // New cards for pack 3
   lakshir_ritual: (loop, source, targets) => {
-    const target = targets[0] || source;
     // Lose 12 HP (not damage, direct HP loss)
     loop.directHpChange(source, -12);
     // Gain 24 shield (armor)
-    loop.addArmor(target, 24);
+    loop.addArmor(source, 24);
   },
 
   duel_slash: (loop, source, targets) => {
