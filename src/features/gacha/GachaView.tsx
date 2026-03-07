@@ -24,6 +24,13 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 10;
 
+  const visiblePacks = packs.filter((pack) => {
+    if (!pack.isTemporary) return true;
+    if (!pack.requiredTokenId) return false;
+    const requiredCount = pack.requiredTokenCount || 1;
+    return (tokens[pack.requiredTokenId] || 0) >= requiredCount;
+  });
+
   const buyPack = (packId: string, price: number, count: number) => {
     const pack = packs.find(p => p.id === packId);
     if (!pack) return;
@@ -229,7 +236,7 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
           </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {packs.map(pack => {
+          {visiblePacks.map(pack => {
             // Check explicit unlock status
             let isUnlocked = unlockedPacks.includes(pack.id);
             let unlockCondition = "";

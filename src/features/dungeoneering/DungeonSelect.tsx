@@ -239,6 +239,9 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                   <div className="w-full md:w-1/3 bg-slate-800 p-6 rounded-lg border border-slate-700">
                       <h2 className="text-2xl font-bold mb-4 text-emerald-400">{dungeon?.name}</h2>
                       <p className="text-slate-400 mb-6">{dungeon?.description}</p>
+                                            {dungeon?.designer && (
+                                                <p className="text-right text-xs text-slate-500 -mt-4 mb-4">设计师: {dungeon.designer}</p>
+                                            )}
                       
                       <div className="space-y-4">
                           <div className="flex justify-between border-b border-slate-700 pb-2">
@@ -459,6 +462,9 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
               </div>
               
               <p className="text-slate-400 text-sm mb-6 h-10">{dungeon.description}</p>
+                            {dungeon.designer && (
+                                <p className="text-right text-xs text-slate-500 -mt-4 mb-4">设计师: {dungeon.designer}</p>
+                            )}
               
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1 text-yellow-400">

@@ -69,6 +69,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   const getEffectDescription = (c: Card | CardInstance) => (isInstance(c) ? c.factory.effectDescription : c.effectDescription);
   const getTags = (c: Card | CardInstance) => (isInstance(c) ? c.tagsRuntime || c.factory.tags : c.tags);
   const getMaxCopies = (c: Card | CardInstance) => (isInstance(c) ? c.factory.maxCopies : c.maxCopies);
+  const getDesigner = (c: Card | CardInstance) => (isInstance(c) ? c.factory.designer : c.designer);
 
   const descriptionText = getDescription(card) || '';
   const effectText = getEffectDescription(card) || '';
@@ -284,6 +285,10 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
             </>
           )}
         </div>
+
+        {getDesigner(card) && (
+          <div className="mt-1 text-right text-[9px] text-slate-500">设计师: {getDesigner(card)}</div>
+        )}
       </div>
 
       {(count !== undefined || inDeck !== undefined) && (

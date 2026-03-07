@@ -63,5 +63,20 @@
     "stages": [
       { "type": "boss", "enemyPoolId": "fiery_duelist_boss" }
     ]
+  },
+  {
+    "id": "variable_gear_start",
+    "name": "变速齿轮，启动！",
+    "description": "齿轮、轰鸣与高速碰撞。",
+    "designer": "木头",
+    "unlockRequirementId": "training_ground",
+    "teamSize": 1,
+    "unlocksPackId": "pack_4_variable_gear",
+    "goldRewardMin": 10,
+    "goldRewardMax": 10,
+    "stages": [
+      { "type": "elite", "enemyPoolId": "variable_gear_elite" },
+      { "type": "boss", "enemyPoolId": "variable_gear_boss" }
+    ]
   }
 ]

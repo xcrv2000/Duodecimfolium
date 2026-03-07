@@ -17,6 +17,7 @@ export interface CardFactory {
   name: string; // 给玩家看的卡的名字
   description: string; // 给玩家看的卡的描述
   effectDescription: string; // 给玩家看的卡的效果文本
+  designer?: string; // 设计者标注（可选）
   packId: string; // 这张卡属于哪个卡包
   rarity: CardRarity; // 稀有度（卡包中的份数）
   maxCopies?: number; // 单卡可携带上限，默认3

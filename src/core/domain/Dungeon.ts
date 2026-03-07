@@ -2,6 +2,7 @@ export interface Dungeon {
   id: string;
   name: string;
   description: string;
+  designer?: string;
   unlockRequirementId?: string; // 需要通过该地牢后才能解锁
   teamSize: number; // 允许的角色数量
   unlocksPackId?: string; // 首次通过解锁哪个卡包

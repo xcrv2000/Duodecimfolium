@@ -51,6 +51,35 @@ describe('CardScripts', () => {
     battleLoop = new BattleLoop(battleState, rng);
   });
 
+  const createCardInstance = (
+    id: string,
+    scriptId: string,
+    speed10: number | null,
+    tags: string[] = ['攻击', '物理']
+  ): any => ({
+    instanceId: id,
+    ownerId: playerUnit.id,
+    baseSpeed10: speed10,
+    currentSpeed10: speed10,
+    deckSpeedPenalty: 0,
+    permanentSpeedModifier: 0,
+    tagsRuntime: [...tags],
+    modifiers: [],
+    buffs: [],
+    factoryBuffs: [],
+    factory: {
+      id,
+      name: id,
+      description: id,
+      effectDescription: id,
+      packId: 'test',
+      rarity: 1,
+      speed: speed10 === null ? null : speed10 / 10,
+      scriptId,
+      tags
+    }
+  });
+
   describe('卡脚本注册', () => {
     it('应该包含所有已定义的卡脚本', () => {
       const expectedCards = [
@@ -58,7 +87,10 @@ describe('CardScripts', () => {
         'throw', 'concentrate', 'fireball', 'ice_orb', 'stone_orb', 'clear_oil',
         'bright_oil', 'extend_slash', 'majesty', 'deterrence', 'spin_slash',
         'spin_slash_token', 'upward_slash', 'upward_slash_token', 'calm_mind',
-        'wind_thunder_strike', 'ration', 'whetstone', 'flick_thrust', 'moonlight_slash'
+        'wind_thunder_strike', 'ration', 'whetstone', 'flick_thrust', 'moonlight_slash',
+        'quick_start', 'life_recorder', 'kinetic_recovery_device', 'big_torque_gear',
+        'speed_magician', 'cancel', 'kinetic_impact', 'super_kinetic_impact',
+        'rush_attack', 'superluminal', 'high_speed_engine', 'overload_cargo'
       ];
 
       expectedCards.forEach((cardId) => {
@@ -69,7 +101,186 @@ describe('CardScripts', () => {
 
     it('脚本总数应至少覆盖已声明清单', () => {
       const scriptCount = Object.keys(CardScripts).length;
-      expect(scriptCount).toBeGreaterThanOrEqual(28);
+      expect(scriptCount).toBeGreaterThanOrEqual(40);
+    });
+  });
+
+  describe('0.3.5 新卡脚本行为', () => {
+    it('quick_start 应降低下一张卡速度并移除自身', () => {
+      const quickStart = createCardInstance('quick_start_card', 'quick_start', 10, ['辅助']);
+      const nextCard = createCardInstance('next_card', 'slash', 60, ['攻击', '物理']);
+      playerUnit.cards = [quickStart, nextCard];
+      (battleLoop as any).currentCard = quickStart;
+
+      CardScripts.quick_start(battleLoop, playerUnit, [playerUnit]);
+
+      expect(nextCard.currentSpeed10).toBe(36);
+      expect(playerUnit.cards.some((c: any) => c.instanceId === quickStart.instanceId)).toBe(false);
+    });
+
+    it('life_recorder 应先记录生命，再将生命重设为记录值并移除本卡', () => {
+      const lifeRecorder = createCardInstance('life_recorder_card', 'life_recorder', 60, ['辅助']);
+      playerUnit.cards = [lifeRecorder];
+      playerUnit.hp = 72;
+
+      CardScripts.life_recorder(battleLoop, playerUnit, [playerUnit]);
+      expect(playerUnit.buffs.find((b) => b.id === 'life_record')?.level).toBe(72);
+
+      playerUnit.hp = 40;
+      (battleLoop as any).currentCard = lifeRecorder;
+      CardScripts.life_recorder(battleLoop, playerUnit, [playerUnit]);
+
+      expect(playerUnit.hp).toBe(72);
+      expect(playerUnit.buffs.find((b) => b.id === 'life_record')).toBeUndefined();
+      expect(playerUnit.cards.length).toBe(0);
+    });
+
+    it('kinetic_recovery_device 应施加可叠加 buff', () => {
+      CardScripts.kinetic_recovery_device(battleLoop, playerUnit, [playerUnit]);
+      CardScripts.kinetic_recovery_device(battleLoop, playerUnit, [playerUnit]);
+
+      const buff = playerUnit.buffs.find((b) => b.id === 'kinetic_recovery_device');
+      expect(buff).toBeDefined();
+      expect(buff?.level).toBe(2);
+    });
+
+    it('big_torque_gear 应让下一张攻击卡速度+3并使下一次攻击伤害+6', () => {
+      const attackCard = createCardInstance('atk', 'slash', 50, ['攻击', '物理']);
+      playerUnit.cards = [attackCard];
+
+      CardScripts.big_torque_gear(battleLoop, playerUnit, [playerUnit]);
+
+      expect(attackCard.currentSpeed10).toBe(80);
+
+      const hpBefore = enemyUnit.hp;
+      battleLoop.dealDamage(playerUnit, enemyUnit, 3, 'physical');
+      expect(enemyUnit.hp).toBe(hpBefore - 9);
+      expect(playerUnit.buffs.find((b) => b.id === 'big_torque_gear')).toBeUndefined();
+    });
+
+    it('speed_magician 应交换最快与最慢卡的速度', () => {
+      const fast = createCardInstance('fast', 'slash', 20, ['攻击', '物理']);
+      const slow = createCardInstance('slow', 'slash', 90, ['攻击', '物理']);
+      const mid = createCardInstance('mid', 'slash', 50, ['攻击', '物理']);
+      playerUnit.cards = [fast, slow, mid];
+
+      CardScripts.speed_magician(battleLoop, playerUnit, [playerUnit]);
+
+      expect(fast.currentSpeed10).toBe(90);
+      expect(slow.currentSpeed10).toBe(20);
+      expect(mid.currentSpeed10).toBe(50);
+    });
+
+    it('cancel 应提高比当前卡更慢中最接近的一张卡速度+2', () => {
+      const current = createCardInstance('cancel_current', 'cancel', 70, ['辅助']);
+      const c1 = createCardInstance('c1', 'slash', 40, ['攻击', '物理']);
+      const c2 = createCardInstance('c2', 'slash', 60, ['攻击', '物理']);
+      playerUnit.cards = [current, c1, c2];
+      (battleLoop as any).currentCard = current;
+
+      CardScripts.cancel(battleLoop, playerUnit, [playerUnit]);
+
+      expect(c1.currentSpeed10).toBe(40);
+      expect(c2.currentSpeed10).toBe(80);
+    });
+
+    it('kinetic_impact 伤害应为当前速度+3且不低于3', () => {
+      const kineticImpact = createCardInstance('kinetic', 'kinetic_impact', 60, ['攻击', '物理']);
+      (battleLoop as any).currentCard = kineticImpact;
+
+      const hpBefore = enemyUnit.hp;
+      CardScripts.kinetic_impact(battleLoop, playerUnit, [enemyUnit]);
+
+      expect(enemyUnit.hp).toBe(hpBefore - 9);
+    });
+
+    it('super_kinetic_impact 应按速度*2伤害并在低于6时自伤', () => {
+      const superKinetic = createCardInstance('super_kinetic', 'super_kinetic_impact', 20, ['攻击', '物理']);
+      (battleLoop as any).currentCard = superKinetic;
+
+      const enemyHpBefore = enemyUnit.hp;
+      const playerHpBefore = playerUnit.hp;
+      CardScripts.super_kinetic_impact(battleLoop, playerUnit, [enemyUnit]);
+
+      expect(enemyUnit.hp).toBe(enemyHpBefore - 4);
+      expect(playerUnit.hp).toBe(playerHpBefore - 4);
+    });
+
+    it('rush_attack 应造成2伤害并使本卡速度+2（本实现为永久修正）', () => {
+      const rush = createCardInstance('rush', 'rush_attack', 50, ['攻击', '物理']);
+      playerUnit.cards = [rush];
+      (battleLoop as any).currentCard = rush;
+
+      const hpBefore = enemyUnit.hp;
+      CardScripts.rush_attack(battleLoop, playerUnit, [enemyUnit]);
+
+      expect(enemyUnit.hp).toBe(hpBefore - 2);
+      expect(rush.currentSpeed10).toBe(70);
+    });
+
+    it('superluminal 应触发当前最慢卡的脚本效果', () => {
+      const superluminal = createCardInstance('superluminal', 'superluminal', 100, ['辅助']);
+      const slowAttack = createCardInstance('slow_attack', 'slash', 120, ['攻击', '物理']);
+      playerUnit.cards = [superluminal, slowAttack];
+      (battleLoop as any).currentCard = superluminal;
+
+      const hpBefore = enemyUnit.hp;
+      CardScripts.superluminal(battleLoop, playerUnit, [playerUnit]);
+
+      expect(enemyUnit.hp).toBe(hpBefore - 6);
+    });
+  });
+
+  describe('0.3.5 新护具与战斗循环联动', () => {
+    it('high_speed_engine 应使受到伤害+1，且打牌后下一张卡速度-0.4', () => {
+      const engine = createCardInstance('engine', 'high_speed_engine', null, ['护具']);
+      const played = createCardInstance('played', 'slash', 30, ['攻击', '物理']);
+      const next = createCardInstance('next', 'slash', 60, ['攻击', '物理']);
+      playerUnit.cards = [engine, played, next];
+
+      battleLoop.executeStartOfBattleEffects();
+
+      const hpBefore = playerUnit.hp;
+      battleLoop.dealDamage(enemyUnit, playerUnit, 5, 'physical');
+      expect(playerUnit.hp).toBe(hpBefore - 6);
+
+      (battleLoop as any).currentCard = played;
+      (battleLoop as any).applyPerCardPlayEffects(playerUnit, played);
+      expect(next.currentSpeed10).toBe(56);
+    });
+
+    it('overload_cargo 应使受到伤害+1、造成伤害+2，且打牌后下一张卡速度+0.4', () => {
+      const cargo = createCardInstance('cargo', 'overload_cargo', null, ['护具']);
+      const played = createCardInstance('played', 'slash', 30, ['攻击', '物理']);
+      const next = createCardInstance('next', 'slash', 60, ['攻击', '物理']);
+      playerUnit.cards = [cargo, played, next];
+
+      battleLoop.executeStartOfBattleEffects();
+
+      const enemyHpBefore = enemyUnit.hp;
+      battleLoop.dealDamage(playerUnit, enemyUnit, 3, 'physical');
+      expect(enemyUnit.hp).toBe(enemyHpBefore - 5);
+
+      const playerHpBefore = playerUnit.hp;
+      battleLoop.dealDamage(enemyUnit, playerUnit, 4, 'physical');
+      expect(playerUnit.hp).toBe(playerHpBefore - 5);
+
+      (battleLoop as any).currentCard = played;
+      (battleLoop as any).applyPerCardPlayEffects(playerUnit, played);
+      expect(next.currentSpeed10).toBe(64);
+    });
+
+    it('kinetic_recovery_device 在打牌后应按 tick 与基础速度差获得护甲', () => {
+      const kinetic = createCardInstance('kinetic_device', 'kinetic_recovery_device', 40, ['辅助']);
+      const played = createCardInstance('played', 'slash', 60, ['攻击', '物理']);
+      playerUnit.cards = [kinetic, played];
+      battleState.tick = 2;
+
+      CardScripts.kinetic_recovery_device(battleLoop, playerUnit, [playerUnit]);
+      (battleLoop as any).applyPerCardPlayEffects(playerUnit, played);
+
+      const armor = playerUnit.buffs.find((b) => b.id === 'armor');
+      expect(armor?.level).toBe(4);
     });
   });
 

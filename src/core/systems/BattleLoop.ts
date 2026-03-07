@@ -365,6 +365,64 @@ export class BattleLoop {
             }
           });
           // Target consistency - handled in target selection
+        } else if (scriptId === 'high_speed_engine') {
+          const damageBuff: UnitBuff = {
+            id: 'high_speed_engine_damage',
+            name: '高速引擎',
+            description: '受到的所有伤害+1。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'debuff',
+            onReceiveDamage: (_unit, damageInfo) => damageInfo.amount + 1
+          };
+          this.addUnitBuff(unit, damageBuff);
+
+          const shiftBuff: UnitBuff = {
+            id: 'high_speed_engine_shift',
+            name: '高速引擎变速',
+            description: '每打出一张卡后，下一张卡速度-0.4。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'buff'
+          };
+          this.addUnitBuff(unit, shiftBuff);
+        } else if (scriptId === 'overload_cargo') {
+          const damageTakenBuff: UnitBuff = {
+            id: 'overload_cargo_taken',
+            name: '超载装货',
+            description: '受到的所有伤害+1。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'debuff',
+            onReceiveDamage: (_unit, damageInfo) => damageInfo.amount + 1
+          };
+          this.addUnitBuff(unit, damageTakenBuff);
+
+          const damageDealBuff: UnitBuff = {
+            id: 'overload_cargo_deal',
+            name: '超载装货',
+            description: '造成的伤害+2。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 2,
+            type: 'buff',
+            onAttack: (_unit, _target, damage) => damage + 2
+          };
+          this.addUnitBuff(unit, damageDealBuff);
+
+          const shiftBuff: UnitBuff = {
+            id: 'overload_cargo_shift',
+            name: '超载装货变速',
+            description: '每打出一张卡后，下一张卡速度+0.4。',
+            duration: 999,
+            stackRule: 'nonStackable',
+            level: 1,
+            type: 'buff'
+          };
+          this.addUnitBuff(unit, shiftBuff);
         }
       });
     });
@@ -655,6 +713,8 @@ export class BattleLoop {
           } else {
               script(this, source, targets);
           }
+
+            this.applyPerCardPlayEffects(source, card);
       } catch (e) {
           console.error(`Error executing script ${card.factory.scriptId}`, e);
           this.log(source, null, `执行卡牌 ${card.factory.name} 失败: ${e}`, 'info');
@@ -667,6 +727,36 @@ export class BattleLoop {
 
     // Check Deaths
     this.checkDeaths();
+  }
+
+  private applyPerCardPlayEffects(source: BattleUnit, playedCard: CardInstance): void {
+    if (playedCard.baseSpeed10 === null) return;
+
+    const kineticBuff = source.buffs.find(b => b.id === 'kinetic_recovery_device');
+    if (kineticBuff && playedCard.baseSpeed10 !== null) {
+      const baseTick = playedCard.baseSpeed10 / 10;
+      const diff = Math.floor(Math.abs(this.state.tick - baseTick));
+      const armorGain = diff * kineticBuff.level;
+      if (armorGain > 0) {
+        this.addArmor(source, armorGain);
+      }
+    }
+
+    const highSpeedEngine = source.buffs.find(b => b.id === 'high_speed_engine_shift');
+    if (highSpeedEngine) {
+      const nextCard = this.findNextCardOnTimeline(source);
+      if (nextCard) {
+        this.modifyCardSpeed(nextCard, -4);
+      }
+    }
+
+    const overloadCargo = source.buffs.find(b => b.id === 'overload_cargo_shift');
+    if (overloadCargo) {
+      const nextCard = this.findNextCardOnTimeline(source);
+      if (nextCard) {
+        this.modifyCardSpeed(nextCard, 4);
+      }
+    }
   }
 
   private findTargets(source: BattleUnit, card: CardInstance): BattleUnit[] {

@@ -693,5 +693,176 @@ export const CardScripts: Record<string, CardScript> = {
 
   tight_robe: (_loop, _source, _targets) => {
     // Buffs applied in battle initialization
+  },
+
+  // Pack 4: Variable Gear
+  quick_start: (loop, source, _targets) => {
+    const nextCard = loop.findNextCardOnTimeline(source);
+    if (nextCard) {
+      loop.modifyCardSpeed(nextCard, -24);
+    }
+
+    const currentCard = (loop as any).currentCard;
+    if (currentCard) {
+      const idx = source.cards.findIndex(c => c.instanceId === currentCard.instanceId);
+      if (idx !== -1) {
+        source.cards.splice(idx, 1);
+      }
+    }
+  },
+
+  life_recorder: (loop, source, _targets) => {
+    const existing = source.buffs.find(b => b.id === 'life_record');
+    const currentCard = (loop as any).currentCard;
+
+    if (existing) {
+      source.hp = Math.max(0, Math.min(source.maxHp, existing.level));
+      if (currentCard) {
+        const idx = source.cards.findIndex(c => c.instanceId === currentCard.instanceId);
+        if (idx !== -1) source.cards.splice(idx, 1);
+      }
+      loop.removeBuff(source, 'life_record');
+      return;
+    }
+
+    const buff: UnitBuff = {
+      id: 'life_record',
+      name: '生命记录',
+      description: '记录生命值。',
+      duration: -1,
+      stackRule: 'nonStackable',
+      level: source.hp,
+      type: 'buff'
+    };
+    loop.addUnitBuff(source, buff);
+  },
+
+  kinetic_recovery_device: (loop, source, targets) => {
+    const target = targets[0] || source;
+    const buff: UnitBuff = {
+      id: 'kinetic_recovery_device',
+      name: '动能回收装置',
+      description: '每次打出卡牌时，按当前tick与基础速度差获得护甲。',
+      duration: -1,
+      stackRule: 'stackable',
+      level: 1,
+      type: 'buff'
+    };
+    loop.addUnitBuff(target, buff);
+  },
+
+  big_torque_gear: (loop, source, targets) => {
+    const target = targets[0] || source;
+    const nextAttack = target.cards
+      .filter(c => c.currentSpeed10 !== null && c.tagsRuntime?.includes('攻击'))
+      .sort((a, b) => (a.currentSpeed10! - b.currentSpeed10!))[0];
+    if (nextAttack) {
+      loop.modifyCardSpeed(nextAttack, 30);
+    }
+
+    const buff: UnitBuff = {
+      id: 'big_torque_gear',
+      name: '大扭矩齿轮',
+      description: '下一次攻击伤害+6。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 6,
+      type: 'buff',
+      onAttack: (unit, _t, damage) => {
+        const idx = unit.buffs.findIndex(b => b.id === 'big_torque_gear');
+        if (idx !== -1) unit.buffs.splice(idx, 1);
+        return damage + 6;
+      }
+    };
+    loop.addUnitBuff(target, buff);
+  },
+
+  speed_magician: (loop, source, targets) => {
+    const target = targets[0] || source;
+    const candidates = target.cards.filter(c => c.currentSpeed10 !== null);
+    if (candidates.length < 2) return;
+
+    const sorted = [...candidates].sort((a, b) => (a.currentSpeed10! - b.currentSpeed10!));
+    const fastest = sorted[0];
+    const slowest = sorted[sorted.length - 1];
+    if (!fastest || !slowest || fastest.instanceId === slowest.instanceId) return;
+
+    const fastestSpeed = fastest.currentSpeed10!;
+    const slowestSpeed = slowest.currentSpeed10!;
+    loop.modifyCardPermanentSpeed(fastest, slowestSpeed - fastestSpeed);
+    loop.modifyCardPermanentSpeed(slowest, fastestSpeed - slowestSpeed);
+  },
+
+  cancel: (loop, source, _targets) => {
+    const currentCard = (loop as any).currentCard;
+    if (!currentCard || currentCard.currentSpeed10 === null) return;
+
+    const lowerCandidates = source.cards
+      .filter(c => c.currentSpeed10 !== null && c.currentSpeed10 < currentCard.currentSpeed10!);
+
+    if (lowerCandidates.length === 0) return;
+
+    lowerCandidates.sort((a, b) => (b.currentSpeed10! - a.currentSpeed10!));
+    loop.modifyCardSpeed(lowerCandidates[0], 20);
+  },
+
+  kinetic_impact: (loop, source, targets) => {
+    const target = targets[0];
+    const currentCard = (loop as any).currentCard;
+    if (!target || !currentCard || currentCard.currentSpeed10 === null) return;
+
+    const currentSpeed = Math.floor(currentCard.currentSpeed10 / 10);
+    const damage = Math.max(3, currentSpeed + 3);
+    loop.dealDamage(source, target, damage, 'physical');
+  },
+
+  super_kinetic_impact: (loop, source, targets) => {
+    const target = targets[0];
+    const currentCard = (loop as any).currentCard;
+    if (!target || !currentCard || currentCard.currentSpeed10 === null) return;
+
+    const currentSpeed = Math.floor(currentCard.currentSpeed10 / 10);
+    const damage = Math.floor(currentSpeed * 2);
+    loop.dealDamage(source, target, damage, 'physical');
+
+    if (damage < 6) {
+      const selfDamage = Math.max(0, Math.floor(6 - currentSpeed));
+      if (selfDamage > 0) {
+        loop.dealDamage(source, source, selfDamage, 'physical');
+      }
+    }
+  },
+
+  rush_attack: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 2, 'physical');
+
+    const currentCard = (loop as any).currentCard;
+    if (currentCard) {
+      loop.modifyCardPermanentSpeed(currentCard, 20);
+    }
+  },
+
+  superluminal: (loop, source, _targets) => {
+    const currentCard = (loop as any).currentCard;
+    const candidates = source.cards.filter(c => c.currentSpeed10 !== null && c.instanceId !== currentCard?.instanceId);
+    if (candidates.length === 0) return;
+
+    candidates.sort((a, b) => (b.currentSpeed10! - a.currentSpeed10!));
+    const targetCard = candidates[0];
+    const script = CardScripts[targetCard.factory.scriptId];
+    if (!script) return;
+
+    const targets = (loop as any).findTargets(source, targetCard);
+    script(loop, source, targets);
+  },
+
+  high_speed_engine: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
+  },
+
+  overload_cargo: (_loop, _source, _targets) => {
+    // Buffs applied in battle initialization
   }
 };

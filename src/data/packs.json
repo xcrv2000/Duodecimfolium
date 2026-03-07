@@ -18,5 +18,15 @@
     "price": 10,
     "requiredTokenId": "duelist_proof",
     "requiredTokenCount": 1
+  },
+  {
+    "id": "pack_4_variable_gear",
+    "name": "变速齿轮组",
+    "description": "齿轮轰鸣，速度就是一切。",
+    "designer": "木头",
+    "price": 10,
+    "requiredTokenId": "variable_gear_token",
+    "requiredTokenCount": 1,
+    "isTemporary": true
   }
 ]
