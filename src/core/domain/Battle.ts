@@ -7,7 +7,7 @@ export interface DamageInfo {
   sourceUnit: BattleUnit;
   targetUnit: BattleUnit;
   type: 'physical' | 'magical';
-  tags: string[]; // Card tags, may include modifier-added tags like '魔法/火'
+  tags: string[]; // Card tags, may include modifier-added tags like '火'
 }
 
 export interface BattleUnit {

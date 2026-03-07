@@ -102,7 +102,7 @@ export class BattleLoop {
       // tagsRuntime = factory.tags（基础标签）+ 修饰珠添加的标签
       // 
       // 基础标签来自卡的定义（例如 "攻击/物理", "辅助", "防御"）
-      // 修饰珠可以添加额外标签（例如火灵珠添加 "魔法/火"）
+      // 修饰珠可以添加额外标签（例如火灵珠添加 "火"）
       card.tagsRuntime = [...(card.factory.tags || [])];
       
       // 应用 attr_add 修饰珠效果
@@ -110,16 +110,16 @@ export class BattleLoop {
           if (mod.effectId === 'attr_add') {
               // 根据 modifier.value 添加相应的标签路径
               if (mod.value === 'fire') {
-                  if (!card.tagsRuntime!.includes('魔法/火')) {
-                      card.tagsRuntime!.push('魔法/火');
+                  if (!card.tagsRuntime!.includes('火')) {
+                      card.tagsRuntime!.push('火');
                   }
               } else if (mod.value === 'ice') {
-                  if (!card.tagsRuntime!.includes('魔法/冰')) {
-                      card.tagsRuntime!.push('魔法/冰');
+                  if (!card.tagsRuntime!.includes('冰')) {
+                      card.tagsRuntime!.push('冰');
                   }
               } else if (mod.value === 'rock') {
-                  if (!card.tagsRuntime!.includes('物理/岩')) {
-                      card.tagsRuntime!.push('物理/岩');
+                  if (!card.tagsRuntime!.includes('岩')) {
+                      card.tagsRuntime!.push('岩');
                   }
               }
           }
