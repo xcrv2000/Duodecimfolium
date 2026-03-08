@@ -840,7 +840,8 @@ export const CardScripts: Record<string, CardScript> = {
 
     const currentCard = (loop as any).currentCard;
     if (currentCard) {
-      loop.modifyCardPermanentSpeed(currentCard, 20);
+      // 本回合内加速，回合结束由 CardInstanceBuff 清空
+      loop.modifyCardSpeed(currentCard, 20);
     }
   },
 

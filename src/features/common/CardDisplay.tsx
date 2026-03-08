@@ -80,6 +80,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   const baseSpeed = isInstance(card) ? (card.baseSpeed10 !== null ? card.baseSpeed10 / 10 : null) : card.speed;
   const currentSpeed = isInstance(card) ? (card.currentSpeed10 !== null ? card.currentSpeed10 / 10 : null) : card.speed;
   const displaySpeed = currentSpeed !== null && currentSpeed !== undefined ? Number(currentSpeed).toFixed(1).replace(/\.0$/, '') : '-';
+  const isInvalidTimelineSpeed = currentSpeed !== null && currentSpeed >= 13;
 
   let speedTooltip = `Base Speed: ${baseSpeed}`;
   if (isInstance(card) && currentSpeed !== null && baseSpeed !== null) {
@@ -226,7 +227,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
           <div className={`bg-slate-900 border-2 rounded-lg p-4 flex flex-col gap-2 ${borderClass}`}>
             <div className="flex justify-between items-start">
               <span className="font-bold text-xl text-white">{getName(card)}</span>
-              <span className="text-yellow-400 font-bold text-lg bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600">
+              <span className={`font-bold text-lg bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center border border-slate-600 ${isInvalidTimelineSpeed ? 'text-red-400' : 'text-yellow-400'}`}>
                 {displaySpeed}
               </span>
             </div>
@@ -255,7 +256,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
               className="absolute -top-2 -right-2 sm:-top-3 sm:-right-3 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-slate-900 border-2 border-slate-600 flex items-center justify-center shadow-lg z-10 group-hover:scale-110 transition-transform"
               title={speedTooltip}
             >
-              <span className="text-yellow-400 font-bold text-sm sm:text-lg">{displaySpeed}</span>
+              <span className={`${isInvalidTimelineSpeed ? 'text-red-400' : 'text-yellow-400'} font-bold text-sm sm:text-lg`}>{displaySpeed}</span>
             </div>
           )}
         </div>

@@ -206,7 +206,7 @@ describe('CardScripts', () => {
       expect(playerUnit.hp).toBe(playerHpBefore - 4);
     });
 
-    it('rush_attack 应造成2伤害并使本卡速度+2（本实现为永久修正）', () => {
+    it('rush_attack 应造成2伤害并使本卡速度+2，回合结束后恢复', () => {
       const rush = createCardInstance('rush', 'rush_attack', 50, ['攻击', '物理']);
       playerUnit.cards = [rush];
       (battleLoop as any).currentCard = rush;
@@ -216,6 +216,9 @@ describe('CardScripts', () => {
 
       expect(enemyUnit.hp).toBe(hpBefore - 2);
       expect(rush.currentSpeed10).toBe(70);
+
+      battleLoop.endTurn();
+      expect(rush.currentSpeed10).toBe(50);
     });
 
     it('superluminal 应触发当前最慢卡的脚本效果', () => {

@@ -297,47 +297,33 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
             return 2.8;
         };
 
+        const occurrenceMap: Record<string, number> = {};
+
         const annotated = deckItems.map((item, index) => {
             const card = cards.find(c => c.id === item.id);
             const modifier = item.modifierId ? modifiers.find((m) => m.id === item.modifierId) : null;
             const modifierSpeed = modifier?.effectId === 'speed_mod' ? Number(modifier.value) : 0;
+            const occurrence = (occurrenceMap[item.id] || 0) + 1;
+            occurrenceMap[item.id] = occurrence;
+            const duplicatePenalty = penaltyForRank(occurrence);
             return {
                 ...item,
                 originalIndex: index,
                 baseSpeed: card?.speed ?? null,
                 modifierSpeed,
+                duplicatePenalty,
                 name: card?.name || item.id,
-                finalSpeed: Number.POSITIVE_INFINITY
+                finalSpeed:
+                    card?.speed === null || card?.speed === undefined
+                        ? Number.POSITIVE_INFINITY
+                        : card.speed + duplicatePenalty + modifierSpeed
             };
-        });
-
-        // 为同名卡分配惩罚：先按“基础速度+修饰珠修正”从小到大排列，再应用第1/2/3张惩罚。
-        const groups: Record<string, typeof annotated> = {};
-        annotated.forEach((entry) => {
-            if (!groups[entry.id]) groups[entry.id] = [];
-            groups[entry.id].push(entry);
-        });
-
-        Object.values(groups).forEach((group) => {
-            group.sort((a, b) => {
-                const sa = (a.baseSpeed ?? Number.POSITIVE_INFINITY) + a.modifierSpeed;
-                const sb = (b.baseSpeed ?? Number.POSITIVE_INFINITY) + b.modifierSpeed;
-                if (sa !== sb) return sa - sb;
-                return a.originalIndex - b.originalIndex;
-            });
-
-            group.forEach((entry, i) => {
-                if (entry.baseSpeed === null) {
-                    entry.finalSpeed = Number.POSITIVE_INFINITY;
-                    return;
-                }
-                const penalty = penaltyForRank(i + 1);
-                entry.finalSpeed = entry.baseSpeed + entry.modifierSpeed + penalty;
-            });
         });
 
         annotated.sort((a, b) => {
             if (a.finalSpeed !== b.finalSpeed) return a.finalSpeed - b.finalSpeed;
+            // 同名卡保持原有先后（第2张仍是第2张），不让修饰珠改变惩罚位次
+            if (a.id === b.id) return a.originalIndex - b.originalIndex;
             return a.name.localeCompare(b.name, 'zh-CN');
         });
 

@@ -512,6 +512,9 @@ export class BattleLoop {
       // we know speed is a number right now; later boundary checks may set it to null
       let numericSpeed: number = speed as number;
       
+      // 先应用同名卡惩罚，再应用修饰珠（符合“惩罚先于修饰珠”的结算顺序）
+      numericSpeed += (card.deckSpeedPenalty || 0);
+
       // === 应用修饰珠效果 ===
       // 修饰珠系统支持两种效果：
       // 1. speed_mod: 修改卡的速度 (微风珠 -0.5, 黑铁珠 +0.5)
@@ -564,9 +567,6 @@ export class BattleLoop {
           }
       });
       
-      // Apply Deck Speed Penalty
-      numericSpeed += (card.deckSpeedPenalty || 0);
-      
       // === 速度边界值处理 ===
       // now assign back to speed variable so boundary logic can set null if needed
       speed = numericSpeed;
@@ -576,16 +576,8 @@ export class BattleLoop {
       // 含义：卡不能放在时间轴之前，minimum speed = 0（tick 0）
       if (speed !== null && speed < 0) speed = 0;
       
-      // 上限（≥130）：根据战斗系统修正文档 §1.3
-      // "speed ≥ 13 invalid" - 这里指的是 0.1 精度的速度值
-      // 约等于 currentSpeed10 >= 130（即 >= 13.0，超出时间轴范围）
-      // 含义：卡被加速过度，超出时间轴最大值 12.9，无法在战斗中触发
-      // 
-      // 处理方案：标记为"失效"，不会在 tick 循环中触发
-      // TODO: 在 UI 中显示失效卡，鼠标悬停告知理由
-      if (speed !== null && speed >= 130) {
-        speed = null; // 无效速度，不会被触发
-      }
+      // 上限（≥130）：不置空，保留数值用于 UI 展示。
+      // 调度层 processTick 仅处理 [0, 130) 区间，因此 >=130 的卡仍不会在时间轴触发。
       
       card.currentSpeed10 = speed;
   }
