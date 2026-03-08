@@ -283,21 +283,66 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         modifierId: currentDeck.modifierSlots?.[index]
     }));
     
-    deckItems.sort((a, b) => {
-        const cardA = cards.find(c => c.id === a.id);
-        const cardB = cards.find(c => c.id === b.id);
-        if (!cardA || !cardB) return 0;
+    if (criteria === 'id') {
+        deckItems.sort((a, b) => {
+            const cardA = cards.find(c => c.id === a.id);
+            const cardB = cards.find(c => c.id === b.id);
+            if (!cardA || !cardB) return 0;
+            return cardA.id.localeCompare(cardB.id);
+        });
+    } else {
+        const penaltyForRank = (rank: number) => {
+            if (rank <= 1) return 0;
+            if (rank === 2) return 0.9;
+            return 2.8;
+        };
 
-        if (criteria === 'id') {
-            return cardA.id.localeCompare(cardB.id);
-        } else {
-            // Speed sort
-            const speedA = cardA.speed ?? 999;
-            const speedB = cardB.speed ?? 999;
-            if (speedA !== speedB) return speedA - speedB;
-            return cardA.id.localeCompare(cardB.id);
-        }
-    });
+        const annotated = deckItems.map((item, index) => {
+            const card = cards.find(c => c.id === item.id);
+            const modifier = item.modifierId ? modifiers.find((m) => m.id === item.modifierId) : null;
+            const modifierSpeed = modifier?.effectId === 'speed_mod' ? Number(modifier.value) : 0;
+            return {
+                ...item,
+                originalIndex: index,
+                baseSpeed: card?.speed ?? null,
+                modifierSpeed,
+                name: card?.name || item.id,
+                finalSpeed: Number.POSITIVE_INFINITY
+            };
+        });
+
+        // 为同名卡分配惩罚：先按“基础速度+修饰珠修正”从小到大排列，再应用第1/2/3张惩罚。
+        const groups: Record<string, typeof annotated> = {};
+        annotated.forEach((entry) => {
+            if (!groups[entry.id]) groups[entry.id] = [];
+            groups[entry.id].push(entry);
+        });
+
+        Object.values(groups).forEach((group) => {
+            group.sort((a, b) => {
+                const sa = (a.baseSpeed ?? Number.POSITIVE_INFINITY) + a.modifierSpeed;
+                const sb = (b.baseSpeed ?? Number.POSITIVE_INFINITY) + b.modifierSpeed;
+                if (sa !== sb) return sa - sb;
+                return a.originalIndex - b.originalIndex;
+            });
+
+            group.forEach((entry, i) => {
+                if (entry.baseSpeed === null) {
+                    entry.finalSpeed = Number.POSITIVE_INFINITY;
+                    return;
+                }
+                const penalty = penaltyForRank(i + 1);
+                entry.finalSpeed = entry.baseSpeed + entry.modifierSpeed + penalty;
+            });
+        });
+
+        annotated.sort((a, b) => {
+            if (a.finalSpeed !== b.finalSpeed) return a.finalSpeed - b.finalSpeed;
+            return a.name.localeCompare(b.name, 'zh-CN');
+        });
+
+        deckItems.splice(0, deckItems.length, ...annotated.map((x) => ({ id: x.id, modifierId: x.modifierId })));
+    }
     
     const newIds = deckItems.map(item => item.id);
     const newModifiers: Record<string, string> = {};
