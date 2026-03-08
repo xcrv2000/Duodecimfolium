@@ -182,7 +182,7 @@ const MainLayout: React.FC = () => {
             <div className="flex items-center gap-3 sm:gap-6">
             {visibleTokens.length > 0 && (
                 <div className="flex items-center gap-2 text-emerald-400 font-bold">
-                    <span>代币:</span>
+                    <span>信物:</span>
                     <span>{visibleTokens.map(([id, count]) => `${tokenNameMap[id] || id}×${count}`).join('，')}</span>
                 </div>
             )}
