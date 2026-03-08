@@ -556,13 +556,13 @@
     "id": "kinetic_recovery_device",
     "name": "动能回收装置",
     "description": "上山耗油，下山蓄电",
-    "effectDescription": "获得“动能回收装置”buff：每张卡打出时，当前tick值每与该卡基础速度差1（向下取整），获得1护甲；可叠加。",
+    "effectDescription": "【护甲】获得“动能回收装置”buff：每张卡打出时，当前tick值每与该卡基础速度差1（向下取整），获得1护甲；可叠加。",
     "designer": "木头",
     "packId": "pack_4_variable_gear",
     "rarity": 3,
     "speed": 4,
     "scriptId": "kinetic_recovery_device",
-    "tags": ["辅助"]
+    "tags": ["辅助", "护甲"]
   },
   {
     "id": "big_torque_gear",

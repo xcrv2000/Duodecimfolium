@@ -67,7 +67,7 @@
   {
     "id": "variable_gear_start",
     "name": "变速齿轮，启动！",
-    "description": "齿轮、轰鸣与高速碰撞。",
+    "description": "（正在开着鼠标连点器挂机…）",
     "designer": "木头",
     "unlockRequirementId": "training_ground",
     "teamSize": 1,
@@ -75,7 +75,12 @@
     "goldRewardMin": 10,
     "goldRewardMax": 10,
     "stages": [
-      { "type": "elite", "enemyPoolId": "variable_gear_elite" },
+      { "type": "mob", "enemyPoolId": "variable_gear_mob" },
+      { "type": "mob", "enemyPoolId": "variable_gear_mob" },
+      { "type": "mob", "enemyPoolId": "variable_gear_mob" },
+      { "type": "mob", "enemyPoolId": "variable_gear_mob" },
+      { "type": "mob", "enemyPoolId": "variable_gear_mob" },
+      { "type": "mob", "enemyPoolId": "variable_gear_mob" },
       { "type": "boss", "enemyPoolId": "variable_gear_boss" }
     ]
   }

@@ -6,8 +6,8 @@
     "magic_mob": ["mob_fire_mage", "mob_ice_mage", "mob_earth_mage", "mob_magic_swordsman"],
     "magic_elite": ["elite_fire_mage", "elite_magic_swordsman", "elite_ice_mage"],
     "fiery_duelist_boss": ["apprentice_fire_adept", "apprentice_shadow_scout", "apprentice_berserker"],
-    "variable_gear_elite": ["variable_gear_elite_1"],
-    "variable_gear_boss": ["variable_gear_boss_1"]
+    "variable_gear_mob": ["variable_gear_mob_1", "variable_gear_mob_2", "variable_gear_mob_3"],
+    "variable_gear_boss": ["variable_gear_boss_1", "variable_gear_boss_2"]
   },
   "definitions": {
     "mob_1": {
@@ -163,26 +163,54 @@
         "pool": ["duelist_proof"]
       }
     },
-    "variable_gear_elite_1": {
-      "id": "variable_gear_elite_1",
-      "name": "齿轮操作员",
-      "hpMin": 55,
-      "hpMax": 60,
+    "variable_gear_mob_1": {
+      "id": "variable_gear_mob_1",
+      "name": "变速小怪1",
+      "hpMin": 45,
+      "hpMax": 50,
       "deck": [
         "quick_start",
         "rush_attack",
-        "kinetic_recovery_device",
+        "kinetic_recovery_device"
+      ],
+      "dropTable": {
+        "chance": 0.15,
+        "min": 1,
+        "max": 1,
+        "pool": ["variable_gear_token"]
+      }
+    },
+    "variable_gear_mob_2": {
+      "id": "variable_gear_mob_2",
+      "name": "变速小怪2",
+      "hpMin": 45,
+      "hpMax": 50,
+      "deck": [
         "super_kinetic_impact",
         "speed_magician",
         "temporary_ceasefire",
-        "sledgehammer",
+        "sledgehammer"
+      ],
+      "dropTable": {
+        "chance": 0.15,
+        "min": 1,
+        "max": 1,
+        "pool": ["variable_gear_token"]
+      }
+    },
+    "variable_gear_mob_3": {
+      "id": "variable_gear_mob_3",
+      "name": "变速小怪3",
+      "hpMin": 45,
+      "hpMax": 50,
+      "deck": [
         "big_torque_gear",
         "big_torque_gear",
         "big_torque_gear",
         "kinetic_impact"
       ],
       "dropTable": {
-        "chance": 0.5,
+        "chance": 0.15,
         "min": 1,
         "max": 1,
         "pool": ["variable_gear_token"]
@@ -190,7 +218,7 @@
     },
     "variable_gear_boss_1": {
       "id": "variable_gear_boss_1",
-      "name": "变速总控机师",
+      "name": "变速Boss1",
       "hpMin": 75,
       "hpMax": 80,
       "deck": [
@@ -200,7 +228,21 @@
         "rush_attack",
         "clear_oil",
         "overload_cargo",
-        "kinetic_recovery_device",
+        "kinetic_recovery_device"
+      ],
+      "dropTable": {
+        "chance": 1.0,
+        "min": 1,
+        "max": 2,
+        "pool": ["variable_gear_token"]
+      }
+    },
+    "variable_gear_boss_2": {
+      "id": "variable_gear_boss_2",
+      "name": "变速Boss2",
+      "hpMin": 75,
+      "hpMax": 80,
+      "deck": [
         "super_kinetic_impact",
         "speed_magician",
         "temporary_ceasefire",
