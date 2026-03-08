@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useBattleStore, CustomUnitConfig } from '../../stores/battleStore';
 import { useReplayStore } from '../../stores/replayStore';
@@ -15,6 +15,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   const unlockedDungeons = usePlayerStore(state => state.unlockedDungeons);
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const decks = usePlayerStore(state => state.decks);
+    const defaultDeckId = usePlayerStore(state => state.defaultDeckId);
   const startDungeon = useBattleStore(state => state.startDungeon);
   const startCustomBattle = useBattleStore(state => state.startCustomBattle);
   const startReplay = useBattleStore(state => state.startReplay);
@@ -24,6 +25,14 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   const [viewMode, setViewMode] = useState<'dungeon' | 'replay'>('dungeon');
   const [selectedDungeonId, setSelectedDungeonId] = useState<string | null>(null);
   const [selectedDeckIndex, setSelectedDeckIndex] = useState<number>(0);
+
+    useEffect(() => {
+        if (!selectedDungeonId || selectedDungeonId === 'sandbox_training') return;
+        const defaultIndex = decks.findIndex((d) => d.id === defaultDeckId);
+        if (defaultIndex >= 0) {
+            setSelectedDeckIndex(defaultIndex);
+        }
+    }, [selectedDungeonId, defaultDeckId, decks]);
 
   const [sandboxConfig, setSandboxConfig] = useState<{
       isOpen: boolean;
@@ -43,10 +52,11 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
     if (!selectedDungeonId) return;
 
     if (selectedDungeonId === 'sandbox_training') {
+        const defaultDeck = decks.find((d) => d.id === defaultDeckId) || decks[0];
         setSandboxConfig({
             ...sandboxConfig,
             isOpen: true,
-            playerDeckIds: Array(sandboxConfig.playerCount).fill(decks[0]?.id || ''),
+            playerDeckIds: Array(sandboxConfig.playerCount).fill(defaultDeck?.id || ''),
             enemyDeckJsons: Array(sandboxConfig.enemyCount).fill('')
         });
         return;

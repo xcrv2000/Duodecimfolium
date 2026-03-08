@@ -19,6 +19,7 @@ interface PlayerStore extends PlayerState {
   renameDeck: (deckId: string, newName: string) => void;
   updateDeck: (deckId: string, cardIds: string[], modifierSlots?: Record<string, string>) => void;
   importDeck: (deck: any) => void; // Accepts deck object
+  setDefaultDeck: (deckId: string) => void;
   
   // Modifiers
   addModifier: (id: string, count?: number) => void;
@@ -49,6 +50,7 @@ const initialState: PlayerState = {
       cardSpeedPenalties: {}
     }
   ],
+  defaultDeckId: 'default_deck',
   modifiers: {
     'breeze_orb': 3,
     'iron_orb': 3,
@@ -157,12 +159,23 @@ export const usePlayerStore = create<PlayerStore>()(
           modifierSlots: {},
           cardSpeedPenalties: {}
         };
-        return { decks: [...state.decks, newDeck] };
+        return {
+          decks: [...state.decks, newDeck],
+          defaultDeckId: state.defaultDeckId || newDeck.id
+        };
       }),
 
       deleteDeck: (deckId) => set((state) => {
         if (state.decks.length <= 1) return state; // Prevent deleting last deck
-        return { decks: state.decks.filter(d => d.id !== deckId) };
+        const nextDecks = state.decks.filter(d => d.id !== deckId);
+        const nextDefault =
+          state.defaultDeckId === deckId
+            ? (nextDecks[0]?.id || 'default_deck')
+            : (state.defaultDeckId || nextDecks[0]?.id || 'default_deck');
+        return {
+          decks: nextDecks,
+          defaultDeckId: nextDefault
+        };
       }),
 
       renameDeck: (deckId, newName) => set((state) => ({
@@ -234,7 +247,15 @@ export const usePlayerStore = create<PlayerStore>()(
         // Check limits
         if (state.decks.length >= 100) return state;
         
-        return { decks: [...state.decks, newDeck] };
+        return {
+          decks: [...state.decks, newDeck],
+          defaultDeckId: state.defaultDeckId || newDeck.id
+        };
+      }),
+
+      setDefaultDeck: (deckId) => set((state) => {
+        if (!state.decks.some((d) => d.id === deckId)) return state;
+        return { defaultDeckId: deckId };
       }),
 
       craftCard: (cardId, cost) => set((state) => {
@@ -252,14 +273,27 @@ export const usePlayerStore = create<PlayerStore>()(
     {
       name: 'duodecimfolium-player-storage-v1', // unique name with version
       storage: createJSONStorage(() => localStorage), // Explicitly use localStorage
-      version: 2,
+      version: 3,
       migrate: (persistedState: any, version) => {
-        if (!persistedState || version >= 2) return persistedState;
-        return {
-          ...persistedState,
-          openedPacks: persistedState.openedPacks || [],
-          tokens: persistedState.tokens || {}
-        };
+        if (!persistedState) return persistedState;
+
+        if (version < 2) {
+          return {
+            ...persistedState,
+            openedPacks: persistedState.openedPacks || [],
+            tokens: persistedState.tokens || {},
+            defaultDeckId: persistedState.defaultDeckId || persistedState.decks?.[0]?.id || 'default_deck'
+          };
+        }
+
+        if (version < 3) {
+          return {
+            ...persistedState,
+            defaultDeckId: persistedState.defaultDeckId || persistedState.decks?.[0]?.id || 'default_deck'
+          };
+        }
+
+        return persistedState;
       },
       partialize: (state) => ({
         gold: state.gold,
@@ -270,6 +304,7 @@ export const usePlayerStore = create<PlayerStore>()(
         openedPacks: state.openedPacks,
         collection: state.collection,
         decks: state.decks,
+        defaultDeckId: state.defaultDeckId,
         modifiers: state.modifiers,
         tokens: state.tokens
       }),

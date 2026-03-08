@@ -7,6 +7,7 @@ export interface PlayerState {
   openedPacks: string[]; // ID list of packs that have been opened at least once
   collection: Record<string, number>; // cardId -> count
   decks: Deck[];
+  defaultDeckId?: string;
   
   /**
    * 修饰珠库存（永久配件库）

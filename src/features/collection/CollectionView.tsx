@@ -14,7 +14,7 @@ const modifiers = modifiersData as any[];
 const packNameById = Object.fromEntries(packs.map((p) => [p.id, p.name]));
 
 const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
-  const { collection, decks, updateDeck, createDeck, deleteDeck, renameDeck, importDeck, modifiers: ownedModifiers } = usePlayerStore();
+    const { collection, decks, updateDeck, createDeck, deleteDeck, renameDeck, importDeck, setDefaultDeck, defaultDeckId, modifiers: ownedModifiers } = usePlayerStore();
   const [selectedDeckId, setSelectedDeckId] = useState(decks[0]?.id || '');
   const [isRenaming, setIsRenaming] = useState(false);
   const [tempName, setTempName] = useState('');
@@ -427,6 +427,17 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
             ) : (
                 <div className="flex justify-between items-center bg-slate-800 p-2 rounded border border-slate-700">
                     <span className={`font-bold truncate flex-1 ${!isDeckValid ? 'text-red-400' : 'text-slate-200'}`}>{currentDeck.name}</span>
+                    <button
+                        onClick={() => setDefaultDeck(currentDeck.id)}
+                        className={`text-xs px-2 py-1 rounded mr-2 border transition-colors ${
+                            defaultDeckId === currentDeck.id
+                                ? 'bg-emerald-600/30 text-emerald-300 border-emerald-500'
+                                : 'bg-slate-900 text-slate-300 border-slate-600 hover:border-emerald-500 hover:text-emerald-300'
+                        }`}
+                        title="设为默认卡组"
+                    >
+                        默认
+                    </button>
                     <button onClick={handleRenameStart} className="text-slate-400 hover:text-white ml-2" title="重命名"><Edit2 size={14} /></button>
                 </div>
             )}
