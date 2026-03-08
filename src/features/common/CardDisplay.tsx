@@ -29,7 +29,7 @@ const allCards = cardsData as Card[];
 const allBuffs = buffsData as Array<{ name: string; description: string }>;
 const buffByName = new Map(allBuffs.map((b) => [b.name, b]));
 const keywordDescriptions: Record<string, string> = {
-  全力: '该卡结算时，会优先以当前血量最高的敌方单位为目标。'
+  全力: '该卡会占据所在的完整的tick。'
 };
 
 const CardDisplay: React.FC<CardDisplayProps> = ({

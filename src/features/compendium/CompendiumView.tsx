@@ -77,15 +77,35 @@ const CompendiumView: React.FC = () => {
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
         return (
+                    card.id.toLowerCase().includes(query) ||
           card.name.toLowerCase().includes(query) ||
           card.description.toLowerCase().includes(query) ||
-          card.effectDescription.toLowerCase().includes(query)
+                    card.effectDescription.toLowerCase().includes(query) ||
+                    card.packId.toLowerCase().includes(query) ||
+                    (card.tags || []).some((tag) => tag.toLowerCase().includes(query))
         );
       }
 
       return true;
     });
   }, [selectedPack, selectedCost, selectedTag, searchQuery, visiblePackIds]);
+
+    const filteredModifiers = useMemo(() => {
+        if (!searchQuery.trim()) return modifiers;
+        const query = searchQuery.toLowerCase();
+        return modifiers.filter((mod) => {
+            const haystack = [
+                mod.id,
+                mod.name,
+                mod.description,
+                mod.effectId,
+                String(mod.value ?? '')
+            ]
+                .join(' ')
+                .toLowerCase();
+            return haystack.includes(query);
+        });
+    }, [searchQuery]);
 
   // Statistics
   const totalCards = cards.filter(c => visiblePackIds.has(c.packId)).length;
@@ -157,21 +177,21 @@ const CompendiumView: React.FC = () => {
             </div>
         </div>
         
-        {/* Filters - Only for cards tab */}
-        {activeTab === 'cards' && (
+        {/* Search + Filters */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-end">
-            {/* Search */}
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
                 <input 
                     type="text" 
-                    placeholder="Search cards..." 
-                    className="bg-slate-800 border border-slate-700 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:border-emerald-500 outline-none w-full sm:w-48"
+                    placeholder={activeTab === 'cards' ? '搜索卡牌...' : '搜索修饰珠...'} 
+                    className="bg-slate-800 border border-slate-700 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:border-emerald-500 outline-none w-full sm:w-56"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
             </div>
 
+        {activeTab === 'cards' && (
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 sm:items-end">
             {/* Pack Filter */}
             <div className="flex flex-col gap-1">
                 <label className="text-xs text-slate-500 font-bold">卡包</label>
@@ -218,6 +238,7 @@ const CompendiumView: React.FC = () => {
             </div>
         </div>
         )}
+                </div>
       </div>
 
       {/* Grid */}
@@ -272,7 +293,7 @@ const CompendiumView: React.FC = () => {
             </div>
         ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 pb-8">
-                {modifiers.map(mod => {
+                {filteredModifiers.map(mod => {
                     const count = ownedModifiers[mod.id] || 0;
                     const style = getModifierStyle(mod.id);
                     return (
@@ -292,6 +313,11 @@ const CompendiumView: React.FC = () => {
                         </div>
                     );
                 })}
+                {filteredModifiers.length === 0 && (
+                    <div className="col-span-full text-center text-slate-500 py-20">
+                        未找到符合搜索条件的修饰珠。
+                    </div>
+                )}
             </div>
         )}
       </div>

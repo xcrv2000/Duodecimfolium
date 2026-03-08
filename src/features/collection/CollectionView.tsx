@@ -1,20 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { usePlayerStore } from '../../stores/playerStore';
 import cardsData from '../../data/cards.json';
+import packsData from '../../data/packs.json';
 import modifiersData from '../../data/modifiers.json';
-import { Layers, Plus, Minus, Trash2, Edit2, Download, Upload, Check, X, Gem } from 'lucide-react';
+import { Layers, Plus, Minus, Trash2, Edit2, Download, Upload, Check, X, Gem, Search } from 'lucide-react';
 import { Card } from '../../core/domain/Card';
 import CardDisplay from '../common/CardDisplay';
 import { decodeDeckCode, encodeDeckCode } from '../../utils/deckCode';
 
 const cards = cardsData as Card[];
+const packs = packsData as Array<{ id: string; name: string }>;
 const modifiers = modifiersData as any[];
+const packNameById = Object.fromEntries(packs.map((p) => [p.id, p.name]));
 
 const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
   const { collection, decks, updateDeck, createDeck, deleteDeck, renameDeck, importDeck, modifiers: ownedModifiers } = usePlayerStore();
   const [selectedDeckId, setSelectedDeckId] = useState(decks[0]?.id || '');
   const [isRenaming, setIsRenaming] = useState(false);
   const [tempName, setTempName] = useState('');
+    const [collectionSearch, setCollectionSearch] = useState('');
+    const [collectionSort, setCollectionSort] = useState<'default' | 'speed' | 'pack'>('default');
   
   // Modifier selection state
   const [modifierTargetIndex, setModifierTargetIndex] = useState<number | null>(null);
@@ -59,7 +64,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     ...cards.filter((card) => (collection[card.id] || 0) > 0).map((card) => card.packId)
   ]);
   
-  const visibleCards = cards.filter(card => {
+    const visibleCards = cards.filter(card => {
       const count = collection[card.id] || 0;
       if (count > 0) return true;
       // If count is 0, only show if its pack is unlocked
@@ -68,6 +73,48 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
       if (!card.packId) return true; // Always show base cards?
       return visiblePackIds.has(card.packId);
   });
+
+    const displayCards = useMemo(() => {
+        const query = collectionSearch.trim().toLowerCase();
+        const filtered = visibleCards.filter((card) => {
+            const count = collection[card.id] || 0;
+            if (count <= 0) return false;
+            if (!query) return true;
+
+            const haystack = [
+                card.id,
+                card.name,
+                card.description,
+                card.effectDescription,
+                packNameById[card.packId] || '',
+                ...(card.tags || [])
+            ]
+                .join(' ')
+                .toLowerCase();
+
+            return haystack.includes(query);
+        });
+
+        const sorted = [...filtered];
+        if (collectionSort === 'speed') {
+            sorted.sort((a, b) => {
+                const sa = a.speed ?? Number.POSITIVE_INFINITY;
+                const sb = b.speed ?? Number.POSITIVE_INFINITY;
+                if (sa !== sb) return sa - sb;
+                return a.name.localeCompare(b.name, 'zh-CN');
+            });
+        } else if (collectionSort === 'pack') {
+            sorted.sort((a, b) => {
+                const pa = packNameById[a.packId] || a.packId;
+                const pb = packNameById[b.packId] || b.packId;
+                const packCmp = pa.localeCompare(pb, 'zh-CN');
+                if (packCmp !== 0) return packCmp;
+                return a.name.localeCompare(b.name, 'zh-CN');
+            });
+        }
+
+        return sorted;
+    }, [visibleCards, collection, collectionSearch, collectionSort]);
 
   const currentDeck = decks.find(d => d.id === selectedDeckId) || decks[0];
     const getCardMaxCopies = (cardId: string) => cards.find((c) => c.id === cardId)?.maxCopies ?? 3;
@@ -270,9 +317,31 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
         <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 md:mb-8 text-emerald-400 flex items-center gap-2">
           <Layers /> 卡组编辑 (Deck Builder)
         </h1>
+
+                <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row gap-2 sm:gap-3">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={16} />
+                        <input
+                            type="text"
+                            value={collectionSearch}
+                            onChange={(e) => setCollectionSearch(e.target.value)}
+                            placeholder="搜索持有卡牌（名称/描述/标签/卡包）"
+                            className="w-full bg-slate-800 border border-slate-700 rounded-full pl-10 pr-4 py-2 text-sm text-white focus:border-emerald-500 outline-none"
+                        />
+                    </div>
+                    <select
+                        value={collectionSort}
+                        onChange={(e) => setCollectionSort(e.target.value as 'default' | 'speed' | 'pack')}
+                        className="bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white outline-none focus:border-emerald-500"
+                    >
+                        <option value="default">默认顺序</option>
+                        <option value="speed">按速度排序</option>
+                        <option value="pack">按卡包排序</option>
+                    </select>
+                </div>
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 sm:gap-3 md:gap-4 pb-20">
-          {visibleCards.map(card => {
+                    {displayCards.map(card => {
             const count = collection[card.id] || 0;
             const inDeck = getDeckCardCount(card.id);
                         const canAdd = count > inDeck;
@@ -289,6 +358,9 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
               />
             );
           })}
+                    {displayCards.length === 0 && (
+                        <div className="col-span-full text-center text-slate-500 py-12">没有符合条件的持有卡牌</div>
+                    )}
         </div>
       </div>
 
