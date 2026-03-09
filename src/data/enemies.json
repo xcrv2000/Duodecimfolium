@@ -266,7 +266,7 @@
       "name": "神秘肘击者",
       "hpMin": 20,
       "hpMax": 20,
-      "deck": ["maze_step", "maze_step", "swing_punch", "counterweight"]
+      "deck": ["maze_step", "maze_step", "swing_punch", "charge", "counterweight"]
     },
     "poop_zone_mob_2": {
       "id": "poop_zone_mob_2",

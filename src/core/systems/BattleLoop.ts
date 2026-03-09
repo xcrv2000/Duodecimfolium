@@ -167,8 +167,8 @@ export class BattleLoop {
       const enemies = this.state.units.filter(u => u.team !== source.team && !u.isDead);
       if (enemies.length === 0) return;
       const target = enemies[Math.floor(this.rng.next() * enemies.length)];
-      this.directHpChange(target, -stormStacks);
-      this.log(source, target, `暴风雨触发：对 ${target.name} 造成${stormStacks}点穿甲伤害。`, 'attack', stormStacks);
+      this.log(source, target, `暴风雨触发。`, 'info');
+      this.dealDamage(source, target, stormStacks, 'physical', ['穿甲']);
     });
   }
 
@@ -930,8 +930,9 @@ export class BattleLoop {
         effectiveType = 'physical';
     }
     
+    const hasPierceTag = cardTags.some(tag => tag.includes('穿甲'));
     const armorBuff = target.buffs.find(b => b.id === 'armor');
-    if (armorBuff && armorBuff.level > 0) {
+    if (!hasPierceTag && armorBuff && armorBuff.level > 0) {
       const armorDamage = Math.min(armorBuff.level, damage);
       armorBuff.level -= armorDamage;
       damage -= armorDamage;

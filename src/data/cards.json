@@ -736,7 +736,7 @@
     "id": "storm",
     "name": "暴风雨",
     "description": "没比暴风雪靠谱",
-    "effectDescription": "本回合每 tick 开始时造成1点穿甲伤害。",
+    "effectDescription": "本回合每 tick 开始时造成1点穿甲的物理伤害。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
     "rarity": 6,

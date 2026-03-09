@@ -245,6 +245,37 @@ describe('BattleLoop', () => {
       const armorBuff = enemyUnit.buffs.find((b) => b.id === 'armor');
       expect(armorBuff?.level).toBe(3);
     });
+
+    it('暴风雨伤害应触发流血追加伤害', () => {
+      const playerUnit = battleState.units[0];
+      const enemyUnit = battleState.units[1];
+      const hpBefore = enemyUnit.hp;
+
+      playerUnit.buffs.push({
+        id: 'storm_current_turn',
+        name: '暴风雨',
+        description: '本回合每tick开始造成穿甲伤害。',
+        type: 'debuff',
+        duration: 1,
+        stackRule: 'stackable',
+        level: 1
+      });
+
+      enemyUnit.buffs.push({
+        id: 'bleed',
+        name: '流血',
+        description: '受到物理伤害时追加伤害。',
+        type: 'debuff',
+        duration: 1,
+        stackRule: 'stackable',
+        level: 2
+      });
+
+      battleLoop.nextTick();
+
+      // 暴风雨基础伤害1 + 流血2 = 3
+      expect(enemyUnit.hp).toBe(hpBefore - 3);
+    });
   });
 
   describe('日志输出', () => {
