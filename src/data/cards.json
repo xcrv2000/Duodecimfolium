@@ -760,7 +760,7 @@
     "id": "curiosity",
     "name": "好奇心",
     "description": "我猜橘猫找了半天没找到能力牌",
-    "effectDescription": "护具。被一张本场战斗中没见过的攻击牌攻击时，恢复4生命值。",
+    "effectDescription": "护具。增加12点空生命值上限。被一张本场战斗中没见过的攻击牌攻击时，恢复4生命值。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
     "rarity": 3,

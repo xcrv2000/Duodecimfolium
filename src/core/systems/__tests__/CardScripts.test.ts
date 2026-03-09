@@ -397,6 +397,24 @@ describe('CardScripts', () => {
       expect(armorAfter).toBe(armorBefore - 6);
       expect(playerUnit.buffs.find((b) => b.id === 'pierce')).toBeUndefined();
     });
+
+    it('暗影步应始终给施法者添加穿甲（即使传入敌方目标）', () => {
+      CardScripts.shadow_step(battleLoop, playerUnit, [enemyUnit]);
+
+      expect(playerUnit.buffs.find((b) => b.id === 'pierce')).toBeDefined();
+      expect(enemyUnit.buffs.find((b) => b.id === 'pierce')).toBeUndefined();
+    });
+
+    it('好奇心应增加12点空生命值上限且不立即回血', () => {
+      playerUnit.hp = 70;
+      playerUnit.maxHp = 100;
+
+      CardScripts.curiosity(battleLoop, playerUnit, [playerUnit]);
+
+      expect(playerUnit.maxHp).toBe(112);
+      expect(playerUnit.hp).toBe(70);
+      expect(playerUnit.buffs.find((b) => b.id === 'curiosity_guard')).toBeDefined();
+    });
   });
 
   describe('卡脚本不应该崩溃', () => {

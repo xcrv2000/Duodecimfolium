@@ -273,7 +273,7 @@
       "name": "巨肉自爆哥",
       "hpMin": 40,
       "hpMax": 40,
-      "deck": ["cloth_light_armor", "lakshir_ritual", "lakshir_ritual", "lakshir_ritual", "counter_magic"]
+      "deck": ["cloth_light_armor", "thrust", "lakshir_ritual", "lakshir_ritual", "lakshir_ritual", "counter_magic"]
     },
     "poop_zone_mob_3": {
       "id": "poop_zone_mob_3",
@@ -287,14 +287,14 @@
       "name": "幽默偷鸡人",
       "hpMin": 30,
       "hpMax": 30,
-      "deck": ["seize_initiative", "seize_initiative", "seize_initiative", "shadow_step", "substitute", "slash"]
+      "deck": ["seize_initiative", "seize_initiative", "seize_initiative", "powerful_cleave", "shadow_step", "substitute", "slash"]
     },
     "poop_zone_elite_1": {
       "id": "poop_zone_elite_1",
       "name": "抽象数值怪",
       "hpMin": 100,
       "hpMax": 100,
-      "deck": ["lakshir_ritual", "lakshir_ritual", "curiosity", "storm", "stab", "iron_wave", "whetstone"],
+      "deck": ["lakshir_ritual", "curiosity", "storm", "stab", "iron_wave", "iron_wave"],
       "dropTable": {
         "chance": 0.5,
         "min": 1,
@@ -305,8 +305,8 @@
     "poop_zone_elite_2": {
       "id": "poop_zone_elite_2",
       "name": "诡异月歌女",
-      "hpMin": 60,
-      "hpMax": 60,
+      "hpMin": 80,
+      "hpMax": 80,
       "deck": ["spirit_song", "spirit_song", "spirit_song", "temporary_ceasefire", "temporary_ceasefire", "moonlight_guidance", "moonlight_guidance", "leather_half_armor"],
       "dropTable": {
         "chance": 0.5,

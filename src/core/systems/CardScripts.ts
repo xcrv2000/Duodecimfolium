@@ -600,8 +600,7 @@ export const CardScripts: Record<string, CardScript> = {
     loop.addUnitBuff(target, buff);
   },
 
-  shadow_step: (loop, source, targets) => {
-    const target = targets[0] || source;
+  shadow_step: (loop, source, _targets) => {
     loop.directHpChange(source, -2);
     // Pierce for next attack
     const buff: UnitBuff = {
@@ -613,7 +612,8 @@ export const CardScripts: Record<string, CardScript> = {
       level: 1,
       type: 'buff'
     };
-    loop.addUnitBuff(target, buff);
+    // Shadow Step is a self-buff card: always grant pierce to the caster.
+    loop.addUnitBuff(source, buff);
   },
 
   shadow_claw: (loop, source, targets) => {
@@ -939,10 +939,12 @@ export const CardScripts: Record<string, CardScript> = {
   },
 
   curiosity: (loop, source, _targets) => {
+    // Grant empty max HP: raise maxHp only, do not heal current HP.
+    source.maxHp += 12;
     const buff: UnitBuff = {
       id: 'curiosity_guard',
       name: '好奇心',
-      description: '被本战斗中未见过的攻击牌命中时，回复4生命。',
+      description: '增加12点空生命值上限；被本战斗中未见过的攻击牌命中时，回复4生命。',
       duration: -1,
       stackRule: 'nonStackable',
       level: 1,
