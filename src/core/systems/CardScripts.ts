@@ -839,16 +839,7 @@ export const CardScripts: Record<string, CardScript> = {
   // Pack 5: Trick of God
   rebellion: (loop, source, targets) => {
     const target = targets[0];
-    const currentCard = (loop as any).currentCard;
-    if (!target || !currentCard) return;
-
-    if (currentCard.baseSpeed10 !== null && currentCard.currentSpeed10 !== null) {
-      const delta = currentCard.currentSpeed10 - currentCard.baseSpeed10;
-      if (delta !== 0) {
-        // Revert existing non-set speed delta once when this card is played.
-        loop.modifyCardPermanentSpeed(currentCard, -2 * delta, { bypassRebellionInvert: true });
-      }
-    }
+    if (!target) return;
 
     loop.dealDamage(source, target, 10, 'physical');
     if (!target.isDead) {

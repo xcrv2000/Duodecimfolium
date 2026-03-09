@@ -270,6 +270,15 @@ describe('CardScripts', () => {
       playerUnit.cards = [freshRebellion];
       battleLoop.modifyCardPermanentSpeed(freshRebellion, -10);
       expect(freshRebellion.currentSpeed10).toBe(70);
+
+      const penaltyRebellion = createCardInstance('rebellion_card_3', 'rebellion', 60, ['攻击', '物理']);
+      penaltyRebellion.deckSpeedPenalty = 9;
+      penaltyRebellion.modifiers = [{ effectId: 'speed_mod', value: 0.5 }];
+      playerUnit.cards = [penaltyRebellion];
+      (battleLoop as any).recalculateCardSpeed(playerUnit, penaltyRebellion);
+
+      // +0.9 与 +0.5 均应被反转，等价于总计 -1.4（speed10: -14）。
+      expect(penaltyRebellion.currentSpeed10).toBe(46);
     });
   });
 

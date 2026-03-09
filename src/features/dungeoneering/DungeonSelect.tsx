@@ -6,6 +6,7 @@ import { Card } from '../../core/domain/Card';
 import cardsData from '../../data/cards.json';
 import dungeonsData from '../../data/dungeons.json';
 import { Dungeon } from '../../core/domain/Dungeon';
+import { decodeDeckCode } from '../../utils/deckCode';
 import { Skull, Coins, Lock, Play, ArrowLeft, History, Star, Trash2 } from 'lucide-react';
 
 const dungeons = dungeonsData as unknown as Dungeon[];
@@ -150,20 +151,30 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
       // Validate Enemy Decks
       const enemyConfigs: CustomUnitConfig[] = [];
       for (let i = 0; i < sandboxConfig.enemyCount; i++) {
-          const json = sandboxConfig.enemyDeckJsons[i];
+          const inputText = sandboxConfig.enemyDeckJsons[i];
           try {
-              const parsed = JSON.parse(json);
-              if (!parsed || !Array.isArray(parsed.cardIds)) throw new Error("Invalid Format");
+              const parsed = decodeDeckCode(inputText);
+              if (!parsed || !Array.isArray(parsed.cardIds)) throw new Error('Invalid format');
+
+              let customHp = 100;
+              try {
+                  const raw = JSON.parse(inputText);
+                  if (raw && typeof raw.hp === 'number' && Number.isFinite(raw.hp)) {
+                      customHp = raw.hp;
+                  }
+              } catch {
+                  // Deck code / non-JSON input does not carry hp override.
+              }
               
               enemyConfigs.push({
                   name: parsed.name || `Dummy ${i+1}`,
                   cardIds: parsed.cardIds,
                   modifierSlots: parsed.modifierSlots,
-                  hp: parsed.hp || 100, // Allow custom HP if in JSON, else 100
+                  hp: customHp,
                   team: 'enemy'
               });
           } catch (e) {
-              alert(`Enemy ${i+1} deck JSON is invalid. Please paste a valid deck JSON.`);
+              alert(`Enemy ${i+1} 牌组输入无效。请粘贴有效卡组码或 JSON。`);
               return;
           }
       }
@@ -394,10 +405,10 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                         </div>
                         {Array.from({ length: sandboxConfig.enemyCount }).map((_, i) => (
                             <div key={i} className="p-2 bg-slate-700/50 rounded">
-                                <label className="block text-sm mb-1">Unit {i+1} Deck JSON:</label>
+                                <label className="block text-sm mb-1">Unit {i+1} Deck Code / JSON:</label>
                                 <textarea 
                                     className="w-full bg-slate-700 p-2 rounded h-24 text-xs font-mono"
-                                    placeholder='Paste JSON here... {"cardIds": ["thrust", ...]}'
+                                    placeholder='Paste deck code or JSON here... DDF3.xxx / {"cardIds": ["thrust", ...]}'
                                     value={sandboxConfig.enemyDeckJsons[i] || ''}
                                     onChange={(e) => {
                                         const newJsons = [...sandboxConfig.enemyDeckJsons];

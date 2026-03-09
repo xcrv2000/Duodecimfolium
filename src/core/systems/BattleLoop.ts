@@ -532,14 +532,12 @@ export class BattleLoop {
       // 0.1 → 1,   0.9 → 9,   2.0 → 20,   2.8 → 28
       // （所有计算保留整数，避免浮点误差）
       
-      // baseSpeed10 not null here, so start with a numeric speed
-      let speed: number | null = card.baseSpeed10 + (card.permanentSpeedModifier || 0);
-
-      // we know speed is a number right now; later boundary checks may set it to null
-      let numericSpeed: number = speed as number;
+      // baseSpeed10 is treated as the immutable base; all adjustments are deltas.
+      let speed: number | null = card.baseSpeed10;
+      let speedDelta10 = card.permanentSpeedModifier || 0;
       
       // 先应用同名卡惩罚，再应用修饰珠（符合“惩罚先于修饰珠”的结算顺序）
-      numericSpeed += (card.deckSpeedPenalty || 0);
+      speedDelta10 += (card.deckSpeedPenalty || 0);
 
       // === 应用修饰珠效果 ===
       // 修饰珠系统支持两种效果：
@@ -553,7 +551,7 @@ export class BattleLoop {
                 const val = Number(mod.value);
                 if (!isNaN(val)) {
                     // value 在 modifiers.json 中是浮点数，需要转为 x10
-                    numericSpeed += Math.round(val * 10);
+                    speedDelta10 += Math.round(val * 10);
                 }
             }
             // attr_add 效果在 initializeCardTags() 中处理
@@ -564,7 +562,7 @@ export class BattleLoop {
       if (card.factoryBuffs) {
         card.factoryBuffs.forEach(buff => {
             if (buff.speedModification) {
-                numericSpeed += buff.speedModification;
+                speedDelta10 += buff.speedModification;
             }
         });
       }
@@ -573,7 +571,7 @@ export class BattleLoop {
       if (card.buffs) {
         card.buffs.forEach(buff => {
             if (buff.speedModification) {
-                numericSpeed += buff.speedModification;
+                speedDelta10 += buff.speedModification;
             }
         });
       }
@@ -585,17 +583,23 @@ export class BattleLoop {
       // 【眩晕】例：level=2 意味着目标卡速度+2.0，转换为speed10则为+20
       unit.buffs.forEach(buff => {
           if (buff.id === 'charge') {
-              numericSpeed += 10; // +1.0 speed（蓄势：下一次攻击前加速1.0）
+              speedDelta10 += 10; // +1.0 speed（蓄势：下一次攻击前加速1.0）
           }
           // 【眩晕】在duration===1时才应用，此时buff已在上一个回合结束时由duration从2递减至1
           if (buff.id === 'stun' && buff.duration === 1) {
-              numericSpeed += buff.level * 10; // ✅ FIX: 乘以10转换为speed10单位（level:2 → +20 speed10 → +2.0 speed）
+              speedDelta10 += buff.level * 10; // ✅ FIX: 乘以10转换为speed10单位（level:2 → +20 speed10 → +2.0 speed）
           }
       });
 
           if (card.factory.scriptId === 'swing_punch') {
-            numericSpeed += this.state.turn % 2 === 1 ? -20 : 20;
+            speedDelta10 += this.state.turn % 2 === 1 ? -20 : 20;
           }
+
+      // Rebellion inverts every speed delta applied to this instance.
+      if (card.factory.scriptId === 'rebellion') {
+          speedDelta10 = -speedDelta10;
+      }
+      const numericSpeed: number = (speed as number) + speedDelta10;
       
       // === 速度边界值处理 ===
       // now assign back to speed variable so boundary logic can set null if needed
@@ -1081,17 +1085,7 @@ export class BattleLoop {
   }
 
   // API: Modify Card Speed
-    private transformSpeedDeltaForRebellion(card: CardInstance, delta10: number): number {
-      if (card.factory.scriptId === 'rebellion') {
-        return -delta10;
-      }
-      return delta10;
-    }
-
-    public modifyCardSpeed(card: CardInstance, delta10: number, options?: { bypassRebellionInvert?: boolean }): void {
-      const adjustedDelta10 = options?.bypassRebellionInvert
-      ? delta10
-      : this.transformSpeedDeltaForRebellion(card, delta10);
+    public modifyCardSpeed(card: CardInstance, delta10: number): void {
       const buff: CardInstanceBuff = {
           id: 'speed_mod_dynamic',
           name: 'Speed Mod',
@@ -1099,19 +1093,15 @@ export class BattleLoop {
           type: 'buff',
           duration: 1, // This turn
           stackRule: 'stackable',
-        level: adjustedDelta10,
-        speedModification: adjustedDelta10
+        level: delta10,
+        speedModification: delta10
       };
       this.addCardInstanceBuff(card, buff);
   }
 
   // API: 修改卡的永久速度修正（用于 wind_thunder_strike 等能力）
-    public modifyCardPermanentSpeed(card: CardInstance, delta10: number, options?: { bypassRebellionInvert?: boolean }): void {
-      const adjustedDelta10 = options?.bypassRebellionInvert
-      ? delta10
-      : this.transformSpeedDeltaForRebellion(card, delta10);
-
-      card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + adjustedDelta10;
+    public modifyCardPermanentSpeed(card: CardInstance, delta10: number): void {
+      card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + delta10;
       
       const unit = this.state.units.find(u => u.id === card.ownerId);
       if (unit) {
