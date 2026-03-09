@@ -737,8 +737,7 @@ export const CardScripts: Record<string, CardScript> = {
     loop.addUnitBuff(source, buff);
   },
 
-  kinetic_recovery_device: (loop, source, targets) => {
-    const target = targets[0] || source;
+  kinetic_recovery_device: (loop, source, _targets) => {
     const buff: UnitBuff = {
       id: 'kinetic_recovery_device',
       name: '动能回收装置',
@@ -748,7 +747,7 @@ export const CardScripts: Record<string, CardScript> = {
       level: 1,
       type: 'buff'
     };
-    loop.addUnitBuff(target, buff);
+    loop.addUnitBuff(source, buff);
   },
 
   big_torque_gear: (loop, source, targets) => {

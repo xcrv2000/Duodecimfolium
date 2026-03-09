@@ -556,13 +556,13 @@
     "id": "kinetic_recovery_device",
     "name": "动能回收装置",
     "description": "上山耗油，下山蓄电",
-    "effectDescription": "【护甲】获得“动能回收装置”buff：每张卡打出时，当前tick值每与该卡基础速度差1（向下取整），获得1护甲；可叠加。",
+    "effectDescription": "护具。战斗开始时生效，持续至战斗结束。每张卡打出时，当前tick值每与该卡基础速度差1（向下取整），获得1护甲；可叠加。",
     "designer": "木头",
     "packId": "pack_4_variable_gear",
     "rarity": 3,
-    "speed": 4,
+    "speed": null,
     "scriptId": "kinetic_recovery_device",
-    "tags": ["辅助", "护甲"]
+    "tags": ["护具"]
   },
   {
     "id": "big_torque_gear",
@@ -675,7 +675,7 @@
   {
     "id": "rebellion",
     "name": "叛逆",
-    "description": "反着来就对了。",
+    "description": "傲娇",
     "effectDescription": "造成10*2点物理伤害。此牌的所有速度修正效果反转。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -687,7 +687,7 @@
   {
     "id": "spirit_song",
     "name": "灵歌",
-    "description": "唱点不一样的。",
+    "description": "we are no strangers to love……",
     "effectDescription": "造成3点魔法伤害，本回合双方所有物理牌速度+1。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -699,7 +699,7 @@
   {
     "id": "substitute",
     "name": "替身",
-    "description": "先挨一点，再不挨。",
+    "description": "还差保护和剧毒",
     "effectDescription": "失去3生命值，召唤一个抵挡1次攻击的分身。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -711,7 +711,7 @@
   {
     "id": "iron_wave",
     "name": "铁斩波",
-    "description": "硬，且有波。",
+    "description": "玩塔玩的",
     "effectDescription": "造成5点物理伤害，获得5护甲。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -723,7 +723,7 @@
   {
     "id": "counterweight",
     "name": "秤砣",
-    "description": "慢有慢的道理。",
+    "description": "在启动了",
     "effectDescription": "护具。你的初始速度最慢的攻击牌释放两次。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -735,7 +735,7 @@
   {
     "id": "storm",
     "name": "暴风雨",
-    "description": "每一 tick 都在刮。",
+    "description": "没比暴风雪靠谱",
     "effectDescription": "本回合每 tick 开始时造成1点穿甲伤害。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -747,7 +747,7 @@
   {
     "id": "swing_punch",
     "name": "摇摆拳",
-    "description": "摇摆，然后重拳。",
+    "description": "鬼！",
     "effectDescription": "造成7点物理伤害。奇数回合-2速，偶数回合+2速。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -759,7 +759,7 @@
   {
     "id": "curiosity",
     "name": "好奇心",
-    "description": "没见过？那我先回一口。",
+    "description": "我猜橘猫找了半天没找到能力牌",
     "effectDescription": "护具。被一张本场战斗中没见过的攻击牌攻击时，恢复4生命值。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -771,7 +771,7 @@
   {
     "id": "counter_magic",
     "name": "相克",
-    "description": "先清零，再比差值。",
+    "description": "撞撞肚皮",
     "effectDescription": "双方失去所有护甲，护甲较低的一方受到护甲差值的魔法伤害。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -783,7 +783,7 @@
   {
     "id": "seize_initiative",
     "name": "抢攻",
-    "description": "同速就先手抢打。",
+    "description": "抓到你了",
     "effectDescription": "如果对方有相同速度的牌，造成6点物理伤害。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -795,7 +795,7 @@
   {
     "id": "moonlight_guidance",
     "name": "月光引导",
-    "description": "把月光挤成炮。",
+    "description": "要来咯",
     "effectDescription": "生成一张【月光轰炸】。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
@@ -807,7 +807,7 @@
   {
     "id": "moonlight_bombard",
     "name": "月光轰炸",
-    "description": "月光引导产物。",
+    "description": "也是一种天基炮",
     "effectDescription": "造成15点魔法伤害。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
