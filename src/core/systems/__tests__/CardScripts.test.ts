@@ -362,6 +362,41 @@ describe('CardScripts', () => {
       // throw 应该在敌人上应用眩晕 Buff
       expect(enemyUnit.buffs.length).toBeGreaterThan(initialBuffCount);
     });
+
+    it('暗影步提供的穿甲应使下一次攻击无视护甲', () => {
+      CardScripts.shadow_step(battleLoop, playerUnit, [playerUnit]);
+      battleLoop.addArmor(enemyUnit, 10);
+
+      const hpBefore = enemyUnit.hp;
+      const armorBefore = enemyUnit.buffs.find((b) => b.id === 'armor')?.level;
+
+      const slashCard = createCardInstance('slash_card', 'slash', 60, ['攻击', '物理']);
+      (battleLoop as any).currentCard = slashCard;
+      CardScripts.slash(battleLoop, playerUnit, [enemyUnit]);
+
+      const armorAfter = enemyUnit.buffs.find((b) => b.id === 'armor')?.level;
+      expect(enemyUnit.hp).toBe(hpBefore - 6);
+      expect(armorAfter).toBe(armorBefore);
+      expect(playerUnit.buffs.find((b) => b.id === 'pierce')).toBeUndefined();
+    });
+
+    it('暗影步穿甲在多段攻击中应仅首段生效', () => {
+      CardScripts.shadow_step(battleLoop, playerUnit, [playerUnit]);
+      battleLoop.addArmor(enemyUnit, 10);
+
+      const hpBefore = enemyUnit.hp;
+      const armorBefore = enemyUnit.buffs.find((b) => b.id === 'armor')?.level || 0;
+
+      const sweepCard = createCardInstance('sweep_card', 'sweep', 90, ['攻击', '物理']);
+      (battleLoop as any).currentCard = sweepCard;
+      CardScripts.sweep(battleLoop, playerUnit, [enemyUnit]);
+
+      const armorAfter = enemyUnit.buffs.find((b) => b.id === 'armor')?.level || 0;
+      // 首段穿甲直伤3，后两段各3点被护甲吸收
+      expect(enemyUnit.hp).toBe(hpBefore - 3);
+      expect(armorAfter).toBe(armorBefore - 6);
+      expect(playerUnit.buffs.find((b) => b.id === 'pierce')).toBeUndefined();
+    });
   });
 
   describe('卡脚本不应该崩溃', () => {

@@ -930,7 +930,14 @@ export class BattleLoop {
         effectiveType = 'physical';
     }
     
-    const hasPierceTag = cardTags.some(tag => tag.includes('穿甲'));
+    const isAttackCard = !!this.currentCard?.tagsRuntime?.includes('攻击');
+    const hasPierceBuff = isAttackCard && source.buffs.some(b => b.id === 'pierce');
+    if (hasPierceBuff) {
+      this.removeBuff(source, 'pierce');
+      this.log(source, target, `穿甲触发：本次攻击无视护甲。`, 'buff');
+    }
+
+    const hasPierceTag = hasPierceBuff || cardTags.some(tag => tag.includes('穿甲'));
     const armorBuff = target.buffs.find(b => b.id === 'armor');
     if (!hasPierceTag && armorBuff && armorBuff.level > 0) {
       const armorDamage = Math.min(armorBuff.level, damage);
