@@ -294,7 +294,7 @@
       "name": "抽象数值怪",
       "hpMin": 100,
       "hpMax": 100,
-      "deck": ["lakshir_ritual", "curiosity", "storm", "stab", "iron_wave", "iron_wave"],
+      "deck": ["lakshir_ritual", "curiosity", "storm", "whetstone", "iron_wave", "iron_wave"],
       "dropTable": {
         "chance": 0.5,
         "min": 1,
