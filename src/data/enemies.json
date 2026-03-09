@@ -277,7 +277,7 @@
     },
     "poop_zone_mob_3": {
       "id": "poop_zone_mob_3",
-      "name": "攻哈质检员",
+      "name": "防哈质检员",
       "hpMin": 20,
       "hpMax": 20,
       "deck": ["rebellion", "rebellion", "rebellion", "temporary_ceasefire", "temporary_ceasefire", "steel_full_armor"]

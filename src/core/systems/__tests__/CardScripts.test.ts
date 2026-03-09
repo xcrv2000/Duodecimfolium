@@ -248,6 +248,29 @@ describe('CardScripts', () => {
       // 被触发卡速度=4，伤害应为 4*2=8；若错误使用超光速速度10则会是20
       expect(enemyUnit.hp).toBe(hpBefore - 8);
     });
+
+    it('moonlight_bombard 发动后应销毁自身', () => {
+      const bombard = createCardInstance('moonlight_bombard_card', 'moonlight_bombard', 10, ['攻击', '魔法', '衍生']);
+      playerUnit.cards = [bombard];
+      (battleLoop as any).currentCard = bombard;
+
+      CardScripts.moonlight_bombard(battleLoop, playerUnit, [enemyUnit]);
+
+      expect(playerUnit.cards.find((c: any) => c.instanceId === bombard.instanceId)).toBeUndefined();
+    });
+
+    it('rebellion 受到速度加减修正时应反转符号（不含设为固定值）', () => {
+      const rebellionCard = createCardInstance('rebellion_card', 'rebellion', 60, ['攻击', '物理']);
+      playerUnit.cards = [rebellionCard];
+
+      battleLoop.modifyCardSpeed(rebellionCard, 20);
+      expect(rebellionCard.currentSpeed10).toBe(40);
+
+      const freshRebellion = createCardInstance('rebellion_card_2', 'rebellion', 60, ['攻击', '物理']);
+      playerUnit.cards = [freshRebellion];
+      battleLoop.modifyCardPermanentSpeed(freshRebellion, -10);
+      expect(freshRebellion.currentSpeed10).toBe(70);
+    });
   });
 
   describe('0.3.5 新护具与战斗循环联动', () => {

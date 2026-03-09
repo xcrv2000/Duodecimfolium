@@ -1081,7 +1081,17 @@ export class BattleLoop {
   }
 
   // API: Modify Card Speed
-  public modifyCardSpeed(card: CardInstance, delta10: number): void {
+    private transformSpeedDeltaForRebellion(card: CardInstance, delta10: number): number {
+      if (card.factory.scriptId === 'rebellion') {
+        return -delta10;
+      }
+      return delta10;
+    }
+
+    public modifyCardSpeed(card: CardInstance, delta10: number, options?: { bypassRebellionInvert?: boolean }): void {
+      const adjustedDelta10 = options?.bypassRebellionInvert
+      ? delta10
+      : this.transformSpeedDeltaForRebellion(card, delta10);
       const buff: CardInstanceBuff = {
           id: 'speed_mod_dynamic',
           name: 'Speed Mod',
@@ -1089,15 +1099,19 @@ export class BattleLoop {
           type: 'buff',
           duration: 1, // This turn
           stackRule: 'stackable',
-          level: delta10,
-          speedModification: delta10
+        level: adjustedDelta10,
+        speedModification: adjustedDelta10
       };
       this.addCardInstanceBuff(card, buff);
   }
 
   // API: 修改卡的永久速度修正（用于 wind_thunder_strike 等能力）
-  public modifyCardPermanentSpeed(card: CardInstance, delta10: number): void {
-      card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + delta10;
+    public modifyCardPermanentSpeed(card: CardInstance, delta10: number, options?: { bypassRebellionInvert?: boolean }): void {
+      const adjustedDelta10 = options?.bypassRebellionInvert
+      ? delta10
+      : this.transformSpeedDeltaForRebellion(card, delta10);
+
+      card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + adjustedDelta10;
       
       const unit = this.state.units.find(u => u.id === card.ownerId);
       if (unit) {

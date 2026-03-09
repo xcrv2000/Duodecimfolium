@@ -845,7 +845,8 @@ export const CardScripts: Record<string, CardScript> = {
     if (currentCard.baseSpeed10 !== null && currentCard.currentSpeed10 !== null) {
       const delta = currentCard.currentSpeed10 - currentCard.baseSpeed10;
       if (delta !== 0) {
-        loop.modifyCardPermanentSpeed(currentCard, -2 * delta);
+        // Revert existing non-set speed delta once when this card is played.
+        loop.modifyCardPermanentSpeed(currentCard, -2 * delta, { bypassRebellionInvert: true });
       }
     }
 
@@ -1003,6 +1004,14 @@ export const CardScripts: Record<string, CardScript> = {
     const target = targets[0];
     if (!target) return;
     loop.dealDamage(source, target, 15, 'magical');
+
+    // Destroy this spawned card instance after resolving its effect.
+    const currentCard = (loop as any).currentCard;
+    if (!currentCard) return;
+    const idx = source.cards.findIndex(c => c.instanceId === currentCard.instanceId);
+    if (idx !== -1) {
+      source.cards.splice(idx, 1);
+    }
   },
 
   high_speed_engine: (_loop, _source, _targets) => {

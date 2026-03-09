@@ -808,7 +808,7 @@
     "id": "moonlight_bombard",
     "name": "月光轰炸",
     "description": "也是一种天基炮",
-    "effectDescription": "造成15点魔法伤害。",
+    "effectDescription": "造成15点魔法伤害。发动后销毁自身。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
     "rarity": 0,
