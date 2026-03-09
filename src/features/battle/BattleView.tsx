@@ -13,6 +13,7 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
   const timerRef = useRef<number | null>(null);
 
   const isCleared = currentDungeonId && clearedDungeons.includes(currentDungeonId);
+  const canCloseResultOverlayForLog = isReplayMode || currentDungeonId === 'sandbox_training';
   
   // Local state for result overlay visibility
   const [isResultOverlayVisible, setIsResultOverlayVisible] = useState(false);
@@ -155,6 +156,14 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
                   <div className="text-xl text-green-400 animate-pulse">
                       {isLooping ? "Looping..." : "Advancing..."}
                   </div>
+                  {canCloseResultOverlayForLog && (
+                    <button
+                      onClick={() => setIsResultOverlayVisible(false)}
+                      className="bg-slate-700 px-6 py-3 rounded text-xl hover:bg-slate-600 w-full flex items-center justify-center gap-2"
+                    >
+                      <Eye size={20} /> View Log
+                    </button>
+                  )}
                   {!isLooping && (
                        <button
                          onClick={() => {
