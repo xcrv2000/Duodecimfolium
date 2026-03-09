@@ -307,7 +307,7 @@
       "name": "诡异月歌女",
       "hpMin": 60,
       "hpMax": 60,
-      "deck": ["spirit_song", "spirit_song", "spirit_song", "temporary_ceasefire", "temporary_ceasefire", "moonlight_bombard", "moonlight_bombard", "leather_half_armor"],
+      "deck": ["spirit_song", "spirit_song", "spirit_song", "temporary_ceasefire", "temporary_ceasefire", "moonlight_guidance", "moonlight_guidance", "leather_half_armor"],
       "dropTable": {
         "chance": 0.5,
         "min": 1,
