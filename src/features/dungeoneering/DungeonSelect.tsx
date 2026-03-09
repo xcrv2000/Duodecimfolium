@@ -41,12 +41,16 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
       playerCount: number;
       enemyCount: number;
       playerDeckIds: string[];
+      playerDeckJsons: string[];
+      enemyDeckIds: string[];
       enemyDeckJsons: string[];
   }>({
       isOpen: false,
       playerCount: 1,
       enemyCount: 1,
       playerDeckIds: [decks[0]?.id || ''],
+      playerDeckJsons: [''],
+      enemyDeckIds: [decks[0]?.id || ''],
       enemyDeckJsons: ['']
   });
 
@@ -64,6 +68,8 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
             ...sandboxConfig,
             isOpen: true,
             playerDeckIds: Array(sandboxConfig.playerCount).fill(defaultDeck?.id || ''),
+            playerDeckJsons: Array(sandboxConfig.playerCount).fill(''),
+            enemyDeckIds: Array(sandboxConfig.enemyCount).fill(defaultDeck?.id || ''),
             enemyDeckJsons: Array(sandboxConfig.enemyCount).fill('')
         });
         return;
@@ -129,20 +135,43 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
       // Validate Player Decks
       const playerConfigs: CustomUnitConfig[] = [];
       for (let i = 0; i < sandboxConfig.playerCount; i++) {
-          const deckId = sandboxConfig.playerDeckIds[i];
-          const deck = decks.find(d => d.id === deckId);
-          if (!deck) {
-              alert(`Player ${i+1} deck invalid.`);
-              return;
+          const inputText = sandboxConfig.playerDeckJsons[i]?.trim() || '';
+          let cardIds: string[] = [];
+          let modifierSlots: Record<string, string> | undefined = undefined;
+          let unitName = `Player ${i+1}`;
+
+          if (inputText) {
+              try {
+                  const parsed = decodeDeckCode(inputText);
+                  if (!parsed || !Array.isArray(parsed.cardIds)) throw new Error('Invalid format');
+                  cardIds = parsed.cardIds;
+                  modifierSlots = parsed.modifierSlots;
+                  unitName = parsed.name || unitName;
+              } catch {
+                  alert(`Player ${i+1} 牌组输入无效。请粘贴有效卡组码或 JSON。`);
+                  return;
+              }
+          } else {
+              const deckId = sandboxConfig.playerDeckIds[i];
+              const deck = decks.find(d => d.id === deckId);
+              if (!deck) {
+                  alert(`Player ${i+1} deck invalid.`);
+                  return;
+              }
+              cardIds = deck.cardIds;
+              modifierSlots = deck.modifierSlots;
+              unitName = deck.name || unitName;
           }
-          if (deck.cardIds.length < 8 || deck.cardIds.length > 12) {
+
+          if (cardIds.length < 8 || cardIds.length > 12) {
               alert(`Player ${i+1} 卡组必须包含8到12张卡牌！`);
               return;
           }
+
           playerConfigs.push({
-              name: `Player ${i+1}`,
-              cardIds: deck.cardIds,
-              modifierSlots: deck.modifierSlots,
+              name: unitName,
+              cardIds,
+              modifierSlots,
               hp: 100,
               team: 'player'
           });
@@ -151,32 +180,56 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
       // Validate Enemy Decks
       const enemyConfigs: CustomUnitConfig[] = [];
       for (let i = 0; i < sandboxConfig.enemyCount; i++) {
-          const inputText = sandboxConfig.enemyDeckJsons[i];
-          try {
-              const parsed = decodeDeckCode(inputText);
-              if (!parsed || !Array.isArray(parsed.cardIds)) throw new Error('Invalid format');
+          const inputText = sandboxConfig.enemyDeckJsons[i]?.trim() || '';
+          let cardIds: string[] = [];
+          let modifierSlots: Record<string, string> | undefined = undefined;
+          let unitName = `Dummy ${i+1}`;
+          let customHp = 100;
 
-              let customHp = 100;
+          if (inputText) {
               try {
-                  const raw = JSON.parse(inputText);
-                  if (raw && typeof raw.hp === 'number' && Number.isFinite(raw.hp)) {
-                      customHp = raw.hp;
+                  const parsed = decodeDeckCode(inputText);
+                  if (!parsed || !Array.isArray(parsed.cardIds)) throw new Error('Invalid format');
+                  cardIds = parsed.cardIds;
+                  modifierSlots = parsed.modifierSlots;
+                  unitName = parsed.name || unitName;
+
+                  try {
+                      const raw = JSON.parse(inputText);
+                      if (raw && typeof raw.hp === 'number' && Number.isFinite(raw.hp)) {
+                          customHp = raw.hp;
+                      }
+                  } catch {
+                      // Deck code / non-JSON input does not carry hp override.
                   }
               } catch {
-                  // Deck code / non-JSON input does not carry hp override.
+                  alert(`Enemy ${i+1} 牌组输入无效。请粘贴有效卡组码或 JSON。`);
+                  return;
               }
-              
-              enemyConfigs.push({
-                  name: parsed.name || `Dummy ${i+1}`,
-                  cardIds: parsed.cardIds,
-                  modifierSlots: parsed.modifierSlots,
-                  hp: customHp,
-                  team: 'enemy'
-              });
-          } catch (e) {
-              alert(`Enemy ${i+1} 牌组输入无效。请粘贴有效卡组码或 JSON。`);
+          } else {
+              const deckId = sandboxConfig.enemyDeckIds[i];
+              const deck = decks.find(d => d.id === deckId);
+              if (!deck) {
+                  alert(`Enemy ${i+1} deck invalid.`);
+                  return;
+              }
+              cardIds = deck.cardIds;
+              modifierSlots = deck.modifierSlots;
+              unitName = deck.name || unitName;
+          }
+
+          if (cardIds.length < 8 || cardIds.length > 12) {
+              alert(`Enemy ${i+1} 卡组必须包含8到12张卡牌！`);
               return;
           }
+
+          enemyConfigs.push({
+              name: unitName,
+              cardIds,
+              modifierSlots,
+              hp: customHp,
+              team: 'enemy'
+          });
       }
 
       startCustomBattle(playerConfigs, enemyConfigs);
@@ -359,7 +412,8 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                     setSandboxConfig(prev => ({
                                         ...prev,
                                         playerCount: count,
-                                        playerDeckIds: Array(count).fill(prev.playerDeckIds[0] || decks[0]?.id || '')
+                                        playerDeckIds: Array(count).fill(prev.playerDeckIds[0] || decks[0]?.id || ''),
+                                        playerDeckJsons: Array(count).fill(prev.playerDeckJsons[0] || '')
                                     }));
                                 }}
                                 className="bg-slate-700 p-1 rounded w-16"
@@ -367,7 +421,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                         </div>
                         {Array.from({ length: sandboxConfig.playerCount }).map((_, i) => (
                             <div key={i} className="p-2 bg-slate-700/50 rounded">
-                                <label className="block text-sm mb-1">Unit {i+1} Deck:</label>
+                                <label className="block text-sm mb-1">Unit {i+1} Deck (Select):</label>
                                 <select 
                                     className="w-full bg-slate-700 p-2 rounded"
                                     value={sandboxConfig.playerDeckIds[i] || ''}
@@ -381,6 +435,18 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                         <option key={d.id} value={d.id}>{d.name}</option>
                                     ))}
                                 </select>
+                                <label className="block text-sm mt-3 mb-1">Or Import Deck Code / JSON:</label>
+                                <textarea 
+                                    className="w-full bg-slate-700 p-2 rounded h-24 text-xs font-mono"
+                                    placeholder='Paste deck code or JSON here... DDF3.xxx / {"cardIds": ["thrust", ...]}'
+                                    value={sandboxConfig.playerDeckJsons[i] || ''}
+                                    onChange={(e) => {
+                                        const newJsons = [...sandboxConfig.playerDeckJsons];
+                                        newJsons[i] = e.target.value;
+                                        setSandboxConfig(prev => ({ ...prev, playerDeckJsons: newJsons }));
+                                    }}
+                                />
+                                <p className="text-xs text-slate-400 mt-1">若填写导入内容，将优先使用导入卡组。</p>
                             </div>
                         ))}
                     </div>
@@ -397,7 +463,8 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                     setSandboxConfig(prev => ({
                                         ...prev,
                                         enemyCount: count,
-                                        enemyDeckJsons: Array(count).fill('')
+                                        enemyDeckIds: Array(count).fill(prev.enemyDeckIds[0] || decks[0]?.id || ''),
+                                        enemyDeckJsons: Array(count).fill(prev.enemyDeckJsons[0] || '')
                                     }));
                                 }}
                                 className="bg-slate-700 p-1 rounded w-16"
@@ -405,7 +472,21 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                         </div>
                         {Array.from({ length: sandboxConfig.enemyCount }).map((_, i) => (
                             <div key={i} className="p-2 bg-slate-700/50 rounded">
-                                <label className="block text-sm mb-1">Unit {i+1} Deck Code / JSON:</label>
+                                <label className="block text-sm mb-1">Unit {i+1} Deck (Select):</label>
+                                <select 
+                                    className="w-full bg-slate-700 p-2 rounded"
+                                    value={sandboxConfig.enemyDeckIds[i] || ''}
+                                    onChange={(e) => {
+                                        const newIds = [...sandboxConfig.enemyDeckIds];
+                                        newIds[i] = e.target.value;
+                                        setSandboxConfig(prev => ({ ...prev, enemyDeckIds: newIds }));
+                                    }}
+                                >
+                                    {decks.map(d => (
+                                        <option key={d.id} value={d.id}>{d.name}</option>
+                                    ))}
+                                </select>
+                                <label className="block text-sm mt-3 mb-1">Or Import Deck Code / JSON:</label>
                                 <textarea 
                                     className="w-full bg-slate-700 p-2 rounded h-24 text-xs font-mono"
                                     placeholder='Paste deck code or JSON here... DDF3.xxx / {"cardIds": ["thrust", ...]}'
@@ -416,6 +497,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                         setSandboxConfig(prev => ({ ...prev, enemyDeckJsons: newJsons }));
                                     }}
                                 />
+                                <p className="text-xs text-slate-400 mt-1">若填写导入内容，将优先使用导入卡组。JSON 可额外包含 hp 字段。</p>
                             </div>
                         ))}
                     </div>
