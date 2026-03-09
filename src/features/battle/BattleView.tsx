@@ -7,7 +7,7 @@ import { BattleUnit, UnitBuff } from '../../core/domain/Battle';
 import { getCardRarityBorderClass } from '../../utils/cardUtils';
 import { formatBuffDescription } from '../../utils/buffUtils';
 
-const BattleView: React.FC = () => {
+const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown }) => {
   const { state, tick, isPaused, togglePause, speedMultiplier, setSpeed, exitBattle, isLooping, toggleLoop, currentDungeonId, isBossStage, isReplayMode } = useBattleStore();
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const timerRef = useRef<number | null>(null);
@@ -71,7 +71,15 @@ const BattleView: React.FC = () => {
           )}
         </div>
         <div className="text-sm sm:text-xl font-bold">Turn: {state.turn} | Tick: {state.tick}/12</div>
-        <button onClick={exitBattle} className="bg-red-600 px-3 sm:px-4 py-2 rounded hover:bg-red-700 self-end sm:self-auto">Exit</button>
+        <button
+          onClick={() => {
+            exitBattle();
+            onReturnToTown?.();
+          }}
+          className="bg-red-600 px-3 sm:px-4 py-2 rounded hover:bg-red-700 self-end sm:self-auto"
+        >
+          Exit
+        </button>
       </div>
 
       {/* Timeline Visualizer (Simple) */}
@@ -148,7 +156,13 @@ const BattleView: React.FC = () => {
                       {isLooping ? "Looping..." : "Advancing..."}
                   </div>
                   {!isLooping && (
-                       <button onClick={exitBattle} className="bg-slate-600 px-6 py-3 rounded text-xl hover:bg-slate-700 w-full">
+                       <button
+                         onClick={() => {
+                           exitBattle();
+                           onReturnToTown?.();
+                         }}
+                         className="bg-slate-600 px-6 py-3 rounded text-xl hover:bg-slate-700 w-full"
+                       >
                            Return to Town
                        </button>
                   )}
@@ -164,7 +178,13 @@ const BattleView: React.FC = () => {
                       <Eye size={20} /> View Log
                   </button>
                   
-                  <button onClick={exitBattle} className="bg-red-900/50 px-6 py-3 rounded text-xl hover:bg-red-800 border border-red-800 w-full">
+                  <button
+                    onClick={() => {
+                      exitBattle();
+                      onReturnToTown?.();
+                    }}
+                    className="bg-red-900/50 px-6 py-3 rounded text-xl hover:bg-red-800 border border-red-800 w-full"
+                  >
                       Return to Town
                   </button>
               </div>

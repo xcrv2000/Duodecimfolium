@@ -155,32 +155,7 @@ export const CardScripts: Record<string, CardScript> = {
       // Or just 'magical' as it's an orb.
       loop.dealDamage(source, target, 6, 'magical');
 
-      // Slow all SUBSEQUENT attack cards of target this turn by 1 (-10 speed10)
-      // "使敌方单位在本回合后续所有攻击的速度获得 -1" => Speed -1 means FASTER (Speed is wait time? NO. Speed is time slot.)
-      // Wait, in this system:
-      // Speed 2 triggers at tick 2. Speed 12 triggers at tick 12.
-      // So "Speed -1" means it triggers EARLIER (Faster).
-      // BUT "Speed -1" in card game context usually means "Slow Down"?
-      // Let's check "Thrust": "Speed +1" -> "+1.0 Speed".
-      // If Thrust (Speed 2) makes target Speed +1 -> Target becomes Speed 3 (Slower/Later).
-      // So "Speed -1" here means Speed becomes Smaller -> Faster/Earlier.
-      // Description: "获得 -1 的卡类速度 buff"
-      // Ice Orb usually slows people down (Chill).
-      // If it makes them Faster (-1), that's weird for Ice.
-      // Let's re-read: "后续所有攻击的速度获得 -1 ... 立即重排"
-      // Maybe in this game Speed value IS Speed (Higher is Faster)?
-      // NO. Tick 0..12. 0 is start. 12 is end.
-      // So Small Speed = Early/Fast. Large Speed = Late/Slow.
-      // If Ice Orb gives -1 Speed, it makes them FASTER.
-      // Unless "Speed" property on card means "Velocity"? No, it means "Time Cost/Delay".
-      // Let's check "Thrust" again: "使该卡在本回合获得 速度 +1（【迟缓 1】）".
-      // So +1 is Slow (Delay).
-      // Then -1 must be Haste (Accelerate).
-      // Does Ice Orb make enemy faster?
-      // "冰……球？" -> "Is it an ice orb?"
-      // Maybe it's slippery?
-      // "使敌方单位在本回合后续所有攻击的速度获得 -1" -> Haste.
-      // Okay, I will implement as -10 speed10.
+      // Slow all subsequent attack cards of target this turn by +1 speed.
       
       // Update: Target all subsequent ATTAKC cards
       const currentTick = loop.getCurrentTick();
@@ -190,9 +165,9 @@ export const CardScripts: Record<string, CardScript> = {
           c.tagsRuntime?.includes('攻击')
       );
       
-      targetCards.forEach(c => {
-          loop.modifyCardSpeed(c, -10);
-      });
+        targetCards.forEach(c => {
+          loop.modifyCardSpeed(c, 10);
+        });
   },
 
   // 13. Stone Orb (石球？？？)

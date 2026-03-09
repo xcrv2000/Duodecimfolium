@@ -124,7 +124,7 @@
     "id": "ice_orb",
     "name": "冰……球？",
     "description": "看起来像冰球，但是有点硬。",
-    "effectDescription": "造成6点伤害（物理+魔法+冰）。使目标本回合后续所有攻击卡速度-1。",
+    "effectDescription": "造成6点伤害（物理+魔法+冰）。使目标本回合后续所有攻击卡速度+1。",
     "packId": "sword_and_magic",
     "rarity": 12,
     "speed": 7,

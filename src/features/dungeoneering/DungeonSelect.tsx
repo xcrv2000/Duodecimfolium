@@ -19,6 +19,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   const startDungeon = useBattleStore(state => state.startDungeon);
   const startCustomBattle = useBattleStore(state => state.startCustomBattle);
   const startReplay = useBattleStore(state => state.startReplay);
+    const runningBattleState = useBattleStore(state => state.state);
   
   const { replays, toggleFavorite, deleteReplay } = useReplayStore();
 
@@ -49,6 +50,11 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   });
 
   const handleStartDungeon = () => {
+        if (runningBattleState && !runningBattleState.isOver) {
+            onNavigate('battle');
+            return;
+        }
+
     if (!selectedDungeonId) return;
 
     if (selectedDungeonId === 'sandbox_training') {
@@ -114,6 +120,11 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   };
 
   const handleStartSandbox = () => {
+      if (runningBattleState && !runningBattleState.isOver) {
+          onNavigate('battle');
+          return;
+      }
+
       // Validate Player Decks
       const playerConfigs: CustomUnitConfig[] = [];
       for (let i = 0; i < sandboxConfig.playerCount; i++) {
@@ -215,6 +226,10 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                   
                                   <button 
                                     onClick={() => {
+                                        if (runningBattleState && !runningBattleState.isOver) {
+                                            onNavigate('battle');
+                                            return;
+                                        }
                                         startReplay(replay.initialState, replay.seed);
                                         onNavigate('battle');
                                     }}

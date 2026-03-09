@@ -115,6 +115,14 @@ const MainLayout: React.FC = () => {
       }
   }, [battleState?.isOver, battleState?.winner]);
 
+  useEffect(() => {
+    if (!notification || notification.type !== 'failure') return;
+    const timeoutId = window.setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+    return () => window.clearTimeout(timeoutId);
+  }, [notification]);
+
   // We also need to know when a Dungeon is fully cleared.
   // We can listen to playerStore changes? Or add a callback/event?
   // Or just rely on the fact that battleState becomes null?
@@ -124,7 +132,7 @@ const MainLayout: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'battle':
-        return battleState ? <BattleView /> : <div className="p-8 text-center text-slate-400">当前没有进行中的战斗。</div>;
+        return battleState ? <BattleView onReturnToTown={() => setActiveTab('dungeon')} /> : <div className="p-8 text-center text-slate-400">当前没有进行中的战斗。</div>;
       case 'home':
         return <HomeView onNavigate={setActiveTab} />;
       case 'dungeon':
