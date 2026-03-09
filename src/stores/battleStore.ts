@@ -339,6 +339,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     // Enemies also subject to penalty
     const enemyCardCounts: Record<string, number> = {};
     const enemyCardIds = enemyDef.deck;
+    const enemyModifierSlots: Record<string, string> = enemyDef.modifierSlots || {};
 
     const enemyUnit: BattleUnit = {
       id: enemyDef.id,
@@ -361,6 +362,13 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
         const npcSpeedMod = 0; // Will be added in BattleLoop executeStartOfBattleEffects
 
+        const modId = enemyModifierSlots[idx.toString()];
+        const cardModifiers = [];
+        if (modId) {
+          const modDef = modifiers.find(m => m.id === modId);
+          if (modDef) cardModifiers.push(modDef);
+        }
+
         return {
           // Factory reference (不再展开)
           factory: cardDef as CardFactory,
@@ -373,7 +381,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
           deckSpeedPenalty: penalty,
           permanentSpeedModifier: npcSpeedMod,
           tagsRuntime: [...(cardDef.tags || [])],
-          modifiers: [],
+          modifiers: cardModifiers,
           buffs: [],
           factoryBuffs: []  // 运行时工厂级 buff
         } as CardInstance;

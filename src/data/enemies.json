@@ -308,6 +308,9 @@
       "hpMin": 80,
       "hpMax": 80,
       "deck": ["spirit_song", "spirit_song", "spirit_song", "temporary_ceasefire", "temporary_ceasefire", "moonlight_guidance", "moonlight_guidance", "leather_half_armor"],
+      "modifierSlots": {
+        "1": "iron_orb"
+      },
       "dropTable": {
         "chance": 0.5,
         "min": 1,
