@@ -90,7 +90,10 @@ describe('CardScripts', () => {
         'wind_thunder_strike', 'ration', 'whetstone', 'flick_thrust', 'moonlight_slash',
         'quick_start', 'life_recorder', 'kinetic_recovery_device', 'big_torque_gear',
         'speed_magician', 'cancel', 'kinetic_impact', 'super_kinetic_impact',
-        'rush_attack', 'superluminal', 'high_speed_engine', 'overload_cargo'
+        'rush_attack', 'superluminal', 'high_speed_engine', 'overload_cargo',
+        'rebellion', 'spirit_song', 'substitute', 'iron_wave', 'counterweight',
+        'storm', 'swing_punch', 'curiosity', 'counter_magic', 'seize_initiative',
+        'moonlight_guidance', 'moonlight_bombard'
       ];
 
       expectedCards.forEach((cardId) => {
@@ -101,7 +104,7 @@ describe('CardScripts', () => {
 
     it('脚本总数应至少覆盖已声明清单', () => {
       const scriptCount = Object.keys(CardScripts).length;
-      expect(scriptCount).toBeGreaterThanOrEqual(40);
+      expect(scriptCount).toBeGreaterThanOrEqual(52);
     });
   });
 
@@ -231,6 +234,19 @@ describe('CardScripts', () => {
       CardScripts.superluminal(battleLoop, playerUnit, [playerUnit]);
 
       expect(enemyUnit.hp).toBe(hpBefore - 6);
+    });
+
+    it('superluminal 触发 super_kinetic_impact 时应使用被触发卡速度', () => {
+      const superluminal = createCardInstance('superluminal', 'superluminal', 100, ['辅助']);
+      const superKinetic = createCardInstance('super_kinetic', 'super_kinetic_impact', 40, ['攻击', '物理']);
+      playerUnit.cards = [superluminal, superKinetic];
+      (battleLoop as any).currentCard = superluminal;
+
+      const hpBefore = enemyUnit.hp;
+      CardScripts.superluminal(battleLoop, playerUnit, [playerUnit]);
+
+      // 被触发卡速度=4，伤害应为 4*2=8；若错误使用超光速速度10则会是20
+      expect(enemyUnit.hp).toBe(hpBefore - 8);
     });
   });
 

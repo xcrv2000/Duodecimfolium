@@ -856,7 +856,177 @@ export const CardScripts: Record<string, CardScript> = {
     if (!script) return;
 
     const targets = (loop as any).findTargets(source, targetCard);
+    const previousCard = (loop as any).currentCard;
+    (loop as any).currentCard = targetCard;
     script(loop, source, targets);
+    (loop as any).currentCard = previousCard;
+  },
+
+  // Pack 5: Trick of God
+  rebellion: (loop, source, targets) => {
+    const target = targets[0];
+    const currentCard = (loop as any).currentCard;
+    if (!target || !currentCard) return;
+
+    if (currentCard.baseSpeed10 !== null && currentCard.currentSpeed10 !== null) {
+      const delta = currentCard.currentSpeed10 - currentCard.baseSpeed10;
+      if (delta !== 0) {
+        loop.modifyCardPermanentSpeed(currentCard, -2 * delta);
+      }
+    }
+
+    loop.dealDamage(source, target, 10, 'physical');
+    if (!target.isDead) {
+      loop.dealDamage(source, target, 10, 'physical');
+    }
+  },
+
+  spirit_song: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+
+    loop.dealDamage(source, target, 3, 'magical');
+
+    const currentTick = loop.getCurrentTick();
+    const tickStart = currentTick * 10;
+    loop.getAllUnits().forEach(unit => {
+      unit.cards.forEach(card => {
+        if (card.currentSpeed10 === null) return;
+        if (card.currentSpeed10 < tickStart) return;
+        if (card.tagsRuntime?.includes('物理')) {
+          loop.modifyCardSpeed(card, 10);
+        }
+      });
+    });
+  },
+
+  substitute: (loop, source, _targets) => {
+    loop.directHpChange(source, -3);
+    const buff: UnitBuff = {
+      id: 'substitute_guard',
+      name: '替身',
+      description: '抵挡下一次受到的伤害。',
+      duration: -1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff',
+      onReceiveDamage: (unit, _damageInfo, _battle) => {
+        loop.removeBuff(unit, 'substitute_guard');
+        return 0;
+      }
+    };
+    loop.addUnitBuff(source, buff);
+  },
+
+  iron_wave: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 5, 'physical');
+    loop.addArmor(source, 5);
+  },
+
+  counterweight: (loop, source, _targets) => {
+    const attacks = source.cards
+      .filter(c => c.currentSpeed10 !== null && c.tagsRuntime?.includes('攻击'))
+      .sort((a, b) => (b.currentSpeed10! - a.currentSpeed10!));
+    const slowest = attacks[0];
+    if (!slowest) return;
+
+    const buff: UnitBuff = {
+      id: 'counterweight_repeat',
+      name: '秤砣',
+      description: '初始最慢攻击牌额外释放一次。',
+      duration: -1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff',
+      sourceInstanceId: slowest.instanceId
+    };
+    loop.addUnitBuff(source, buff);
+  },
+
+  storm: (loop, source, _targets) => {
+    const buff: UnitBuff = {
+      id: 'storm_current_turn',
+      name: '暴风雨',
+      description: '本回合每tick开始时，对随机敌人造成1点穿甲伤害。',
+      duration: 1,
+      stackRule: 'stackable',
+      level: 1,
+      type: 'debuff'
+    };
+    loop.addUnitBuff(source, buff);
+  },
+
+  swing_punch: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 7, 'physical');
+  },
+
+  curiosity: (loop, source, _targets) => {
+    const buff: UnitBuff = {
+      id: 'curiosity_guard',
+      name: '好奇心',
+      description: '被本战斗中未见过的攻击牌命中时，回复4生命。',
+      duration: -1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff'
+    };
+    loop.addUnitBuff(source, buff);
+  },
+
+  counter_magic: (loop, source, _targets) => {
+    const enemy = loop.getAllUnits().find(u => u.team !== source.team && !u.isDead);
+    if (!enemy) return;
+
+    const sourceArmorBuff = source.buffs.find(b => b.id === 'armor');
+    const enemyArmorBuff = enemy.buffs.find(b => b.id === 'armor');
+    const sourceArmor = sourceArmorBuff?.level || 0;
+    const enemyArmor = enemyArmorBuff?.level || 0;
+    const diff = Math.abs(sourceArmor - enemyArmor);
+
+    if (sourceArmorBuff) {
+      sourceArmorBuff.level = 0;
+      loop.removeBuff(source, 'armor');
+    }
+    if (enemyArmorBuff) {
+      enemyArmorBuff.level = 0;
+      loop.removeBuff(enemy, 'armor');
+    }
+
+    if (diff <= 0) return;
+    const target = sourceArmor < enemyArmor ? source : enemy;
+    loop.dealDamage(source, target, diff, 'magical');
+  },
+
+  seize_initiative: (loop, source, targets) => {
+    const target = targets[0];
+    const currentCard = (loop as any).currentCard;
+    if (!target || !currentCard || currentCard.currentSpeed10 === null) return;
+
+    const enemyUnits = loop.getAllUnits().filter(u => u.team !== source.team && !u.isDead);
+    const hasSameSpeedCard = enemyUnits.some(unit =>
+      unit.cards.some(card =>
+        card.currentSpeed10 !== null &&
+        card.currentSpeed10 === currentCard.currentSpeed10
+      )
+    );
+
+    if (hasSameSpeedCard) {
+      loop.dealDamage(source, target, 6, 'physical');
+    }
+  },
+
+  moonlight_guidance: (loop, source, _targets) => {
+    loop.spawnCard(source, 'moonlight_bombard', 10);
+  },
+
+  moonlight_bombard: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 15, 'magical');
   },
 
   high_speed_engine: (_loop, _source, _targets) => {

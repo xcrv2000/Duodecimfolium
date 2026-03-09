@@ -83,5 +83,24 @@
       { "type": "mob", "enemyPoolId": "variable_gear_mob" },
       { "type": "boss", "enemyPoolId": "variable_gear_boss" }
     ]
+  },
+  {
+    "id": "dung_poop_zone",
+    "name": "粪怪地带",
+    "description": "冒险者还不知道马上他要面对什么……",
+    "designer": "橘猫",
+    "unlockRequirementId": "training_ground",
+    "teamSize": 1,
+    "unlocksPackId": "pack_5_trick_of_god",
+    "goldRewardMin": 20,
+    "goldRewardMax": 20,
+    "stages": [
+      { "type": "mob", "enemyPoolId": "poop_zone_mob" },
+      { "type": "mob", "enemyPoolId": "poop_zone_mob" },
+      { "type": "elite", "enemyPoolId": "poop_zone_elite" },
+      { "type": "mob", "enemyPoolId": "poop_zone_mob" },
+      { "type": "mob", "enemyPoolId": "poop_zone_mob" },
+      { "type": "elite", "enemyPoolId": "poop_zone_elite" }
+    ]
   }
 ]

@@ -18,6 +18,7 @@ export class BattleLoop {
   private state: BattleState;
   private currentCard: CardInstance | null = null;
   private rng: RNG;
+  private seenAttackScriptsByTarget: Record<string, Set<string>> = {};
 
   constructor(state: BattleState, rng: RNG) {
     this.state = state;
@@ -43,6 +44,12 @@ export class BattleLoop {
               name: '上挑斩·剑气',
               description: '上挑斩激发的剑气。',
               effectDescription: '造成4点魔法伤害。',
+              tags: ["攻击", "魔法", "衍生"]
+            },
+            'moonlight_bombard': {
+              name: '月光轰炸',
+              description: '月光引导产物。',
+              effectDescription: '造成15点魔法伤害。',
               tags: ["攻击", "魔法", "衍生"]
           }
       };
@@ -136,6 +143,9 @@ export class BattleLoop {
       this.startTurn();
     }
 
+    // Storm: per-tick start damage for current turn effects.
+    this.applyTickStartEffects();
+
     this.processTick(this.state.tick);
 
     this.state.tick++;
@@ -144,6 +154,22 @@ export class BattleLoop {
     }
 
     return { ...this.state };
+  }
+
+  private applyTickStartEffects(): void {
+    this.state.units.forEach(source => {
+      if (source.isDead) return;
+      const stormStacks = source.buffs
+        .filter(b => b.id === 'storm_current_turn')
+        .reduce((sum, buff) => sum + buff.level, 0);
+      if (stormStacks <= 0) return;
+
+      const enemies = this.state.units.filter(u => u.team !== source.team && !u.isDead);
+      if (enemies.length === 0) return;
+      const target = enemies[Math.floor(this.rng.next() * enemies.length)];
+      this.directHpChange(target, -stormStacks);
+      this.log(source, target, `暴风雨触发：对 ${target.name} 造成${stormStacks}点穿甲伤害。`, 'attack', stormStacks);
+    });
   }
 
   public executeStartOfBattleEffects(): void {
@@ -566,6 +592,10 @@ export class BattleLoop {
               numericSpeed += buff.level * 10; // ✅ FIX: 乘以10转换为speed10单位（level:2 → +20 speed10 → +2.0 speed）
           }
       });
+
+          if (card.factory.scriptId === 'swing_punch') {
+            numericSpeed += this.state.turn % 2 === 1 ? -20 : 20;
+          }
       
       // === 速度边界值处理 ===
       // now assign back to speed variable so boundary logic can set null if needed
@@ -669,6 +699,10 @@ export class BattleLoop {
     const script = CardScripts[card.factory.scriptId];
     if (script) {
       try {
+          const counterweightBuff = source.buffs.find(
+            b => b.id === 'counterweight_repeat' && b.sourceInstanceId === card.instanceId
+          );
+
           // Check for Calm Mind buff on source
           const calmMindBuff = source.buffs.find(b => b.id === 'calm_mind');
           const isMagicAttack = card.tagsRuntime?.includes('魔法') && card.tagsRuntime?.includes('攻击');
@@ -704,6 +738,12 @@ export class BattleLoop {
               this.removeBuff(source, 'calm_mind');
           } else {
               script(this, source, targets);
+
+              if (counterweightBuff) {
+                this.removeBuff(source, 'counterweight_repeat');
+                this.log(source, null, `秤砣触发：${card.factory.name} 追加结算一次。`, 'buff');
+                script(this, source, targets);
+              }
           }
 
             this.applyPerCardPlayEffects(source, card);
@@ -846,6 +886,24 @@ export class BattleLoop {
     type: 'physical' | 'magical',
     extraTags?: string[]
   ): void {
+    const scriptId = this.currentCard?.factory?.scriptId;
+    if (scriptId && this.currentCard?.tagsRuntime?.includes('攻击')) {
+      const curiosity = target.buffs.find(b => b.id === 'curiosity_guard');
+      if (curiosity) {
+        const seen = this.seenAttackScriptsByTarget[target.id] || new Set<string>();
+        if (!seen.has(scriptId)) {
+          seen.add(scriptId);
+          this.seenAttackScriptsByTarget[target.id] = seen;
+          const before = target.hp;
+          target.hp = Math.min(target.maxHp, target.hp + 4);
+          const healed = target.hp - before;
+          if (healed > 0) {
+            this.log(target, target, `好奇心触发：恢复${healed}点生命。`, 'buff', healed);
+          }
+        }
+      }
+    }
+
     // 1. Apply Source Buffs (onAttack)
     let damage = amount;
     source.buffs.forEach(buff => {

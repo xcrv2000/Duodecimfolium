@@ -7,7 +7,9 @@
     "magic_elite": ["elite_fire_mage", "elite_magic_swordsman", "elite_ice_mage"],
     "fiery_duelist_boss": ["apprentice_fire_adept", "apprentice_shadow_scout", "apprentice_berserker"],
     "variable_gear_mob": ["variable_gear_mob_1", "variable_gear_mob_2", "variable_gear_mob_3"],
-    "variable_gear_boss": ["variable_gear_boss_1", "variable_gear_boss_2"]
+    "variable_gear_boss": ["variable_gear_boss_1", "variable_gear_boss_2"],
+    "poop_zone_mob": ["poop_zone_mob_1", "poop_zone_mob_2", "poop_zone_mob_3", "poop_zone_mob_4"],
+    "poop_zone_elite": ["poop_zone_elite_1", "poop_zone_elite_2"]
   },
   "definitions": {
     "mob_1": {
@@ -257,6 +259,60 @@
         "min": 1,
         "max": 2,
         "pool": ["variable_gear_token"]
+      }
+    },
+    "poop_zone_mob_1": {
+      "id": "poop_zone_mob_1",
+      "name": "神秘肘击者",
+      "hpMin": 20,
+      "hpMax": 20,
+      "deck": ["maze_step", "maze_step", "swing_punch", "counterweight"]
+    },
+    "poop_zone_mob_2": {
+      "id": "poop_zone_mob_2",
+      "name": "巨肉自爆哥",
+      "hpMin": 40,
+      "hpMax": 40,
+      "deck": ["cloth_light_armor", "lakshir_ritual", "lakshir_ritual", "lakshir_ritual", "counter_magic"]
+    },
+    "poop_zone_mob_3": {
+      "id": "poop_zone_mob_3",
+      "name": "攻哈质检员",
+      "hpMin": 20,
+      "hpMax": 20,
+      "deck": ["rebellion", "rebellion", "rebellion", "temporary_ceasefire", "temporary_ceasefire", "steel_full_armor"]
+    },
+    "poop_zone_mob_4": {
+      "id": "poop_zone_mob_4",
+      "name": "幽默偷鸡人",
+      "hpMin": 30,
+      "hpMax": 30,
+      "deck": ["seize_initiative", "seize_initiative", "seize_initiative", "shadow_step", "substitute", "slash"]
+    },
+    "poop_zone_elite_1": {
+      "id": "poop_zone_elite_1",
+      "name": "抽象数值怪",
+      "hpMin": 100,
+      "hpMax": 100,
+      "deck": ["lakshir_ritual", "lakshir_ritual", "curiosity", "storm", "stab", "iron_wave", "whetstone"],
+      "dropTable": {
+        "chance": 0.5,
+        "min": 1,
+        "max": 1,
+        "pool": ["blackhand_token"]
+      }
+    },
+    "poop_zone_elite_2": {
+      "id": "poop_zone_elite_2",
+      "name": "诡异月歌女",
+      "hpMin": 60,
+      "hpMax": 60,
+      "deck": ["spirit_song", "spirit_song", "spirit_song", "temporary_ceasefire", "temporary_ceasefire", "moonlight_bombard", "moonlight_bombard", "leather_half_armor"],
+      "dropTable": {
+        "chance": 0.5,
+        "min": 1,
+        "max": 1,
+        "pool": ["blackhand_token"]
       }
     }
   }

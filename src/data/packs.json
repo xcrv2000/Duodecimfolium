@@ -22,10 +22,20 @@
   {
     "id": "pack_4_variable_gear",
     "name": "变速齿轮组",
-    "description": "齿轮轰鸣，速度就是一切。",
+    "description": "不是作弊哦。",
     "designer": "木头",
     "price": 10,
     "requiredTokenId": "variable_gear_token",
+    "requiredTokenCount": 1,
+    "isTemporary": true
+  },
+  {
+    "id": "pack_5_trick_of_god",
+    "name": "神人小妙招",
+    "description": "作者也不清楚这个包的定位。",
+    "designer": "橘猫",
+    "price": 10,
+    "requiredTokenId": "blackhand_token",
     "requiredTokenCount": 1,
     "isTemporary": true
   }
