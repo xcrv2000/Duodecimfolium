@@ -66,9 +66,9 @@ export interface CardInstance {
   factory: CardFactory;  // [新] 引用卡的配置
   instanceId: string;
 
-  // x10 格式的速度（运行时转换）
+  // x10 格式的生效刻（运行时转换）
   baseSpeed10: number | null;  // factory.speed * 10，转为整数
-  currentSpeed10: number | null;  // 当前速度，包含所有修正
+  currentSpeed10: number | null;  // 当前生效刻，包含所有修正
 
   // 修正值
   permanentSpeedModifier: number;  // 永久修正（如 NPC +0.1）
@@ -116,8 +116,8 @@ const scriptId = card.factory.scriptId;
 
 **这些保留在 CardInstance 上，不需改动**:
 ```typescript
-card.baseSpeed10;        // 转换后的速度（x10 整数）
-card.currentSpeed10;     // 当前速度（包含修正）
+card.baseSpeed10;        // 转换后的生效刻（x10 整数）
+card.currentSpeed10;     // 当前生效刻（包含修正）
 card.tagsRuntime;        // 运行时标签（含修饰珠添加）
 card.buffs;              // Buff 列表
 card.modifiers;          // 镶嵌的修饰珠
@@ -196,7 +196,7 @@ const instance: CardInstance = {
 #### 示例：编写使用工厂级 Buff 的卡脚本
 
 ```typescript
-// 例：一张卡"本战斗永久获得 +0.5 速度"
+// 例：一张卡"本战斗永久获得 +0.5 生效刻"
 const myCardScript = {
   execute: (context) => {
     const { battle, card, source } = context;
@@ -205,7 +205,7 @@ const myCardScript = {
     battle.addCardFactoryBuff(card, {
       id: 'my_speed_boost',
       name: '加速 Buff',
-      description: '+0.5 速度',
+      description: '+0.5 生效刻',
       duration: Infinity,  // 持续到战斗结束
       stackRule: 'nonStackable',
       level: 1,

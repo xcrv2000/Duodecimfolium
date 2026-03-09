@@ -366,7 +366,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                         className="bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white outline-none focus:border-emerald-500"
                     >
                         <option value="default">默认顺序</option>
-                        <option value="speed">按速度排序</option>
+                        <option value="speed">按生效刻排序</option>
                         <option value="pack">按卡包排序</option>
                     </select>
                 </div>
@@ -497,7 +497,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                     onClick={() => sortDeck('speed')}
                     className="flex-1 bg-slate-800 border border-slate-700 hover:border-emerald-500 text-[10px] py-1.5 rounded text-slate-400 hover:text-white transition-colors"
                 >
-                    按速度排序
+                    按生效刻排序
                 </button>
             </div>
         </div>
@@ -548,7 +548,7 @@ const CollectionView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
                                     <div className="flex flex-col flex-1" onClick={() => removeFromDeck(index)}>
                                         <span className="font-bold text-sm text-slate-200">{card.name}</span>
                                         <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                                            <span>速度: {displaySpeed}</span>
+                                            <span>生效刻: {displaySpeed}</span>
                                             {penalty > 0 && (
                                                 <span className="text-red-400 font-bold bg-red-900/30 px-1 rounded">
                                                     {penaltyText} ({finalSpeed})

@@ -259,7 +259,7 @@ const CardMini: React.FC<{ card: CardInstance, onMouseEnter?: (rect: DOMRect) =>
         }
     };
     
-    // 判断卡是否失效（速度超出范围）
+    // 判断卡是否失效（生效刻超出范围）
     const isCardInvalid = card.currentSpeed10 === null || card.currentSpeed10 >= 130;
     const speedDisplay = card.currentSpeed10 !== null && card.currentSpeed10 < 130 
         ? (card.currentSpeed10 / 10).toFixed(1) 
@@ -274,7 +274,7 @@ const CardMini: React.FC<{ card: CardInstance, onMouseEnter?: (rect: DOMRect) =>
             className={`w-12 h-16 bg-slate-700 border-2 rounded flex flex-col items-center justify-center text-xs relative ${borderClass} cursor-help hover:scale-110 transition-transform ${isCardInvalid ? 'opacity-50' : ''}`}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={onMouseLeave}
-            title={isCardInvalid ? `卡已失效 (${card.currentSpeed10 === null ? '无效速度' : '>= 13.0'})` : ''}
+            title={isCardInvalid ? `卡已失效 (${card.currentSpeed10 === null ? '无效生效刻' : '>= 13.0'})` : ''}
         >
             <span className="font-bold">{card.factory.name[0]}</span>
             {/* 显示卡实例 buff 标志 */}

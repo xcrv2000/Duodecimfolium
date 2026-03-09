@@ -167,7 +167,7 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
         ) : (
           <div className="space-y-1">
             <div className="font-bold text-slate-100">{activeTooltip.card.name}</div>
-            <div className="text-cyan-300">速度: {activeTooltip.card.speed === null ? '-' : activeTooltip.card.speed}</div>
+            <div className="text-cyan-300">生效刻: {activeTooltip.card.speed === null ? '-' : activeTooltip.card.speed}</div>
             <div className="text-slate-300">{activeTooltip.card.effectDescription}</div>
             {activeTooltip.card.description && (
               <div className="text-slate-500 italic">{activeTooltip.card.description}</div>

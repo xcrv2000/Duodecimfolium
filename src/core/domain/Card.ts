@@ -1,7 +1,7 @@
 import type { CardInstanceBuff, CardFactoryBuff } from './Battle';
 
 export type CardRarity = number; // 卡包中的份数
-export type CardSpeed = number | null; // 配置中的速度 (e.g. 2.1), null for passive
+export type CardSpeed = number | null; // 配置中的生效刻 (e.g. 2.1), null for passive
 
 /**
  * CardFactory（卡工厂）
@@ -21,7 +21,7 @@ export interface CardFactory {
   packId: string; // 这张卡属于哪个卡包
   rarity: CardRarity; // 稀有度（卡包中的份数）
   maxCopies?: number; // 单卡可携带上限，默认3
-  speed: CardSpeed; // 基础速度 (0.1 精度，e.g. 2.1)
+  speed: CardSpeed; // 基础生效刻 (0.1 精度，e.g. 2.1)
   scriptId: string; // 给系统看的卡的脚本 ID
   tags: string[]; // 属性标签 (e.g., "攻击/物理")
   baselineFactoryBuffs?: CardFactoryBuff[]; // 工厂级buff（战斗持续）
@@ -46,7 +46,7 @@ export interface Modifier {
  * 
  * 运行时临时对象，在每个回合的 CardGeneration 阶段创建。
  * 由 CardFactory 生成，但包含当前战斗场景的动态信息：
- * - 速度修正（修饰珠、buff、同名卡惩罚）
+ * - 生效刻修正（修饰珠、buff、同名卡惩罚）
  * - 运行时标签（修饰珠附加）
  * - 实例级 buff
  * 
@@ -59,13 +59,13 @@ export interface CardInstance {
   instanceId: string; // 运行时唯一ID
   ownerId: string; // 持有者单位 ID
   
-  // ----- 速度系统（x10 整数存储，精度 0.1） -----
+  // ----- 生效刻系统（x10 整数存储，精度 0.1） -----
   baseSpeed10: number | null; // 从 factory.speed 转换来，单位 x10
-  currentSpeed10: number | null; // 当前速度 x10，受修正影响
+  currentSpeed10: number | null; // 当前生效刻 x10，受修正影响
   
-  // ----- 速度修正与惩罚 -----
+  // ----- 生效刻修正与惩罚 -----
   permanentSpeedModifier: number; // 永久修正 (x10)，e.g. NPC +0.1 -> +1
-  deckSpeedPenalty: number; // 同名卡速度惩罚 (x10)，第2张 +9, 第3张 +28
+  deckSpeedPenalty: number; // 同名卡生效刻惩罚 (x10)，第2张 +9, 第3张 +28
   
   // ----- 运行时扩展 -----
   tagsRuntime: string[]; // factory.tags + 修饰珠添加的标签

@@ -209,7 +209,7 @@ const CompendiumView: React.FC = () => {
 
             {/* Cost Filter */}
             <div className="flex flex-col gap-1">
-                <label className="text-xs text-slate-500 font-bold">速度</label>
+                <label className="text-xs text-slate-500 font-bold">生效刻</label>
                 <select 
                     className="bg-slate-800 border border-slate-700 rounded p-2 text-sm text-white outline-none focus:border-emerald-500"
                     value={selectedCost}

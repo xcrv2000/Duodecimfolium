@@ -109,7 +109,7 @@ describe('CardScripts', () => {
   });
 
   describe('0.3.5 新卡脚本行为', () => {
-    it('quick_start 应降低下一张卡速度并移除自身', () => {
+    it('quick_start 应降低下一张卡生效刻并移除自身', () => {
       const quickStart = createCardInstance('quick_start_card', 'quick_start', 10, ['辅助']);
       const nextCard = createCardInstance('next_card', 'slash', 60, ['攻击', '物理']);
       playerUnit.cards = [quickStart, nextCard];
@@ -147,7 +147,7 @@ describe('CardScripts', () => {
       expect(buff?.level).toBe(2);
     });
 
-    it('big_torque_gear 应让下一张攻击卡速度+3并使下一次攻击伤害+6', () => {
+    it('big_torque_gear 应让下一张攻击卡生效刻+3并使下一次攻击伤害+6', () => {
       const attackCard = createCardInstance('atk', 'slash', 50, ['攻击', '物理']);
       playerUnit.cards = [attackCard];
 
@@ -161,7 +161,7 @@ describe('CardScripts', () => {
       expect(playerUnit.buffs.find((b) => b.id === 'big_torque_gear')).toBeUndefined();
     });
 
-    it('speed_magician 应交换最快与最慢卡的速度', () => {
+    it('speed_magician 应交换最快与最慢卡的生效刻', () => {
       const fast = createCardInstance('fast', 'slash', 20, ['攻击', '物理']);
       const slow = createCardInstance('slow', 'slash', 90, ['攻击', '物理']);
       const mid = createCardInstance('mid', 'slash', 50, ['攻击', '物理']);
@@ -174,7 +174,7 @@ describe('CardScripts', () => {
       expect(mid.currentSpeed10).toBe(50);
     });
 
-    it('cancel 应提高比当前卡更慢中最接近的一张卡速度+2', () => {
+    it('cancel 应提高比当前卡更慢中最接近的一张卡生效刻+2', () => {
       const current = createCardInstance('cancel_current', 'cancel', 70, ['辅助']);
       const c1 = createCardInstance('c1', 'slash', 40, ['攻击', '物理']);
       const c2 = createCardInstance('c2', 'slash', 60, ['攻击', '物理']);
@@ -187,7 +187,7 @@ describe('CardScripts', () => {
       expect(c2.currentSpeed10).toBe(80);
     });
 
-    it('kinetic_impact 伤害应为当前速度+3且不低于3', () => {
+    it('kinetic_impact 伤害应为当前生效刻+3且不低于3', () => {
       const kineticImpact = createCardInstance('kinetic', 'kinetic_impact', 60, ['攻击', '物理']);
       (battleLoop as any).currentCard = kineticImpact;
 
@@ -197,7 +197,7 @@ describe('CardScripts', () => {
       expect(enemyUnit.hp).toBe(hpBefore - 9);
     });
 
-    it('super_kinetic_impact 应按速度*2伤害并在低于6时自伤', () => {
+    it('super_kinetic_impact 应按生效刻*2伤害并在低于6时自伤', () => {
       const superKinetic = createCardInstance('super_kinetic', 'super_kinetic_impact', 20, ['攻击', '物理']);
       (battleLoop as any).currentCard = superKinetic;
 
@@ -209,7 +209,7 @@ describe('CardScripts', () => {
       expect(playerUnit.hp).toBe(playerHpBefore - 4);
     });
 
-    it('rush_attack 应造成2伤害并使本卡速度+2，回合结束后恢复', () => {
+    it('rush_attack 应造成2伤害并使本卡生效刻+2，回合结束后恢复', () => {
       const rush = createCardInstance('rush', 'rush_attack', 50, ['攻击', '物理']);
       playerUnit.cards = [rush];
       (battleLoop as any).currentCard = rush;
@@ -236,7 +236,7 @@ describe('CardScripts', () => {
       expect(enemyUnit.hp).toBe(hpBefore - 6);
     });
 
-    it('superluminal 触发 super_kinetic_impact 时应使用被触发卡速度', () => {
+    it('superluminal 触发 super_kinetic_impact 时应使用被触发卡生效刻', () => {
       const superluminal = createCardInstance('superluminal', 'superluminal', 100, ['辅助']);
       const superKinetic = createCardInstance('super_kinetic', 'super_kinetic_impact', 40, ['攻击', '物理']);
       playerUnit.cards = [superluminal, superKinetic];
@@ -245,7 +245,7 @@ describe('CardScripts', () => {
       const hpBefore = enemyUnit.hp;
       CardScripts.superluminal(battleLoop, playerUnit, [playerUnit]);
 
-      // 被触发卡速度=4，伤害应为 4*2=8；若错误使用超光速速度10则会是20
+      // 被触发卡生效刻=4，伤害应为 4*2=8；若错误使用超光速生效刻10则会是20
       expect(enemyUnit.hp).toBe(hpBefore - 8);
     });
 
@@ -259,7 +259,7 @@ describe('CardScripts', () => {
       expect(playerUnit.cards.find((c: any) => c.instanceId === bombard.instanceId)).toBeUndefined();
     });
 
-    it('rebellion 受到速度加减修正时应反转符号（不含设为固定值）', () => {
+    it('rebellion 受到生效刻加减修正时应反转符号（不含设为固定值）', () => {
       const rebellionCard = createCardInstance('rebellion_card', 'rebellion', 60, ['攻击', '物理']);
       playerUnit.cards = [rebellionCard];
 
@@ -283,7 +283,7 @@ describe('CardScripts', () => {
   });
 
   describe('0.3.5 新护具与战斗循环联动', () => {
-    it('high_speed_engine 应使受到伤害+1，且打牌后下一张卡速度-0.4', () => {
+    it('high_speed_engine 应使受到伤害+1，且打牌后下一张卡生效刻-0.4', () => {
       const engine = createCardInstance('engine', 'high_speed_engine', null, ['护具']);
       const played = createCardInstance('played', 'slash', 30, ['攻击', '物理']);
       const next = createCardInstance('next', 'slash', 60, ['攻击', '物理']);
@@ -300,7 +300,7 @@ describe('CardScripts', () => {
       expect(next.currentSpeed10).toBe(56);
     });
 
-    it('overload_cargo 应使受到伤害+1、造成伤害+2，且打牌后下一张卡速度+0.4', () => {
+    it('overload_cargo 应使受到伤害+1、造成伤害+2，且打牌后下一张卡生效刻+0.4', () => {
       const cargo = createCardInstance('cargo', 'overload_cargo', null, ['护具']);
       const played = createCardInstance('played', 'slash', 30, ['攻击', '物理']);
       const next = createCardInstance('next', 'slash', 60, ['攻击', '物理']);
@@ -321,7 +321,7 @@ describe('CardScripts', () => {
       expect(next.currentSpeed10).toBe(64);
     });
 
-    it('kinetic_recovery_device 在打牌后应按 tick 与基础速度差获得护甲', () => {
+    it('kinetic_recovery_device 在打牌后应按 tick 与基础生效刻差获得护甲', () => {
       const kinetic = createCardInstance('kinetic_device', 'kinetic_recovery_device', 40, ['辅助']);
       const played = createCardInstance('played', 'slash', 60, ['攻击', '物理']);
       playerUnit.cards = [kinetic, played];

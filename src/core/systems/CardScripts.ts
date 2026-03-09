@@ -185,20 +185,20 @@ export const CardScripts: Record<string, CardScript> = {
   // 14. Clear Oil (清亮剑油)
   clear_oil: (loop, source, targets) => {
       const target = targets[0] || source; // Self
-      // 给目标单位【清亮剑油】buff：下一次物理攻击后，那张卡从下回合起速度-2
+      // 给目标单位【清亮剑油】buff：下一次物理攻击后，那张卡从下回合起生效刻-2
       const buff: UnitBuff = {
           id: 'clear_oil_effect',
           name: '清亮剑油',
-          description: '下一次物理攻击后，那张卡从下回合起速度-2。（至少为0）',
+          description: '下一次物理攻击后，那张卡从下回合起生效刻-2。（至少为0）',
           duration: 999, // 战斗结束
           stackRule: 'nonStackable',
           level: 1,
           type: 'buff',
-          // 在下一次物理攻击后触发，修改该卡的永久速度修正
+          // 在下一次物理攻击后触发，修改该卡的永久生效刻修正
           // 这是一个状态buff，需要在 BattleLoop 的 executeCard 中检查
           onAttack: (_unit, _target, damage, _state) => {
               // 仅物理攻击触发
-              // 实际的速度修改需要在 BattleLoop.executeCard 中特殊处理
+              // 实际的生效刻修改需要在 BattleLoop.executeCard 中特殊处理
               return damage;
           }
       };
@@ -208,11 +208,11 @@ export const CardScripts: Record<string, CardScript> = {
   // 15. Bright Oil (明亮剑油)
   bright_oil: (loop, source, targets) => {
       const target = targets[0] || source;
-      // 给目标单位【明亮剑油】buff：下一次物理攻击后，那张卡永久速度-3
+      // 给目标单位【明亮剑油】buff：下一次物理攻击后，那张卡永久生效刻-3
       const buff: UnitBuff = {
           id: 'bright_oil_effect',
           name: '明亮剑油',
-          description: '下一次物理攻击后，那张卡永久速度-3。（至少为0）',
+          description: '下一次物理攻击后，那张卡永久生效刻-3。（至少为0）',
           duration: 999,
           stackRule: 'nonStackable',
           level: 1,
@@ -367,11 +367,11 @@ export const CardScripts: Record<string, CardScript> = {
       if (!target) return;
       loop.dealDamage(source, target, 6, 'physical');
       
-      // 本卡后续速度永久-1（至少为0）
+      // 本卡后续生效刻永久-1（至少为0）
       // 通过访问 loop 的 currentCard（假设已在 executeCard 中设置）
       const currentCard = (loop as any).currentCard;
       if (currentCard) {
-          // 使用新的 API 方法修改卡的永久速度修正
+          // 使用新的 API 方法修改卡的永久生效刻修正
           loop.modifyCardPermanentSpeed(currentCard, -10);
       }
   },
@@ -716,7 +716,7 @@ export const CardScripts: Record<string, CardScript> = {
     const buff: UnitBuff = {
       id: 'kinetic_recovery_device',
       name: '动能回收装置',
-      description: '每次打出卡牌时，按当前tick与基础速度差获得护甲。',
+      description: '每次打出卡牌时，按当前tick与基础生效刻差获得护甲。',
       duration: -1,
       stackRule: 'stackable',
       level: 1,

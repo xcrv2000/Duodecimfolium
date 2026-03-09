@@ -69,7 +69,7 @@ reference/
 ### 近期更新 🔄
 
 - ✅ 修复3个高优先级bug (clear_oil, bright_oil, wind_thunder_strike)
-- ✅ 添加永久速度修改API
+- ✅ 添加永久生效刻修改API
 - ✅ 文档结构重组 (logs/docs/archived)
 - ✅ 版本号升级至 v0.2.5
 
@@ -190,7 +190,7 @@ npm run dev         # 启动开发服务器
 | 修改标签判断逻辑 | [CardFactory 迁移指南.md](./CardFactory迁移指南.md) § 场景 C | 使用 `card.tagsRuntime` 代替 `card.tags` |
 | 实现新的 Buff 效果 | [重构变更日志.md](./重构变更日志.md#change-21-cardfactorybuff-落地) | 调用 `addCardInstanceBuff()` 或 `addCardFactoryBuff()` |
 | 添加新的修饰珠 | [CardFactory 迁移指南.md](./CardFactory迁移指南.md) § ① 添加新的修饰珠效果 | 修改 modifiers.json 和 BattleLoop.ts |
-| 处理速度边界值 | [重构变更日志.md](./重构变更日志.md#change-24-越界速度与边界值处理) | < 0 clamp, >= 130 标记失效 |
+| 处理生效刻边界值 | [重构变更日志.md](./重构变更日志.md#change-24-越界生效刻与边界值处理) | < 0 clamp, >= 130 标记失效 |
 | 声明多英雄支持 | [重构变更日志.md](./重构变更日志.md) § 后续迭代 | 已预留架构，可在 Phase N 实现 |
 | 验证重构完整性 | [重构变更日志.md](./重构变更日志.md#验证清单) | 15+ 项检查清单 |
 
@@ -207,7 +207,7 @@ npm run dev         # 启动开发服务器
 
 ### 业务逻辑
 - [ ] 卡牌脚本中使用的 Buff API 正确（UnitBuff vs CardInstanceBuff vs CardFactoryBuff）
-- [ ] 速度修正值使用 x10 整数格式（不是浮点数）
+- [ ] 生效刻修正值使用 x10 整数格式（不是浮点数）
 - [ ] 标签判断使用 `tagsRuntime`（包含修饰珠添加的标签）
 
 ### 代码质量
@@ -218,7 +218,7 @@ npm run dev         # 启动开发服务器
 
 ### 测试
 - [ ] 手动测试一个完整的地牢战斗
-- [ ] 测试多张同名卡的速度惩罚
+- [ ] 测试多张同名卡的生效刻惩罚
 - [ ] 测试修饰珠效果应用
 - [ ] 如涉及 Buff，测试生命周期和清理
 

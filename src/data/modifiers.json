@@ -2,14 +2,14 @@
     {
         "id": "breeze_orb",
         "name": "微风珠",
-        "description": "速度 -0.5 (不会减到0以下)",
+        "description": "生效刻 -0.5 (不会减到0以下)",
         "effectId": "speed_mod",
         "value": -0.5
     },
     {
         "id": "iron_orb",
         "name": "黑铁珠",
-        "description": "速度 +0.5",
+        "description": "生效刻 +0.5",
         "effectId": "speed_mod",
         "value": 0.5
     },

@@ -36,8 +36,8 @@ export interface Deck {
   modifierSlots: Record<string, string>; // cardIndex -> modifierId
   
   /**
-   * 同名卡速度惩罚（预计算）
-   * 用于在组卡界面中显示最终速度
+   * 同名卡生效刻惩罚（预计算）
+   * 用于在组卡界面中显示最终生效刻
    * 格式: cardIndex -> speedPenalty (x10)
    * 
    * 计算规则：

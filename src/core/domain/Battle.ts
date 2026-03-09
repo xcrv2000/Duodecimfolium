@@ -46,13 +46,13 @@ export interface UnitBuff extends BaseBuff {
 export interface CardInstanceBuff extends BaseBuff {
     type: 'buff' | 'debuff';
     // Specific to Card Instances (e.g. speed modification)
-    speedModification?: number; // 速度修正值 (x10)
+    speedModification?: number; // 生效刻修正值 (x10)
 }
 
 export interface CardFactoryBuff extends BaseBuff {
     type: 'buff' | 'debuff';
     // Specific to Card Factories (e.g. permanent speed modification)
-    speedModification?: number; // 速度修正值 (x10)
+    speedModification?: number; // 生效刻修正值 (x10)
 }
 
 export interface BattleState {

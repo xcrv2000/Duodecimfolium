@@ -82,14 +82,14 @@ describe('BattleLoop', () => {
   });
 
   describe('同名卡惩罚系统', () => {
-    it('应该正确初始化速度惩罚', () => {
+    it('应该正确初始化生效刻惩罚', () => {
       const playerUnit = battleState.units[0];
       expect(playerUnit.cards[0].deckSpeedPenalty).toBe(0);
       expect(playerUnit.cards[1].deckSpeedPenalty).toBe(9); // +0.9 x10
       expect(playerUnit.cards[2].deckSpeedPenalty).toBe(28); // +2.8 x10
     });
 
-    it('应该在速度计算中应用惩罚', () => {
+    it('应该在生效刻计算中应用惩罚', () => {
       battleLoop.executeStartOfBattleEffects();
       
       const playerUnit = battleState.units[0];
@@ -97,7 +97,7 @@ describe('BattleLoop', () => {
       const card2Speed = playerUnit.cards[1].currentSpeed10;
       const card3Speed = playerUnit.cards[2].currentSpeed10;
 
-      // 第2和第3张卡的速度应该更高（更慢）
+      // 第2和第3张卡的生效刻应该更高（更慢）
       expect(card2Speed as number).toBeGreaterThan(card1Speed as number);
       expect(card3Speed as number).toBeGreaterThan(card2Speed as number);
     });
@@ -189,8 +189,8 @@ describe('BattleLoop', () => {
     });
   });
 
-  describe('卡速度计算', () => {
-    it('应该正确初始化卡片的当前速度', () => {
+  describe('卡生效刻计算', () => {
+    it('应该正确初始化卡片的当前生效刻', () => {
       battleLoop.executeStartOfBattleEffects();
 
       const playerUnit = battleState.units[0];
@@ -201,7 +201,7 @@ describe('BattleLoop', () => {
       });
     });
 
-    it('应该正确处理负速度（设为0）', () => {
+    it('应该正确处理负生效刻（设为0）', () => {
       const playerUnit = battleState.units[0];
       const card = playerUnit.cards[0];
 

@@ -176,7 +176,7 @@ export class BattleLoop {
     this.log(null, null, "--- 战斗开始 ---", 'info');
     
     // 0. Apply Duplicate Card Speed Penalty
-    // "同名卡第2张速度+0.9，第3张速度+2.8"
+    // "同名卡第2张生效刻+0.9，第3张生效刻+2.8"
     this.state.units.forEach(unit => {
         const cardNameCount = new Map<string, number>();
         
@@ -187,11 +187,11 @@ export class BattleLoop {
             if (count === 1) {
                 // Second occurrence: +0.9 speed = +9 speed10
               card.deckSpeedPenalty = 9;
-                this.log(unit, null, `${card.factory.name} (第2张): 速度惩罚 +0.9`, 'info');
+                this.log(unit, null, `${card.factory.name} (第2张): 生效刻惩罚 +0.9`, 'info');
             } else if (count === 2) {
                 // Third occurrence: +2.8 speed = +28 speed10
               card.deckSpeedPenalty = 28;
-                this.log(unit, null, `${card.factory.name} (第3张): 速度惩罚 +2.8`, 'info');
+                this.log(unit, null, `${card.factory.name} (第3张): 生效刻惩罚 +2.8`, 'info');
             }
         });
     });
@@ -268,7 +268,7 @@ export class BattleLoop {
       armorCards.forEach(card => {
         const scriptId = card.factory.scriptId;
         if (scriptId === 'steel_full_armor') {
-          // 所有伤害-1，卡结算后该角色其他卡速度+1，回合开始+24护甲
+          // 所有伤害-1，卡结算后该角色其他卡生效刻+1，回合开始+24护甲
           const damageBuff: UnitBuff = {
             id: 'steel_armor_damage',
             name: '钢制全身甲',
@@ -294,7 +294,7 @@ export class BattleLoop {
           };
           this.addUnitBuff(unit, armorBuff);
         } else if (scriptId === 'leather_half_armor') {
-          // 被护甲格挡的伤害-1，卡结算后该角色其他卡速度+0.5，回合开始+16护甲
+          // 被护甲格挡的伤害-1，卡结算后该角色其他卡生效刻+0.5，回合开始+16护甲
           const damageBuff: UnitBuff = {
             id: 'leather_armor_damage',
             name: '皮质半身甲',
@@ -326,7 +326,7 @@ export class BattleLoop {
           };
           this.addUnitBuff(unit, armorBuff);
         } else if (scriptId === 'cloth_light_armor') {
-          // 每tick第一次伤害-1，卡结算后该角色其他卡速度+0.3，回合开始+12护甲
+          // 每tick第一次伤害-1，卡结算后该角色其他卡生效刻+0.3，回合开始+12护甲
           const damageBuff: UnitBuff = {
             id: 'cloth_armor_damage',
             name: '布质轻甲',
@@ -383,7 +383,7 @@ export class BattleLoop {
           };
           this.addUnitBuff(unit, evadeBuff);
         } else if (scriptId === 'tight_robe') {
-          // 速度+1，随机指定目标时尽可能指定相同
+          // 生效刻+1，随机指定目标时尽可能指定相同
           // Speed +1 to all cards
           unit.cards.forEach(c => {
             if (c.baseSpeed10 !== null) {
@@ -407,7 +407,7 @@ export class BattleLoop {
           const shiftBuff: UnitBuff = {
             id: 'high_speed_engine_shift',
             name: '高速引擎变速',
-            description: '每打出一张卡后，下一张卡速度-0.4。',
+            description: '每打出一张卡后，下一张卡生效刻-0.4。',
             duration: 999,
             stackRule: 'nonStackable',
             level: 1,
@@ -442,7 +442,7 @@ export class BattleLoop {
           const shiftBuff: UnitBuff = {
             id: 'overload_cargo_shift',
             name: '超载装货变速',
-            description: '每打出一张卡后，下一张卡速度+0.4。',
+            description: '每打出一张卡后，下一张卡生效刻+0.4。',
             duration: 999,
             stackRule: 'nonStackable',
             level: 1,
@@ -461,17 +461,17 @@ export class BattleLoop {
     // === 回合结束结算流程 ===
     // 这个阶段结算本回合残留的状态并准备下一回合
     // 
-    // 执行顺序（确保buff生命周期与速度计算一致）：
+    // 执行顺序（确保buff生命周期与生效刻计算一致）：
     // 1. duration递减
     // 2. buff清除（duration <= 0）
-    // 3. 重新计算速度（应用仍然存活的buff）
+    // 3. 重新计算生效刻（应用仍然存活的buff）
     // 
     // 【例：眩晕buff的完整生命周期】
     // T1回合：【摔】卡执行 → addUnitBuff({id: 'stun', duration: 2, level: 2})
-    //        duration=2时，recalculateCardSpeed检查`buff.duration === 1`不满足 → 不应用速度修正
-    // T1回合结束：duration递减 2→1，buff保留（duration > 0）→ 下一回合应用速度修正
-    // T2回合：recalculateCardSpeed检查`buff.duration === 1`满足 → 应用速度修正(+2.0)
-    // T2回合结束：duration递减 1→0，buff删除（duration <= 0）→ 速度修正解除
+    //        duration=2时，recalculateCardSpeed检查`buff.duration === 1`不满足 → 不应用生效刻修正
+    // T1回合结束：duration递减 2→1，buff保留（duration > 0）→ 下一回合应用生效刻修正
+    // T2回合：recalculateCardSpeed检查`buff.duration === 1`满足 → 应用生效刻修正(+2.0)
+    // T2回合结束：duration递减 1→0，buff删除（duration <= 0）→ 生效刻修正解除
     this.state.units.forEach(unit => {
       // 1. 结算单位 buff（UnitBuff）
       // 【顺序很重要】先触发回调，再递减duration
@@ -487,14 +487,14 @@ export class BattleLoop {
       // 包括护甲buff在内的所有buff都会在此处根据duration自动清除
       unit.buffs = unit.buffs.filter(b => b.duration > 0 || b.duration < 0);
       
-      // 3. 重置卡实例并重算速度
-      // CardInstanceBuff清除（这些是本回合临时buff，如"下一张卡速度+X"）
-      // 然后重新计算速度，此时：
+      // 3. 重置卡实例并重算生效刻
+      // CardInstanceBuff清除（这些是本回合临时buff，如"下一张卡生效刻+X"）
+      // 然后重新计算生效刻，此时：
       //   - unit.buffs已更新（duration已递减，已删除多余的）
       //   - 新的recalculateCardSpeed会读到最新的buff状态
       unit.cards.forEach(card => {
           card.buffs = []; // Clear CardInstanceBuffs (清除本回合临时buff)
-          this.recalculateCardSpeed(unit, card); // 重新计算速度，应用仍然存活的UnitBuff
+          this.recalculateCardSpeed(unit, card); // 重新计算生效刻，应用仍然存活的UnitBuff
       });
     });
 
@@ -521,14 +521,14 @@ export class BattleLoop {
           return;
       }
       
-      // === 速度计算说明 ===
+      // === 生效刻计算说明 ===
       // 底层逻辑全部使用 speed10 单位（整数0-130）
-      // UI层显示时除以10得到玩家可见的速度（浮点0-13）
+      // UI层显示时除以10得到玩家可见的生效刻（浮点0-13）
       //
       // speed10 = baseSpeed10 + permanentSpeedModifier + modifiers_speedMod + UnitBuffs + CardBuffs + deckPenalty
       //
       // 【单位转换规则】
-      // 玩家看到的速度值：         底层speed10：
+      // 玩家看到的生效刻值：         底层speed10：
       // 0.1 → 1,   0.9 → 9,   2.0 → 20,   2.8 → 28
       // （所有计算保留整数，避免浮点误差）
       
@@ -541,10 +541,10 @@ export class BattleLoop {
 
       // === 应用修饰珠效果 ===
       // 修饰珠系统支持两种效果：
-      // 1. speed_mod: 修改卡的速度 (微风珠 -0.5, 黑铁珠 +0.5)
+      // 1. speed_mod: 修改卡的生效刻 (微风珠 -0.5, 黑铁珠 +0.5)
       // 2. attr_add: 添加属性标签 (火灵珠 "火", 冰灵珠 "冰", 岩灵珠 "岩")
       //
-      // 速度修饰是在这里应用的，属性修饰在 initializeCardTags() 中应用
+      // 生效刻修饰是在这里应用的，属性修饰在 initializeCardTags() 中应用
       if (card.modifiers) {
         card.modifiers.forEach(mod => {
             if (mod.effectId === 'speed_mod') {
@@ -580,7 +580,7 @@ export class BattleLoop {
       // Charge: +10 speed10 (immediate) → +1.0 speed
       // Stun: +level*10 speed10 (next turn only, i.e., duration === 1) → speed increase by level
       //
-      // 【眩晕】例：level=2 意味着目标卡速度+2.0，转换为speed10则为+20
+      // 【眩晕】例：level=2 意味着目标卡生效刻+2.0，转换为speed10则为+20
       unit.buffs.forEach(buff => {
           if (buff.id === 'charge') {
               speedDelta10 += 10; // +1.0 speed（蓄势：下一次攻击前加速1.0）
@@ -601,12 +601,12 @@ export class BattleLoop {
       }
       const numericSpeed: number = (speed as number) + speedDelta10;
       
-      // === 速度边界值处理 ===
+      // === 生效刻边界值处理 ===
       // now assign back to speed variable so boundary logic can set null if needed
       speed = numericSpeed;
       // 
       // 下限（<0）：根据战斗系统修正文档 §1.3
-      // "speed < 0 invalid" - 速度不能为负
+      // "speed < 0 invalid" - 生效刻不能为负
       // 含义：卡不能放在时间轴之前，minimum speed = 0（tick 0）
       if (speed !== null && speed < 0) speed = 0;
       
@@ -1064,12 +1064,12 @@ export class BattleLoop {
     // 延迟生效buff（如【眩晕】Stun）：
     //   - duration为2（当前回合+下一回合）
     //   - 添加时duration=2，recalculateCardSpeed检查`buff.duration === 1`不满足 → 暂不应用
-    //   - 回合结束时duration递减至1 → 下一回合时应用速度修正
+    //   - 回合结束时duration递减至1 → 下一回合时应用生效刻修正
     //   - 这样设计确保【眩晕】的减速效果在"下一回合开始"时才应用
     //
     // 对于speed相关的buff，记住：
-    //   - 速度值都用speed10单位（0-130），需要乘以10
-    //   - buff.level是效果等级，应用时需确认单位转换（例：level=2意味着+2.0速度，应加20到numericSpeed）
+    //   - 生效刻值都用speed10单位（0-130），需要乘以10
+    //   - buff.level是效果等级，应用时需确认单位转换（例：level=2意味着+2.0生效刻，应加20到numericSpeed）
     
     // Recalculate speeds (e.g. for Charge)
     unit.cards.forEach(card => this.recalculateCardSpeed(unit, card));
@@ -1099,7 +1099,7 @@ export class BattleLoop {
       this.addCardInstanceBuff(card, buff);
   }
 
-  // API: 修改卡的永久速度修正（用于 wind_thunder_strike 等能力）
+  // API: 修改卡的永久生效刻修正（用于 wind_thunder_strike 等能力）
     public modifyCardPermanentSpeed(card: CardInstance, delta10: number): void {
       card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + delta10;
       
