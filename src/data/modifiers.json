@@ -16,21 +16,21 @@
     {
         "id": "fire_orb",
         "name": "火灵珠",
-        "description": "攻击附加【魔法/火】属性",
+        "description": "攻击附加【火】属性",
         "effectId": "attr_add",
         "value": "fire"
     },
     {
         "id": "ice_orb",
         "name": "冰灵珠",
-        "description": "攻击附加【魔法/冰】属性",
+        "description": "攻击附加【冰】属性",
         "effectId": "attr_add",
         "value": "ice"
     },
     {
         "id": "rock_orb",
         "name": "岩灵珠",
-        "description": "攻击附加【物理/岩】属性",
+        "description": "攻击附加【岩】属性",
         "effectId": "attr_add",
         "value": "rock"
     }
