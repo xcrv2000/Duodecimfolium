@@ -32,9 +32,9 @@
   {
     "id": "pack_5_trick_of_god",
     "name": "神人小妙招",
-    "description": "作者也不清楚这个包的定位。",
+    "description": "作者（橘猫）也不清楚这个包的定位。",
     "designer": "橘猫",
-    "price": 10,
+    "price": 10, 
     "requiredTokenId": "blackhand_token",
     "requiredTokenCount": 1,
     "isTemporary": true

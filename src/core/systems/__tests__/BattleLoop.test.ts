@@ -209,6 +209,65 @@ describe('BattleLoop', () => {
       expect(card.currentSpeed10).not.toBeNull();
       expect(card.currentSpeed10).toBeGreaterThanOrEqual(0);
     });
+
+    it('tight_robe 的开战修正应立即作用于 rebellion，且反转其生效刻修正', () => {
+      const rebellionFactory: CardFactory = {
+        id: 'rebellion',
+        name: '叛逆',
+        description: '测试叛逆',
+        effectDescription: '测试',
+        packId: 'test',
+        rarity: 6,
+        speed: 6,
+        scriptId: 'rebellion',
+        tags: ['攻击', '物理']
+      };
+      const robeFactory: CardFactory = {
+        id: 'tight_robe',
+        name: '紧束法袍',
+        description: '测试紧束法袍',
+        effectDescription: '测试',
+        packId: 'test',
+        rarity: 3,
+        speed: null,
+        scriptId: 'tight_robe',
+        tags: ['护具']
+      };
+
+      const playerUnit = battleState.units[0];
+      playerUnit.cards = [
+        {
+          factory: rebellionFactory,
+          instanceId: 'rebellion_1',
+          baseSpeed10: 60,
+          currentSpeed10: null,
+          deckSpeedPenalty: 0,
+          permanentSpeedModifier: 0,
+          ownerId: playerUnit.id,
+          tagsRuntime: rebellionFactory.tags,
+          modifiers: [],
+          buffs: [],
+          factoryBuffs: []
+        },
+        {
+          factory: robeFactory,
+          instanceId: 'robe_1',
+          baseSpeed10: null,
+          currentSpeed10: null,
+          deckSpeedPenalty: 0,
+          permanentSpeedModifier: 0,
+          ownerId: playerUnit.id,
+          tagsRuntime: robeFactory.tags,
+          modifiers: [],
+          buffs: [],
+          factoryBuffs: []
+        }
+      ];
+
+      battleLoop.executeStartOfBattleEffects();
+
+      expect(playerUnit.cards[0].currentSpeed10).toBe(50);
+    });
   });
 
   describe('伤害处理', () => {

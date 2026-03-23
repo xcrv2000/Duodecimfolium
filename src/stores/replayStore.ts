@@ -22,6 +22,11 @@ interface ReplayStore {
   clearHistory: () => void; // Clears non-favorites
 }
 
+export const REPLAY_STORAGE_KEY = 'duodecimfolium-replays';
+export const getPersistedReplaySlice = (state: ReplayStore) => ({
+  replays: state.replays
+});
+
 export const useReplayStore = create<ReplayStore>()(
   persist(
     (set) => ({
@@ -90,7 +95,8 @@ export const useReplayStore = create<ReplayStore>()(
       }
     }),
     {
-      name: 'duodecimfolium-replays',
+      name: REPLAY_STORAGE_KEY,
+      partialize: getPersistedReplaySlice,
     }
   )
 );

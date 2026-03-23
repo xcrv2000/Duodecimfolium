@@ -33,7 +33,9 @@ interface PlayerStore extends PlayerState {
   craftCard: (cardId: string, cost: number) => void;
 }
 
-const initialState: PlayerState = {
+export const PLAYER_STORAGE_KEY = 'duodecimfolium-player-storage-v1';
+
+export const initialPlayerState: PlayerState = {
   gold: 100,
   dust: 0,
   unlockedDungeons: ['training_ground', 'sandbox_training'],
@@ -59,53 +61,67 @@ const initialState: PlayerState = {
   tokens: {}
 };
 
-export const usePlayerStore = create<PlayerStore>()(
-  persist(
-    (set) => ({
-      ...initialState,
+export const getPersistedPlayerSlice = (state: PlayerState) => ({
+  gold: state.gold,
+  dust: state.dust,
+  unlockedDungeons: state.unlockedDungeons,
+  clearedDungeons: state.clearedDungeons,
+  unlockedPacks: state.unlockedPacks,
+  openedPacks: state.openedPacks,
+  collection: state.collection,
+  decks: state.decks,
+  defaultDeckId: state.defaultDeckId,
+  modifiers: state.modifiers,
+  tokens: state.tokens
+});
 
-      addGold: (amount) => set((state) => ({ gold: state.gold + amount })),
+export const usePlayerStore = create<PlayerStore>()(
+  persist<PlayerStore, [], [], PlayerState>(
+    (set) => ({
+      ...initialPlayerState,
+
+      addGold: (amount: number) => set((state) => ({ gold: state.gold + amount })),
       
-      addDust: (amount) => set((state) => ({ dust: state.dust + amount })),
+      addDust: (amount: number) => set((state) => ({ dust: state.dust + amount })),
       
-      addModifier: (id, count = 1) => set((state) => ({
+      addModifier: (id: string, count = 1) => set((state) => ({
         modifiers: { ...state.modifiers, [id]: (state.modifiers[id] || 0) + count }
       })),
 
       /** @deprecated 修饰珠不会被消耗，只用于数据修复 */
-      removeModifier: (id, count = 1) => set((state) => ({
+      removeModifier: (id: string, count = 1) => set((state) => ({
         modifiers: { ...state.modifiers, [id]: Math.max(0, (state.modifiers[id] || 0) - count) }
       })),
 
-      addToken: (id, count = 1) => set((state) => ({
+      addToken: (id: string, count = 1) => set((state) => ({
         tokens: { ...state.tokens, [id]: (state.tokens[id] || 0) + count }
       })),
 
-      removeToken: (id, count = 1) => set((state) => ({
+      removeToken: (id: string, count = 1) => set((state) => ({
         tokens: { ...state.tokens, [id]: Math.max(0, (state.tokens[id] || 0) - count) }
       })),
 
-      unlockDungeon: (id) => set((state) => {
+      unlockDungeon: (id: string) => set((state) => {
         if (state.unlockedDungeons.includes(id)) return state;
         return { unlockedDungeons: [...state.unlockedDungeons, id] };
       }),
 
-      clearDungeon: (id) => set((state) => {
+      clearDungeon: (id: string) => set((state) => {
         if (state.clearedDungeons.includes(id)) return state;
         return { clearedDungeons: [...state.clearedDungeons, id] };
       }),
       
-      unlockPack: (id) => set((state) => {
+      unlockPack: (id: string) => set((state) => {
         if (state.unlockedPacks.includes(id)) return state;
         return { unlockedPacks: [...state.unlockedPacks, id] };
       }),
 
-      markPackOpened: (id) => set((state) => {
+      markPackOpened: (id: string) => set((state) => {
         if (state.openedPacks.includes(id)) return state;
         return { openedPacks: [...state.openedPacks, id] };
       }),
       
-      addCard: (id, count = 1) => set((state) => {
+      addCard: (id: string, count = 1) => set((state) => {
         const currentCount = state.collection[id] || 0;
         const newCount = currentCount + count;
         
@@ -123,7 +139,7 @@ export const usePlayerStore = create<PlayerStore>()(
         };
       }),
 
-      addCards: (ids) => set((state) => {
+      addCards: (ids: string[]) => set((state) => {
         const newCollection = { ...state.collection };
         let newDust = state.dust;
         
@@ -142,7 +158,7 @@ export const usePlayerStore = create<PlayerStore>()(
         };
       }),
 
-      removeCard: (id, count = 1) => set((state) => {
+      removeCard: (id: string, count = 1) => set((state) => {
         const currentCount = state.collection[id] || 0;
         const newCount = Math.max(0, currentCount - count);
         return {
@@ -150,7 +166,7 @@ export const usePlayerStore = create<PlayerStore>()(
         };
       }),
 
-      createDeck: (name) => set((state) => {
+      createDeck: (name: string) => set((state) => {
         if (state.decks.length >= 100) return state;
         const newDeck = {
           id: `deck_${Date.now()}`,
@@ -165,7 +181,7 @@ export const usePlayerStore = create<PlayerStore>()(
         };
       }),
 
-      deleteDeck: (deckId) => set((state) => {
+      deleteDeck: (deckId: string) => set((state) => {
         if (state.decks.length <= 1) return state; // Prevent deleting last deck
         const nextDecks = state.decks.filter(d => d.id !== deckId);
         const nextDefault =
@@ -178,11 +194,11 @@ export const usePlayerStore = create<PlayerStore>()(
         };
       }),
 
-      renameDeck: (deckId, newName) => set((state) => ({
+      renameDeck: (deckId: string, newName: string) => set((state) => ({
         decks: state.decks.map(d => d.id === deckId ? { ...d, name: newName } : d)
       })),
 
-      updateDeck: (deckId, cardIds, modifierSlots) => set((state) => ({
+      updateDeck: (deckId: string, cardIds: string[], modifierSlots?: Record<string, string>) => set((state) => ({
         decks: state.decks.map(d => {
           if (d.id !== deckId) return d;
           
@@ -213,7 +229,7 @@ export const usePlayerStore = create<PlayerStore>()(
         })
       })),
 
-      importDeck: (deck) => set((state) => {
+      importDeck: (deck: any) => set((state) => {
         // Validate deck structure
         if (!deck || !Array.isArray(deck.cardIds)) return state;
         
@@ -253,12 +269,12 @@ export const usePlayerStore = create<PlayerStore>()(
         };
       }),
 
-      setDefaultDeck: (deckId) => set((state) => {
+      setDefaultDeck: (deckId: string) => set((state) => {
         if (!state.decks.some((d) => d.id === deckId)) return state;
         return { defaultDeckId: deckId };
       }),
 
-      craftCard: (cardId, cost) => set((state) => {
+      craftCard: (cardId: string, cost: number) => set((state) => {
         if (state.dust < cost) return state;
         
         const currentCount = state.collection[cardId] || 0;
@@ -271,7 +287,7 @@ export const usePlayerStore = create<PlayerStore>()(
       })
     }),
     {
-      name: 'duodecimfolium-player-storage-v1', // unique name with version
+      name: PLAYER_STORAGE_KEY, // unique name with version
       storage: createJSONStorage(() => localStorage), // Explicitly use localStorage
       version: 3,
       migrate: (persistedState: any, version) => {
@@ -295,19 +311,7 @@ export const usePlayerStore = create<PlayerStore>()(
 
         return persistedState;
       },
-      partialize: (state) => ({
-        gold: state.gold,
-        dust: state.dust,
-        unlockedDungeons: state.unlockedDungeons,
-        clearedDungeons: state.clearedDungeons,
-        unlockedPacks: state.unlockedPacks,
-        openedPacks: state.openedPacks,
-        collection: state.collection,
-        decks: state.decks,
-        defaultDeckId: state.defaultDeckId,
-        modifiers: state.modifiers,
-        tokens: state.tokens
-      }),
+      partialize: getPersistedPlayerSlice,
       onRehydrateStorage: () => (state) => {
         console.log('Storage rehydrated:', state);
       },

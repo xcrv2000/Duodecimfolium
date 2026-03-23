@@ -221,7 +221,7 @@ export class BattleLoop {
         if (unit.team === 'enemy') {
             unit.cards.forEach(c => {
                  if (c.baseSpeed10 !== null) {
-                     c.permanentSpeedModifier = (c.permanentSpeedModifier || 0) + 1;
+                     this.applyPermanentSpeedModifier(c, 1, false);
                  }
             });
         }
@@ -387,7 +387,7 @@ export class BattleLoop {
           // Speed +1 to all cards
           unit.cards.forEach(c => {
             if (c.baseSpeed10 !== null) {
-              c.permanentSpeedModifier = (c.permanentSpeedModifier || 0) + 10;
+              this.applyPermanentSpeedModifier(c, 10);
             }
           });
           // Target consistency - handled in target selection
@@ -1101,12 +1101,7 @@ export class BattleLoop {
 
   // API: 修改卡的永久生效刻修正（用于 wind_thunder_strike 等能力）
     public modifyCardPermanentSpeed(card: CardInstance, delta10: number): void {
-      card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + delta10;
-      
-      const unit = this.state.units.find(u => u.id === card.ownerId);
-      if (unit) {
-          this.recalculateCardSpeed(unit, card);
-      }
+      this.applyPermanentSpeedModifier(card, delta10);
   }
   
   public addCardInstanceBuff(card: CardInstance, buff: CardInstanceBuff): void {
@@ -1143,5 +1138,16 @@ export class BattleLoop {
       candidates.sort((a, b) => (a.currentSpeed10!) - (b.currentSpeed10!));
       
       return candidates.length > 0 ? candidates[0] : null;
+  }
+
+  private applyPermanentSpeedModifier(card: CardInstance, delta10: number, shouldRecalculate: boolean = true): void {
+      card.permanentSpeedModifier = (card.permanentSpeedModifier ?? 0) + delta10;
+
+      if (!shouldRecalculate) return;
+
+      const unit = this.state.units.find(u => u.id === card.ownerId);
+      if (unit) {
+          this.recalculateCardSpeed(unit, card);
+      }
   }
 }

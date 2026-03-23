@@ -115,7 +115,7 @@
     "description": "基础的火焰魔法。",
     "effectDescription": "对随机敌方单位造成6点魔法火焰伤害，并对其他敌方单位造成3点伤害。",
     "packId": "sword_and_magic",
-    "rarity": 12,
+    "rarity": 24,
     "speed": 8,
     "scriptId": "fireball",
     "tags": ["攻击", "魔法", "火"]
@@ -126,7 +126,7 @@
     "description": "看起来像冰球，但是有点硬。",
     "effectDescription": "造成6点伤害（物理+魔法+冰）。使目标本回合后续所有攻击卡生效刻+1。",
     "packId": "sword_and_magic",
-    "rarity": 12,
+    "rarity": 24,
     "speed": 7,
     "scriptId": "ice_orb",
     "tags": ["攻击", "魔法", "冰", "物理"]
@@ -137,7 +137,7 @@
     "description": "这就是石头吧！",
     "effectDescription": "对随机敌方单位造成3次2点物理伤害。",
     "packId": "sword_and_magic",
-    "rarity": 12,
+    "rarity": 24,
     "speed": 6,
     "scriptId": "stone_orb",
     "tags": ["攻击", "物理"]
@@ -148,7 +148,7 @@
     "description": "涂抹在武器上，减少阻力。",
     "effectDescription": "下一次物理攻击后，那张卡从下回合起生效刻-2。（至少为0）",
     "packId": "sword_and_magic",
-    "rarity": 3,
+    "rarity": 6,
     "speed": 4,
     "scriptId": "clear_oil",
     "tags": ["辅助"]
@@ -159,7 +159,7 @@
     "description": "高级剑油，效果持久。",
     "effectDescription": "下一次物理攻击后，那张卡永久生效刻-3。（至少为0）",
     "packId": "sword_and_magic",
-    "rarity": 3,
+    "rarity": 6,
     "speed": 8,
     "scriptId": "bright_oil",
     "tags": ["辅助"]
@@ -170,7 +170,7 @@
     "description": "剑气纵横。",
     "effectDescription": "对所有敌方单位造成4点物理伤害。",
     "packId": "sword_and_magic",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 4,
     "scriptId": "extend_slash",
     "tags": ["攻击", "物理"]
@@ -181,7 +181,7 @@
     "description": "不怒自威。",
     "effectDescription": "造成3点物理伤害。目标下一次受到的魔法伤害翻倍。",
     "packId": "sword_and_magic",
-    "rarity": 1,
+    "rarity": 2,
     "speed": 7,
     "scriptId": "majesty",
     "tags": ["攻击", "物理"]
@@ -192,7 +192,7 @@
     "description": "来自魔法的压迫感。",
     "effectDescription": "造成3点魔法伤害。目标下一次受到的物理伤害翻倍。",
     "packId": "sword_and_magic",
-    "rarity": 1,
+    "rarity": 2,
     "speed": 7,
     "scriptId": "deterrence",
     "tags": ["攻击", "魔法"]
@@ -203,7 +203,7 @@
     "description": "借势回旋，再来一刀。",
     "effectDescription": "造成3点物理伤害。若造成伤害，衍生一张【回旋·斩】。",
     "packId": "sword_and_magic",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 4,
     "scriptId": "spin_slash",
     "tags": ["攻击", "物理"]
@@ -225,7 +225,7 @@
     "description": "挑飞敌人，激发剑气。",
     "effectDescription": "造成4点物理伤害。衍生一张【上挑斩·剑气】放入卡组。",
     "packId": "sword_and_magic",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 6,
     "scriptId": "upward_slash",
     "tags": ["攻击", "物理"]
@@ -258,7 +258,7 @@
     "description": "快如风，烈如雷。",
     "effectDescription": "造成6点物理伤害。本卡后续生效刻永久-1。（至少为0）",
     "packId": "sword_and_magic",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 6,
     "scriptId": "wind_thunder_strike",
     "tags": ["攻击", "物理"]
@@ -269,7 +269,7 @@
     "description": "冒险者的必备品。",
     "effectDescription": "战斗结束时，若生命值低于70%，回复20点生命。（限3次）",
     "packId": "sword_and_magic",
-    "rarity": 6,
+    "rarity": 12,
     "speed": null,
     "scriptId": "ration",
     "tags": ["补给品"]
@@ -280,7 +280,7 @@
     "description": "临阵磨枪，不快也光。",
     "effectDescription": "精英战与Boss战开始时，所有物理攻击伤害+1。",
     "packId": "sword_and_magic",
-    "rarity": 6,
+    "rarity": 12,
     "speed": null,
     "scriptId": "whetstone",
     "tags": ["补给品"]
@@ -291,7 +291,7 @@
     "description": "诡异的角度。",
     "effectDescription": "造成2点物理伤害。若目标有后续攻击卡，使其本回合生效刻-1。",
     "packId": "sword_and_magic",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 5,
     "scriptId": "flick_thrust",
     "tags": ["攻击", "物理"]
@@ -302,7 +302,7 @@
     "description": "如月光般凄美。",
     "effectDescription": "第一回合造成12点伤害，否则造成18点伤害。",
     "packId": "sword_and_magic",
-    "rarity": 3,
+    "rarity": 6,
     "speed": 10,
     "scriptId": "moonlight_slash",
     "tags": ["攻击", "物理"]
@@ -427,7 +427,7 @@
     "rarity": 6,
     "speed": 3,
     "scriptId": "shadow_step",
-    "tags": ["魔法", "暗影"]
+    "tags": ["魔法", "暗"]
   },
   {
     "id": "shadow_claw",
@@ -438,7 +438,7 @@
     "rarity": 6,
     "speed": 3,
     "scriptId": "shadow_claw",
-    "tags": ["攻击", "魔法", "暗影"]
+    "tags": ["攻击", "魔法", "暗"]
   },
   {
     "id": "shadow_beam",
@@ -449,7 +449,7 @@
     "rarity": 6,
     "speed": 7,
     "scriptId": "shadow_beam",
-    "tags": ["攻击", "魔法", "暗影"]
+    "tags": ["攻击", "魔法", "暗"]
   },
   {
     "id": "shadow_form",
@@ -460,7 +460,7 @@
     "rarity": 3,
     "speed": 12,
     "scriptId": "shadow_form",
-    "tags": ["暗影", "全力"]
+    "tags": ["暗", "全力"]
   },
   {
     "id": "steel_full_armor",
@@ -679,7 +679,7 @@
     "effectDescription": "造成10*2点物理伤害。此牌的所有生效刻修正效果反转。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 3,
+    "rarity": 6,
     "speed": 15,
     "scriptId": "rebellion",
     "tags": ["攻击", "物理"]
@@ -691,7 +691,7 @@
     "effectDescription": "造成3点魔法伤害，本回合双方所有物理牌生效刻+1。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 6,
+    "rarity": 1,
     "speed": 3,
     "scriptId": "spirit_song",
     "tags": ["攻击", "魔法"]
@@ -703,7 +703,7 @@
     "effectDescription": "失去3生命值，召唤一个抵挡1次攻击的分身。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 5,
     "scriptId": "substitute",
     "tags": ["辅助"]
@@ -715,7 +715,7 @@
     "effectDescription": "造成5点物理伤害，获得5护甲。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 7,
     "scriptId": "iron_wave",
     "tags": ["攻击", "物理"]
@@ -727,7 +727,7 @@
     "effectDescription": "护具。你的初始生效刻最慢的攻击牌释放两次。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 3,
+    "rarity": 12,
     "speed": null,
     "scriptId": "counterweight",
     "tags": ["护具"]
@@ -739,7 +739,7 @@
     "effectDescription": "本回合每 tick 开始时造成1点穿甲的物理伤害。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 4,
     "scriptId": "storm",
     "tags": ["攻击", "物理"]
@@ -751,7 +751,7 @@
     "effectDescription": "造成7点物理伤害。奇数回合-2速，偶数回合+2速。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 6,
     "scriptId": "swing_punch",
     "tags": ["攻击", "物理"]
@@ -763,7 +763,7 @@
     "effectDescription": "护具。增加12点空生命值上限。被一张本场战斗中没见过的攻击牌攻击时，恢复4生命值。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 3,
+    "rarity": 6,
     "speed": null,
     "scriptId": "curiosity",
     "tags": ["护具"]
@@ -778,7 +778,7 @@
     "rarity": 6,
     "speed": 8,
     "scriptId": "counter_magic",
-    "tags": ["攻击", "魔法"]
+    "tags": ["攻击", "物理"]
   },
   {
     "id": "seize_initiative",
@@ -787,7 +787,7 @@
     "effectDescription": "如果对方有相同生效刻的牌，造成6点物理伤害。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 6,
+    "rarity": 12,
     "speed": 1,
     "scriptId": "seize_initiative",
     "tags": ["攻击", "物理"]
@@ -799,7 +799,7 @@
     "effectDescription": "衍生一张【月光轰炸】。",
     "designer": "橘猫",
     "packId": "pack_5_trick_of_god",
-    "rarity": 1,
+    "rarity": 3,
     "speed": 10,
     "scriptId": "moonlight_guidance",
     "tags": ["辅助", "魔法"]
