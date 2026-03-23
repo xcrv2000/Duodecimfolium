@@ -9,7 +9,7 @@ import packsData from '../../data/packs.json';
 import locationsData from '../../data/locations.json';
 import { Dungeon } from '../../core/domain/Dungeon';
 import { decodeDeckCode } from '../../utils/deckCode';
-import { Skull, Coins, Lock, Play, ArrowLeft, History, Star, Trash2 } from 'lucide-react';
+import { Skull, Play, ArrowLeft, History, Star, Trash2 } from 'lucide-react';
 
 const dungeons = dungeonsData as unknown as Dungeon[];
 const cards = cardsData as Card[];

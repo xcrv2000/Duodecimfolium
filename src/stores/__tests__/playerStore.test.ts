@@ -1,7 +1,29 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { usePlayerStore } from '../playerStore';
 
 describe('playerStore', () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>;
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeAll(() => {
+    const shouldSuppress = (args: unknown[]) =>
+      typeof args[0] === 'string' &&
+      args[0].includes("[zustand persist middleware] Unable to update item 'duodecimfolium-player-storage-v1'");
+
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+      if (shouldSuppress(args)) return;
+    });
+
+    consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation((...args: unknown[]) => {
+      if (shouldSuppress(args)) return;
+    });
+  });
+
+  afterAll(() => {
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+  });
+
   beforeEach(() => {
     // Reset store to initial state before each test
     // Note: In a real setup, you'd want to properly isolate store state between tests

@@ -1335,7 +1335,7 @@ export const CardScripts: Record<string, CardScript> = {
     });
   },
 
-  disrupt_token: (loop, source, targets) => {
+  disrupt_token: (loop, _source, targets) => {
     const target = targets[0];
     if (!target) return;
     const debuff: UnitBuff = {
@@ -1361,16 +1361,13 @@ export const CardScripts: Record<string, CardScript> = {
 
     const next = loop.findNextCardOnTimeline(source);
     if (!next) {
-      loop.log(source, null, `【休眠】没有找到目标卡，效果失效。`, 'info');
       return;
     }
 
     // 删除目标卡的卡实例
-    const targetCardName = next.factory.name;
     const targetIdx = source.cards.findIndex(c => c.instanceId === next.instanceId);
     if (targetIdx !== -1) {
       source.cards.splice(targetIdx, 1);
-      loop.log(source, null, `【休眠】停用了 ${targetCardName}。`, 'buff');
     }
 
     // 删除【休眠】卡的卡实例（自己）
