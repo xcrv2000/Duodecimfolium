@@ -6,6 +6,9 @@ import { CardInstance } from '../../core/domain/Card';
 import { BattleUnit, UnitBuff } from '../../core/domain/Battle';
 import { getCardRarityBorderClass } from '../../utils/cardUtils';
 import { formatBuffDescription } from '../../utils/buffUtils';
+import dungeonsData from '../../data/dungeons.json';
+
+const dungeons = dungeonsData as Array<{ id: string; stages: unknown[] }>;
 
 const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown }) => {
   const { state, tick, isPaused, togglePause, speedMultiplier, setSpeed, exitBattle, isLooping, toggleLoop, currentDungeonId, isBossStage, isReplayMode } = useBattleStore();
@@ -14,6 +17,11 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
 
   const isCleared = currentDungeonId && clearedDungeons.includes(currentDungeonId);
   const canCloseResultOverlayForLog = isReplayMode || currentDungeonId === 'sandbox_training';
+  const currentStageIndex = useBattleStore(state => state.currentStageIndex);
+
+  const currentDungeon = currentDungeonId ? dungeons.find(d => d.id === currentDungeonId) : null;
+  const totalBattles = currentDungeon?.stages?.length ?? 0;
+  const currentBattle = totalBattles > 0 ? Math.min(currentStageIndex, totalBattles) : 0;
   
   // Local state for result overlay visibility
   const [isResultOverlayVisible, setIsResultOverlayVisible] = useState(false);
@@ -71,7 +79,10 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
             </>
           )}
         </div>
-        <div className="text-sm sm:text-xl font-bold">Turn: {state.turn} | Tick: {state.tick}/12</div>
+        <div className="text-sm sm:text-xl font-bold">
+          Turn: {state.turn} | Tick: {state.tick}/12
+          {totalBattles > 0 ? ` (${currentBattle}/${totalBattles})` : ''}
+        </div>
         <button
           onClick={() => {
             exitBattle();
@@ -106,11 +117,18 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
         
         {/* Battle Log (Center) */}
         <div className="flex-1 min-h-[180px] lg:h-full lg:max-h-[80vh] bg-slate-950 rounded p-2 overflow-y-auto font-mono text-xs sm:text-sm opacity-80 min-w-0">
-          {state.log.slice().reverse().map((entry, i) => ( // Show newest first
-            <div key={i} className={`mb-1 ${entry.type === 'attack' ? 'text-red-400' : entry.type === 'death' ? 'text-purple-500 font-bold' : 'text-slate-300'}`}>
-              [{entry.tick}] {entry.message}
-            </div>
-          ))}
+          {state.log.slice().reverse().map((entry, i) => {
+            // 空消息作为分段空行，不打印时间戳。
+            if (!entry.message.trim()) {
+              return <div key={i} className="h-3" />;
+            }
+
+            return (
+              <div key={i} className={`mb-1 ${entry.type === 'attack' ? 'text-red-400' : entry.type === 'death' ? 'text-purple-500 font-bold' : 'text-slate-300'}`}>
+                [{entry.tick}] {entry.message}
+              </div>
+            );
+          })}
         </div>
 
         {/* Enemy Side */}

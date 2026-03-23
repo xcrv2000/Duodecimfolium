@@ -5,16 +5,33 @@ import { useReplayStore } from '../../stores/replayStore';
 import { Card } from '../../core/domain/Card';
 import cardsData from '../../data/cards.json';
 import dungeonsData from '../../data/dungeons.json';
+import packsData from '../../data/packs.json';
+import locationsData from '../../data/locations.json';
 import { Dungeon } from '../../core/domain/Dungeon';
 import { decodeDeckCode } from '../../utils/deckCode';
 import { Skull, Coins, Lock, Play, ArrowLeft, History, Star, Trash2 } from 'lucide-react';
 
 const dungeons = dungeonsData as unknown as Dungeon[];
 const cards = cardsData as Card[];
+const packs = packsData as Array<{ id: string; name: string; description: string; isTemporary?: boolean; requiredTokenId?: string; requiredTokenCount?: number }>;
+const locations = locationsData as Array<{
+    id: string;
+    name: string;
+    defaultLabel: string;
+    mapPosition: { x: number; y: number };
+    dungeonIds: string[];
+    packIds: string[];
+}>;
+
+const MAP_IMAGE_PATH = '/reference/docs/%E5%9C%B0%E5%9B%BE.png';
+const BUTTON_IMAGE_PATH = '/reference/docs/button.png';
+const BUTTON_PRESSED_IMAGE_PATH = '/reference/docs/button-pressed.png';
 
 const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigate }) => {
   const unlockedDungeons = usePlayerStore(state => state.unlockedDungeons);
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
+    const unlockedPacks = usePlayerStore(state => state.unlockedPacks);
+    const tokens = usePlayerStore(state => state.tokens);
   const decks = usePlayerStore(state => state.decks);
     const defaultDeckId = usePlayerStore(state => state.defaultDeckId);
   const startDungeon = useBattleStore(state => state.startDungeon);
@@ -26,13 +43,22 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
 
   const [viewMode, setViewMode] = useState<'dungeon' | 'replay'>('dungeon');
   const [selectedDungeonId, setSelectedDungeonId] = useState<string | null>(null);
-  const [selectedDeckIndex, setSelectedDeckIndex] = useState<number>(0);
+    const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
+    const [hoveredLocationId, setHoveredLocationId] = useState<string | null>(null);
+    const [selectedDeckIndices, setSelectedDeckIndices] = useState<number[]>([]);
 
     useEffect(() => {
         if (!selectedDungeonId || selectedDungeonId === 'sandbox_training') return;
+                const dungeon = dungeons.find((d) => d.id === selectedDungeonId);
+                const teamSize = Math.max(1, dungeon?.teamSize || 1);
         const defaultIndex = decks.findIndex((d) => d.id === defaultDeckId);
         if (defaultIndex >= 0) {
-            setSelectedDeckIndex(defaultIndex);
+                        if (teamSize === 1) {
+                            setSelectedDeckIndices([defaultIndex]);
+                        } else {
+                            const fallback = Array.from({ length: teamSize }, (_, i) => i).filter((idx) => idx < decks.length);
+                            setSelectedDeckIndices(fallback.length > 0 ? fallback : [defaultIndex]);
+                        }
         }
     }, [selectedDungeonId, defaultDeckId, decks]);
 
@@ -54,6 +80,36 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
       enemyDeckJsons: ['']
   });
 
+    const isDungeonUnlocked = (dungeon: Dungeon): boolean => {
+        const isRequirementMet = !dungeon.unlockRequirementId || clearedDungeons.includes(dungeon.unlockRequirementId);
+        const isExplicitlyUnlocked = unlockedDungeons.includes(dungeon.id);
+        return isRequirementMet || isExplicitlyUnlocked;
+    };
+
+    const isPackVisible = (pack: { isTemporary?: boolean; requiredTokenId?: string; requiredTokenCount?: number }): boolean => {
+        if (!pack.isTemporary) return true;
+        if (!pack.requiredTokenId) return false;
+        return (tokens[pack.requiredTokenId] || 0) >= (pack.requiredTokenCount || 1);
+    };
+
+    const isPackUnlocked = (packId: string): boolean => {
+        if (unlockedPacks.includes(packId)) return true;
+        const unlockingDungeon = dungeons.find(d => d.unlocksPackId === packId);
+        return !!(unlockingDungeon && clearedDungeons.includes(unlockingDungeon.id));
+    };
+
+    const openSandboxConfig = () => {
+        const defaultDeck = decks.find((d) => d.id === defaultDeckId) || decks[0];
+        setSandboxConfig(prev => ({
+            ...prev,
+            isOpen: true,
+            playerDeckIds: Array(prev.playerCount).fill(defaultDeck?.id || ''),
+            playerDeckJsons: Array(prev.playerCount).fill(''),
+            enemyDeckIds: Array(prev.enemyCount).fill(defaultDeck?.id || ''),
+            enemyDeckJsons: Array(prev.enemyCount).fill('')
+        }));
+    };
+
   const handleStartDungeon = () => {
         if (runningBattleState && !runningBattleState.isOver) {
             onNavigate('battle');
@@ -63,56 +119,61 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
     if (!selectedDungeonId) return;
 
     if (selectedDungeonId === 'sandbox_training') {
-        const defaultDeck = decks.find((d) => d.id === defaultDeckId) || decks[0];
-        setSandboxConfig({
-            ...sandboxConfig,
-            isOpen: true,
-            playerDeckIds: Array(sandboxConfig.playerCount).fill(defaultDeck?.id || ''),
-            playerDeckJsons: Array(sandboxConfig.playerCount).fill(''),
-            enemyDeckIds: Array(sandboxConfig.enemyCount).fill(defaultDeck?.id || ''),
-            enemyDeckJsons: Array(sandboxConfig.enemyCount).fill('')
-        });
+        openSandboxConfig();
         return;
     }
 
-    const playerStore = usePlayerStore.getState();
-    const deck = playerStore.decks[selectedDeckIndex];
-    if (!deck) return;
-    
-    // Check Deck Size
-    if (deck.cardIds.length < 8 || deck.cardIds.length > 12) {
-        alert("卡组必须包含8到12张卡牌！");
-        return;
-    }
+        const playerStore = usePlayerStore.getState();
+        const dungeon = dungeons.find(d => d.id === selectedDungeonId);
+        const teamSize = Math.max(1, dungeon?.teamSize || 1);
 
-    // Check Consumables
-    const consumableCount = deck.cardIds.filter(id => {
-        const c = cards.find(x => x.id === id);
-        return c?.tags?.includes('补给品');
-    }).length;
+        if (selectedDeckIndices.length !== teamSize) {
+            alert(`该地牢需要选择 ${teamSize} 套卡组（当前 ${selectedDeckIndices.length}）。`);
+            return;
+        }
 
-    if (consumableCount > 3) {
-        alert(`补给品最多携带3张! (当前: ${consumableCount})`);
-        return;
-    }
+        const selectedDecks = selectedDeckIndices.map((idx) => playerStore.decks[idx]).filter((deck) => !!deck);
+        if (selectedDecks.length !== teamSize) {
+            alert('卡组选择无效，请重新选择。');
+            return;
+        }
 
-    // Check Armor
-    const armorCount = deck.cardIds.filter(id => {
-        const c = cards.find(x => x.id === id);
-        return c?.tags?.includes('护具');
-    }).length;
-    if (armorCount > 1) {
-        alert(`护具最多携带1张! (当前: ${armorCount})`);
-        return;
-    }
+        for (let deckPos = 0; deckPos < selectedDecks.length; deckPos++) {
+            const deck = selectedDecks[deckPos];
+
+            if (deck.cardIds.length < 8 || deck.cardIds.length > 12) {
+                alert(`队伍槽位 ${deckPos + 1} 的卡组必须包含8到12张卡牌！`);
+                return;
+            }
+
+            const consumableCount = deck.cardIds.filter(id => {
+                const c = cards.find(x => x.id === id);
+                return c?.tags?.includes('补给品');
+            }).length;
+            if (consumableCount > 3) {
+                alert(`队伍槽位 ${deckPos + 1} 补给品最多携带3张! (当前: ${consumableCount})`);
+                return;
+            }
+
+            const armorCount = deck.cardIds.filter(id => {
+                const c = cards.find(x => x.id === id);
+                return c?.tags?.includes('护具');
+            }).length;
+            if (armorCount > 1) {
+                alert(`队伍槽位 ${deckPos + 1} 护具最多携带1张! (当前: ${armorCount})`);
+                return;
+            }
+        }
     
     // Check Modifiers
     const usedModifiers: Record<string, number> = {};
-    if (deck.modifierSlots) {
-        Object.values(deck.modifierSlots).forEach(modId => {
-            usedModifiers[modId] = (usedModifiers[modId] || 0) + 1;
+        selectedDecks.forEach((deck) => {
+            if (deck.modifierSlots) {
+                Object.values(deck.modifierSlots).forEach(modId => {
+                    usedModifiers[modId] = (usedModifiers[modId] || 0) + 1;
+                });
+            }
         });
-    }
     
     for (const [modId, count] of Object.entries(usedModifiers)) {
         const inventoryCount = playerStore.modifiers[modId] || 0;
@@ -122,7 +183,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
         }
     }
     
-    startDungeon(selectedDungeonId, selectedDeckIndex);
+    startDungeon(selectedDungeonId, selectedDeckIndices);
     onNavigate('battle');
   };
 
@@ -245,7 +306,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                     onClick={() => setViewMode('dungeon')}
                     className="flex items-center gap-2 text-slate-400 hover:text-white"
                   >
-                      <ArrowLeft size={20} /> 返回地牢列表
+                                            <ArrowLeft size={20} /> 返回地图
                   </button>
                   <h2 className="text-2xl font-bold text-emerald-400 flex items-center gap-2">
                       <History /> 战斗回放
@@ -313,6 +374,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
   // Deck Selection View
   if (selectedDungeonId && selectedDungeonId !== 'sandbox_training') {
       const dungeon = dungeons.find(d => d.id === selectedDungeonId);
+      const teamSize = Math.max(1, dungeon?.teamSize || 1);
       
       return (
           <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
@@ -320,7 +382,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                 onClick={() => setSelectedDungeonId(null)}
                 className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white"
               >
-                  <ArrowLeft size={20} /> 返回地牢列表
+                                    <ArrowLeft size={20} /> 返回地点详情
               </button>
 
               <div className="flex flex-col md:flex-row gap-8">
@@ -346,22 +408,39 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
 
                   {/* Deck Selection */}
                   <div className="flex-1">
-                      <h3 className="text-xl font-bold mb-4">选择出战卡组</h3>
+                                            <h3 className="text-xl font-bold mb-2">选择出战卡组</h3>
+                                            <p className="text-sm text-slate-400 mb-4">需要选择 {teamSize} 套卡组（已选 {selectedDeckIndices.length}）</p>
                       <div className="grid grid-cols-1 gap-3 sm:gap-4 max-h-[60vh] overflow-y-auto pr-0 sm:pr-2">
                           {decks.map((deck, index) => {
                               const isValid = deck.cardIds.length >= 8 && deck.cardIds.length <= 12;
+                                                            const selectedPos = selectedDeckIndices.indexOf(index);
                               return (
                                   <div 
                                     key={deck.id}
-                                    onClick={() => setSelectedDeckIndex(index)}
+                                                                        onClick={() => {
+                                                                            if (teamSize === 1) {
+                                                                                setSelectedDeckIndices([index]);
+                                                                                return;
+                                                                            }
+
+                                                                            setSelectedDeckIndices((prev) => {
+                                                                                if (prev.includes(index)) {
+                                                                                    return prev.filter((v) => v !== index);
+                                                                                }
+                                                                                if (prev.length >= teamSize) {
+                                                                                    return prev;
+                                                                                }
+                                                                                return [...prev, index];
+                                                                            });
+                                                                        }}
                                     className={`p-4 rounded border-2 cursor-pointer transition-all flex justify-between items-center ${
-                                        selectedDeckIndex === index 
+                                                                                selectedPos !== -1
                                             ? 'bg-slate-800 border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.3)]' 
                                             : 'bg-slate-900 border-slate-800 hover:border-slate-600'
                                     }`}
                                   >
                                       <div>
-                                          <h4 className={`font-bold ${selectedDeckIndex === index ? 'text-emerald-400' : 'text-slate-200'}`}>
+                                                                                    <h4 className={`font-bold ${selectedPos !== -1 ? 'text-emerald-400' : 'text-slate-200'}`}>
                                               {deck.name}
                                           </h4>
                                           <div className="flex gap-4 text-xs mt-1">
@@ -371,7 +450,11 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                               {/* Could show modifiers count here */}
                                           </div>
                                       </div>
-                                      {selectedDeckIndex === index && <div className="w-4 h-4 rounded-full bg-emerald-500" />}
+                                                                            {selectedPos !== -1 && (
+                                                                                <div className="min-w-7 h-7 px-2 rounded-full bg-emerald-500 text-slate-950 text-xs font-bold flex items-center justify-center">
+                                                                                    {selectedPos + 1}
+                                                                                </div>
+                                                                            )}
                                   </div>
                               );
                           })}
@@ -379,7 +462,12 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
 
                       <button 
                         onClick={handleStartDungeon}
-                        className="mt-8 w-full bg-emerald-600 hover:bg-emerald-500 text-white py-4 rounded-lg font-bold text-xl flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-[0.98]"
+                                                disabled={selectedDeckIndices.length !== teamSize}
+                                                className={`mt-8 w-full py-4 rounded-lg font-bold text-xl flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-[0.98] ${
+                                                    selectedDeckIndices.length === teamSize
+                                                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                                        : 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                                                }`}
                       >
                           <Play fill="currentColor" /> 开始挑战
                       </button>
@@ -388,6 +476,102 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
           </div>
       );
   }
+
+    if (selectedLocationId) {
+            const location = locations.find(l => l.id === selectedLocationId);
+            if (location) {
+                    const locationDungeons = location.dungeonIds
+                            .map((id) => dungeons.find((d) => d.id === id))
+                            .filter((d): d is Dungeon => !!d);
+                    const locationPacks = location.packIds
+                            .map((id) => packs.find((p) => p.id === id))
+                            .filter((p): p is { id: string; name: string; description: string; isTemporary?: boolean; requiredTokenId?: string; requiredTokenCount?: number } => !!p)
+                            .filter(isPackVisible);
+
+                    return (
+                            <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto">
+                                    <button
+                                        onClick={() => setSelectedLocationId(null)}
+                                        className="mb-6 flex items-center gap-2 text-slate-400 hover:text-white"
+                                    >
+                                        <ArrowLeft size={20} /> 返回地图
+                                    </button>
+
+                                    <div className="mb-8">
+                                        <h2 className="text-2xl sm:text-3xl font-bold text-emerald-400">{location.name}</h2>
+                                        <p className="text-slate-400 mt-2">选择地点内的地牢或查看对应卡包。</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                        <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
+                                            <h3 className="text-xl font-bold mb-4">地牢</h3>
+                                            <div className="space-y-3">
+                                                {locationDungeons.map((dungeon) => {
+                                                    const unlocked = isDungeonUnlocked(dungeon);
+                                                    const isCleared = clearedDungeons.includes(dungeon.id);
+                                                    return (
+                                                        <div key={dungeon.id} className={`rounded border p-4 ${unlocked ? 'border-slate-600 bg-slate-900' : 'border-slate-800 bg-slate-900/70'}`}>
+                                                            <div className="flex items-center justify-between gap-3">
+                                                                <div>
+                                                                    <div className="font-bold text-white">{dungeon.name}</div>
+                                                                    <div className="text-xs text-slate-400 mt-1">{dungeon.description}</div>
+                                                                </div>
+                                                                {isCleared && <span className="text-xs text-yellow-400">已通关</span>}
+                                                            </div>
+                                                            <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
+                                                                <span>战斗数: {dungeon.stages.length}</span>
+                                                                <span>金币: {dungeon.goldRewardMin}-{dungeon.goldRewardMax}</span>
+                                                            </div>
+                                                            <button
+                                                                disabled={!unlocked}
+                                                                onClick={() => {
+                                                                    if (!unlocked) return;
+                                                                    if (dungeon.id === 'sandbox_training') {
+                                                                        setSelectedDungeonId('sandbox_training');
+                                                                        openSandboxConfig();
+                                                                        return;
+                                                                    }
+                                                                    setSelectedDungeonId(dungeon.id);
+                                                                }}
+                                                                className={`mt-4 w-full py-2 rounded font-bold ${unlocked ? 'bg-emerald-600 hover:bg-emerald-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                                                            >
+                                                                {unlocked ? '选择卡组并挑战' : '未解锁'}
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-slate-800 border border-slate-700 rounded-lg p-5">
+                                            <h3 className="text-xl font-bold mb-4">卡包</h3>
+                                            <div className="space-y-3">
+                                                {locationPacks.map((pack) => {
+                                                    const unlocked = isPackUnlocked(pack.id);
+                                                    return (
+                                                        <div key={pack.id} className={`rounded border p-4 ${unlocked ? 'border-slate-600 bg-slate-900' : 'border-slate-800 bg-slate-900/70'}`}>
+                                                            <div className="font-bold text-white">{pack.name}</div>
+                                                            <div className="text-xs text-slate-400 mt-1">{pack.description}</div>
+                                                            <button
+                                                                disabled={!unlocked}
+                                                                onClick={() => onNavigate('gacha')}
+                                                                className={`mt-4 w-full py-2 rounded font-bold ${unlocked ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-slate-700 text-slate-500 cursor-not-allowed'}`}
+                                                            >
+                                                                {unlocked ? '前往商店查看' : '未解锁'}
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {locationPacks.length === 0 && (
+                                                    <div className="text-sm text-slate-500">当前地点没有可见卡包。</div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                            </div>
+                    );
+            }
+    }
 
   return (
     <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto relative">
@@ -405,10 +589,10 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                         <div className="flex items-center gap-2">
                             <label>Count:</label>
                             <input 
-                                type="number" min="1" max="3" 
+                                type="number" min="1" max="12" 
                                 value={sandboxConfig.playerCount}
                                 onChange={(e) => {
-                                    const count = Math.min(3, Math.max(1, parseInt(e.target.value) || 1));
+                                    const count = Math.min(12, Math.max(1, parseInt(e.target.value) || 1));
                                     setSandboxConfig(prev => ({
                                         ...prev,
                                         playerCount: count,
@@ -446,6 +630,17 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                         setSandboxConfig(prev => ({ ...prev, playerDeckJsons: newJsons }));
                                     }}
                                 />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const newJsons = [...sandboxConfig.playerDeckJsons];
+                                                                        newJsons[i] = '';
+                                                                        setSandboxConfig(prev => ({ ...prev, playerDeckJsons: newJsons }));
+                                                                    }}
+                                                                    className="mt-2 text-xs px-2 py-1 rounded bg-slate-600 hover:bg-slate-500"
+                                                                >
+                                                                    删除已导入内容
+                                                                </button>
                                 <p className="text-xs text-slate-400 mt-1">若填写导入内容，将优先使用导入卡组。</p>
                             </div>
                         ))}
@@ -456,10 +651,10 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                         <div className="flex items-center gap-2">
                             <label>Count:</label>
                             <input 
-                                type="number" min="1" max="3" 
+                                type="number" min="1" max="12" 
                                 value={sandboxConfig.enemyCount}
                                 onChange={(e) => {
-                                    const count = Math.min(3, Math.max(1, parseInt(e.target.value) || 1));
+                                    const count = Math.min(12, Math.max(1, parseInt(e.target.value) || 1));
                                     setSandboxConfig(prev => ({
                                         ...prev,
                                         enemyCount: count,
@@ -497,6 +692,17 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                         setSandboxConfig(prev => ({ ...prev, enemyDeckJsons: newJsons }));
                                     }}
                                 />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => {
+                                                                        const newJsons = [...sandboxConfig.enemyDeckJsons];
+                                                                        newJsons[i] = '';
+                                                                        setSandboxConfig(prev => ({ ...prev, enemyDeckJsons: newJsons }));
+                                                                    }}
+                                                                    className="mt-2 text-xs px-2 py-1 rounded bg-slate-600 hover:bg-slate-500"
+                                                                >
+                                                                    删除已导入内容
+                                                                </button>
                                 <p className="text-xs text-slate-400 mt-1">若填写导入内容，将优先使用导入卡组。JSON 可额外包含 hp 字段。</p>
                             </div>
                         ))}
@@ -521,9 +727,9 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6 sm:mb-8">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-emerald-400 flex items-center gap-2">
-            <Skull /> 选择地牢
+                        <Skull /> 地图探索
           </h1>
           <button 
               onClick={() => setViewMode('replay')}
@@ -533,81 +739,61 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
           </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {dungeons.map(dungeon => {
-          const isRequirementMet = !dungeon.unlockRequirementId || clearedDungeons.includes(dungeon.unlockRequirementId);
-          const isExplicitlyUnlocked = unlockedDungeons.includes(dungeon.id);
-          
-          const isUnlocked = isRequirementMet || isExplicitlyUnlocked;
-          const isCleared = clearedDungeons.includes(dungeon.id);
-          
-          return (
-            <div 
-              key={dungeon.id}
-              className={`relative p-4 sm:p-6 rounded-lg border-2 transition-all group overflow-hidden ${
-                isUnlocked 
-                  ? 'bg-slate-800 border-slate-700 hover:border-emerald-500 cursor-pointer' 
-                  : 'bg-slate-900 border-slate-800 opacity-60 cursor-not-allowed'
-              }`}
-              onClick={() => {
-                if (isUnlocked) {
-                  if (dungeon.id === 'sandbox_training') {
-                      // Sandbox opens its own modal
-                      handleStartDungeon(); // Will trigger sandbox config logic if I pass id... wait, I need to pass ID.
-                      // Let's fix handleStartDungeon to use local state, but for sandbox, we need to trigger it.
-                      // Sandbox is special.
-                      setSelectedDungeonId('sandbox_training');
-                      // Wait, if I set SelectedDungeonId to sandbox, it renders the deck selection view?
-                      // No, I added a check `if (selectedDungeonId && selectedDungeonId !== 'sandbox_training')`
-                      // So for sandbox, it just falls through to the main view, but `useEffect` or something needs to open the modal?
-                      // Or I can just call setSandboxConfig directly here.
-                      setSandboxConfig(prev => ({ ...prev, isOpen: true }));
-                  } else {
-                      setSelectedDungeonId(dungeon.id);
-                  }
-                }
-              }}
-            >
-              {isCleared && (
-                  <div className="absolute -left-8 top-4 bg-yellow-600 w-32 text-center transform -rotate-45 text-[10px] font-bold shadow-lg border-y border-yellow-400 text-white z-10">
-                      已通关
-                  </div>
-              )}
+            <div className="relative rounded-xl border border-slate-700 bg-slate-900 overflow-hidden min-h-[520px]">
+                <img src={MAP_IMAGE_PATH} alt="世界地图" className="w-full h-[520px] object-cover opacity-90" />
 
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-bold text-white group-hover:text-emerald-400">{dungeon.name}</h2>
-                {!isUnlocked && <Lock className="text-slate-500" />}
-              </div>
-              
-              <p className="text-slate-400 text-sm mb-6 h-10">{dungeon.description}</p>
-                            {dungeon.designer && (
-                                <p className="text-right text-xs text-slate-500 -mt-4 mb-4">设计师: {dungeon.designer}</p>
-                            )}
-              
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-1 text-yellow-400">
-                  <Coins size={16} />
-                  <span>{dungeon.goldRewardMin}-{dungeon.goldRewardMax}</span>
-                </div>
-                <div className="flex items-center gap-1 text-slate-400">
-                    <span>Stages: {dungeon.stages.length}</span>
-                </div>
-              </div>
-              
-              {!isUnlocked && dungeon.unlockRequirementId && (
-                  <div className="mt-4 text-xs text-red-400">
-                      需要通关: {dungeons.find(d => d.id === dungeon.unlockRequirementId)?.name || dungeon.unlockRequirementId}
-                  </div>
-              )}
+                <div className="absolute inset-0">
+                    {locations.map((location) => {
+                        const locationDungeons = location.dungeonIds
+                            .map((id) => dungeons.find((d) => d.id === id))
+                            .filter((d): d is Dungeon => !!d);
+                        const locationPacks = location.packIds
+                            .map((id) => packs.find((p) => p.id === id))
+                            .filter((p): p is { id: string; name: string; description: string; isTemporary?: boolean; requiredTokenId?: string; requiredTokenCount?: number } => !!p)
+                            .filter(isPackVisible);
 
-              {isUnlocked && (
-                <button className="mt-6 w-full bg-emerald-600 hover:bg-emerald-700 text-white py-2 rounded font-bold transition-colors">
-                  {dungeon.id === 'sandbox_training' ? '进入配置' : '选择卡组'}
-                </button>
-              )}
-            </div>
-          );
-        })}
+                        const hasUnlockedDungeon = locationDungeons.some((dungeon) => isDungeonUnlocked(dungeon));
+                        const hasUnlockedPack = locationPacks.some((pack) => isPackUnlocked(pack.id));
+                        if (!hasUnlockedDungeon && !hasUnlockedPack) {
+                            return null;
+                        }
+
+                        const tooltipText = [
+                            `地点: ${location.name}`,
+                            `地牢: ${locationDungeons.map((d) => d.name).join('、') || '无'}`,
+                            `卡包: ${locationPacks.map((p) => p.name).join('、') || '无'}`
+                        ].join('\n');
+
+                        const isPressed = selectedLocationId === location.id;
+
+                        return (
+                            <div
+                                key={location.id}
+                                className="absolute"
+                                style={{ left: `${location.mapPosition.x}%`, top: `${location.mapPosition.y}%`, transform: 'translate(-50%, -50%)' }}
+                            >
+                                <button
+                                    onMouseEnter={() => setHoveredLocationId(location.id)}
+                                    onMouseLeave={() => setHoveredLocationId((curr) => (curr === location.id ? null : curr))}
+                                    onClick={() => setSelectedLocationId(location.id)}
+                                    title={tooltipText}
+                                    className="w-16 h-16 bg-contain bg-center bg-no-repeat hover:scale-105 transition-transform"
+                                    style={{ backgroundImage: `url(${isPressed ? BUTTON_PRESSED_IMAGE_PATH : BUTTON_IMAGE_PATH})` }}
+                                    aria-label={`地点 ${location.name}`}
+                                />
+                                <div className="text-center text-white text-sm font-bold mt-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{location.defaultLabel}</div>
+
+                                {hoveredLocationId === location.id && (
+                                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-slate-900/95 border border-slate-600 rounded p-3 z-20 shadow-xl">
+                                        <div className="text-emerald-400 font-bold mb-1">{location.name}</div>
+                                        <div className="text-xs text-slate-300">地牢：{locationDungeons.map((d) => d.name).join('、') || '无'}</div>
+                                        <div className="text-xs text-slate-300 mt-1">卡包：{locationPacks.map((p) => p.name).join('、') || '无'}</div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
       </div>
     </div>
   );

@@ -86,5 +86,53 @@
     "type": "buff",
     "stackRule": "stackable",
     "duration": -1
+  },
+  {
+    "id": "mark",
+    "name": "标记",
+    "description": "随机指定目标时优先成为合法目标。",
+    "type": "debuff",
+    "stackRule": "nonStackable",
+    "duration": 1
+  },
+  {
+    "id": "tracking",
+    "name": "追猎",
+    "description": "召唤者使用物理攻击时，对相同目标造成额外伤害。",
+    "type": "buff",
+    "stackRule": "nonStackable",
+    "duration": 1
+  },
+  {
+    "id": "strength",
+    "name": "力量",
+    "description": "造成物理伤害时额外造成{level}点伤害。",
+    "type": "buff",
+    "stackRule": "stackable",
+    "duration": -1
+  },
+  {
+    "id": "blessing",
+    "name": "庇佑",
+    "description": "每个tick结束时回复{level}点生命。",
+    "type": "buff",
+    "stackRule": "stackable",
+    "duration": 1
+  },
+  {
+    "id": "light_retribution",
+    "name": "光之惩戒",
+    "description": "每当回复生命时，对所有敌人造成等量光魔法伤害。",
+    "type": "buff",
+    "stackRule": "nonStackable",
+    "duration": -1
+  },
+  {
+    "id": "confused_targeting",
+    "name": "扰乱",
+    "description": "下一次攻击随机指定目标（含自己与队友）。",
+    "type": "debuff",
+    "stackRule": "nonStackable",
+    "duration": 1
   }
 ]

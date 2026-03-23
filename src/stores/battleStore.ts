@@ -28,10 +28,10 @@ interface BattleStore {
   isBossStage: boolean;
   speedMultiplier: number; // 1x, 2x, 12x
   collectedLoot: { gold: number, modifiers: string[] };
-  activeDeck: any | null;
+  activeDecks: any[];
   isReplayMode: boolean;
 
-  startDungeon: (dungeonId: string, deckIndex: number) => void;
+  startDungeon: (dungeonId: string, deckIndices: number[]) => void;
   startReplay: (initialState: BattleState, seed: number) => void;
   startCustomBattle: (playerTeams: CustomUnitConfig[], enemyTeams: CustomUnitConfig[]) => void;
   nextStage: () => void;
@@ -61,7 +61,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
   speedMultiplier: 1,
   collectedLoot: { gold: 0, modifiers: [] },
 
-  activeDeck: null,
+  activeDecks: [],
   isReplayMode: false,
 
   startReplay: (initialState, seed) => {
@@ -81,19 +81,21 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       speedMultiplier: 1,
       collectedLoot: { gold: 0, modifiers: [] },
       isReplayMode: true,
-      activeDeck: null
+      activeDecks: []
     });
   },
 
-  startDungeon: (dungeonId, deckIndex) => {
+  startDungeon: (dungeonId, deckIndices) => {
     const dungeon = dungeons.find(d => d.id === dungeonId);
     if (!dungeon) return;
 
-    // Snapshot deck
+    // Snapshot selected decks (supports teamSize > 1)
     const playerStore = usePlayerStore.getState();
-    const deck = playerStore.decks[deckIndex];
-    if (!deck) return;
-    const deckSnapshot = JSON.parse(JSON.stringify(deck));
+    const selectedDecks = deckIndices
+      .map((idx) => playerStore.decks[idx])
+      .filter((deck) => !!deck);
+    if (selectedDecks.length === 0) return;
+    const deckSnapshots = selectedDecks.map((deck) => JSON.parse(JSON.stringify(deck)));
 
     set({
       currentDungeonId: dungeonId,
@@ -104,7 +106,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       speedMultiplier: 1,
       collectedLoot: { gold: 0, modifiers: [] },
       isReplayMode: false,
-      activeDeck: deckSnapshot
+      activeDecks: deckSnapshots
     });
     
     get().nextStage();
@@ -161,7 +163,8 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
                   };
               }).filter((c: any) => c) as any[],
               buffs: [],
-              isDead: false
+                isDead: false,
+                isSummon: false
           };
       };
 
@@ -241,168 +244,162 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       } else {
           // Exit, unless it's training_ground
           if (currentDungeonId !== 'training_ground') {
-              set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false });
+            set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false, activeDecks: [] });
           }
       }
       return;
     }
 
     const stage = dungeon.stages[currentStageIndex];
-    const enemyPool = (enemiesData as any).pools[stage.enemyPoolId];
-    const enemyId = enemyPool[Math.floor(Math.random() * enemyPool.length)];
-    const enemyDef = enemies[enemyId];
-
     const isBossStage = stage.type === 'boss';
 
-    // Create Player Unit(s)
-    // MVP: Single player, single deck
-    // TODO [多英雄支持]: 修改为接收 deckIds: string[] 参数
-    // - stage.allowedTeamSize 标记该地牢允许多少英雄
-    // - 从 playerStore 中取多个卡组构建多个 playerUnit
-    // - 阵容排列规则（负责排序）由地牢配置决定
-    
-    const { activeDeck } = get();
-    if (!activeDeck) return;
-    const playerCardIds = activeDeck.cardIds;
-    
-    // Check if player unit already exists from previous stage?
-    // If so, preserve HP.
+    const { activeDecks } = get();
+    if (!activeDecks || activeDecks.length === 0) return;
+
     const { state: previousState } = get();
-    let initialHp = 100;
-    
-    // If we are continuing a dungeon run (stage index > 0), try to find previous HP
-    if (currentStageIndex > 0 && previousState && previousState.units) {
-        const prevPlayer = previousState.units.find(u => u.team === 'player');
+    const playerUnits: BattleUnit[] = activeDecks.map((activeDeck, unitIndex) => {
+      const playerCardIds = activeDeck.cardIds || [];
+      const playerCardCounts: Record<string, number> = {};
+      let initialHp = 100;
+
+      if (currentStageIndex > 0 && previousState && previousState.units) {
+        const prevPlayer = previousState.units.find(u => u.id === `player_${unitIndex}`);
         if (prevPlayer) {
-            initialHp = prevPlayer.hp;
+          initialHp = prevPlayer.hp;
         }
-    } else {
-        // Start of dungeon or sandbox
-        initialHp = 100; // Or fetch from player stats if we had them
-    }
+      }
 
-    // Count duplicates for penalty
-    const playerCardCounts: Record<string, number> = {};
-    // const playerCardIds = playerDeck.cardIds; // Removed
+      return {
+        id: `player_${unitIndex}`,
+        name: activeDeck.name || `Player ${unitIndex + 1}`,
+        hp: initialHp,
+        maxHp: 100,
+        initialDeckSize: playerCardIds.length,
+        team: 'player',
+        cards: (initialHp <= 0 ? [] : playerCardIds.map((id: string, idx: number) => {
+          const cardDef = cards.find(c => c.id === id);
+          if (!cardDef) return null;
 
-    const playerUnit: BattleUnit = {
-      id: 'player',
-      name: 'Player',
-      hp: initialHp,
-      maxHp: 100,
-      initialDeckSize: playerCardIds.length,
-      team: 'player',
-      cards: playerCardIds.map((id: string, idx: number) => {
-        const cardDef = cards.find(c => c.id === id);
-        if (!cardDef) return null;
-        
-        // Calculate penalty
-        const count = (playerCardCounts[id] || 0) + 1;
-        playerCardCounts[id] = count;
-        
-        let penalty = 0;
-        if (count === 2) penalty = 9; // 0.9 -> 9
-        if (count >= 3) penalty = 28; // 2.8 -> 28
+          const count = (playerCardCounts[id] || 0) + 1;
+          playerCardCounts[id] = count;
 
-        const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
+          let penalty = 0;
+          if (count === 2) penalty = 9;
+          if (count >= 3) penalty = 28;
 
-        // Modifiers
-        const modId = activeDeck.modifierSlots?.[idx];
-        const cardModifiers = [];
-        if (modId) {
+          const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
+
+          const modId = activeDeck.modifierSlots?.[idx];
+          const cardModifiers = [];
+          if (modId) {
             const modDef = modifiers.find(m => m.id === modId);
             if (modDef) cardModifiers.push(modDef);
-        }
+          }
 
-        return {
-          // Factory reference (不再展开)
-          factory: cardDef as CardFactory,
-          
-          // Instance fields
-          instanceId: `p_card_${idx}`,
-          ownerId: 'player',
-          baseSpeed10: baseSpeed10,
-          currentSpeed10: null, 
-          deckSpeedPenalty: penalty,
-          permanentSpeedModifier: 0,
-          tagsRuntime: [...(cardDef.tags || [])],
-          modifiers: cardModifiers,
-          buffs: [],
-          factoryBuffs: []  // 运行时工厂级 buff
-        } as CardInstance;
-      }).filter((c: any) => c), // Filter undefined
-      buffs: [],
-      isDead: false
+          return {
+            factory: cardDef as CardFactory,
+            instanceId: `p_${unitIndex}_card_${idx}`,
+            ownerId: `player_${unitIndex}`,
+            baseSpeed10: baseSpeed10,
+            currentSpeed10: null,
+            deckSpeedPenalty: penalty,
+            permanentSpeedModifier: 0,
+            tagsRuntime: [...(cardDef.tags || [])],
+            modifiers: cardModifiers,
+            buffs: [],
+            factoryBuffs: []
+          } as CardInstance;
+        }).filter((c: any) => c)),
+        buffs: [],
+        isDead: initialHp <= 0,
+        isSummon: false
+      };
+    });
+
+    const explicitEnemyIds = Array.isArray(stage.enemyIds) && stage.enemyIds.length > 0
+      ? [...stage.enemyIds]
+      : null;
+    const enemyPool = (enemiesData as any).pools[stage.enemyPoolId] || [];
+    const enemyCountMin = Math.max(1, Number(stage.enemyCountMin || 1));
+    const enemyCountMax = Math.max(enemyCountMin, Number(stage.enemyCountMax || enemyCountMin));
+    const enemyCount = explicitEnemyIds
+      ? explicitEnemyIds.length
+      : (Math.floor(Math.random() * (enemyCountMax - enemyCountMin + 1)) + enemyCountMin);
+
+    const sampledEnemyIds: string[] = explicitEnemyIds || Array.from({ length: enemyCount }).map(() => {
+      const enemyId = enemyPool[Math.floor(Math.random() * enemyPool.length)];
+      return enemyId;
+    });
+
+    const createEnemyUnit = (enemyDef: any, enemyIndex: number): BattleUnit => {
+      const enemyCardCounts: Record<string, number> = {};
+      const enemyCardIds = enemyDef.deck;
+      const enemyModifierSlots: Record<string, string> = enemyDef.modifierSlots || {};
+
+      return {
+        id: `${enemyDef.id}_${enemyIndex}`,
+        name: enemyDef.name,
+        hp: enemyDef.hpMax,
+        maxHp: enemyDef.hpMax,
+        initialDeckSize: enemyCardIds.length,
+        team: 'enemy',
+        cards: enemyCardIds.map((id: string, idx: number) => {
+          const cardDef = cards.find(c => c.id === id);
+          if (!cardDef) return null;
+
+          const count = (enemyCardCounts[id] || 0) + 1;
+          enemyCardCounts[id] = count;
+
+          let penalty = 0;
+          if (count === 2) penalty = 9;
+          if (count >= 3) penalty = 28;
+
+          const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
+          const modId = enemyModifierSlots[idx.toString()];
+          const cardModifiers = [];
+          if (modId) {
+            const modDef = modifiers.find(m => m.id === modId);
+            if (modDef) cardModifiers.push(modDef);
+          }
+
+          return {
+            factory: cardDef as CardFactory,
+            instanceId: `e_${enemyIndex}_card_${idx}`,
+            ownerId: `${enemyDef.id}_${enemyIndex}`,
+            baseSpeed10: baseSpeed10,
+            currentSpeed10: null,
+            deckSpeedPenalty: penalty,
+            permanentSpeedModifier: 0,
+            tagsRuntime: [...(cardDef.tags || [])],
+            modifiers: cardModifiers,
+            buffs: [],
+            factoryBuffs: []
+          } as CardInstance;
+        }).filter((c: any) => c),
+        buffs: [],
+        isDead: false,
+        isSummon: false
+      };
     };
 
-    // Create Enemy Unit
-    // Enemies also subject to penalty
-    const enemyCardCounts: Record<string, number> = {};
-    const enemyCardIds = enemyDef.deck;
-    const enemyModifierSlots: Record<string, string> = enemyDef.modifierSlots || {};
+    const enemyUnits = sampledEnemyIds
+      .map((enemyId) => enemies[enemyId])
+      .filter((def) => !!def)
+      .map((def, idx) => createEnemyUnit(def, idx));
 
-    const enemyUnit: BattleUnit = {
-      id: enemyDef.id,
-      name: enemyDef.name,
-      hp: enemyDef.hpMax, // Start at max
-      maxHp: enemyDef.hpMax,
-      initialDeckSize: enemyCardIds.length,
-      team: 'enemy',
-      cards: enemyCardIds.map((id: string, idx: number) => {
-        const cardDef = cards.find(c => c.id === id);
-        if (!cardDef) return null;
+    if (enemyUnits.length === 0) return;
 
-        const count = (enemyCardCounts[id] || 0) + 1;
-        enemyCardCounts[id] = count;
-        
-        let penalty = 0;
-        if (count === 2) penalty = 9;
-        if (count >= 3) penalty = 28;
-
-        const baseSpeed10 = cardDef.speed !== null ? Math.round(cardDef.speed * 10) : null;
-        const npcSpeedMod = 0; // Will be added in BattleLoop executeStartOfBattleEffects
-
-        const modId = enemyModifierSlots[idx.toString()];
-        const cardModifiers = [];
-        if (modId) {
-          const modDef = modifiers.find(m => m.id === modId);
-          if (modDef) cardModifiers.push(modDef);
-        }
-
-        return {
-          // Factory reference (不再展开)
-          factory: cardDef as CardFactory,
-          
-          // Instance fields
-          instanceId: `e_card_${idx}`,
-          ownerId: enemyDef.id,
-          baseSpeed10: baseSpeed10,
-          currentSpeed10: null,
-          deckSpeedPenalty: penalty,
-          permanentSpeedModifier: npcSpeedMod,
-          tagsRuntime: [...(cardDef.tags || [])],
-          modifiers: cardModifiers,
-          buffs: [],
-          factoryBuffs: []  // 运行时工厂级 buff
-        } as CardInstance;
-      }).filter((c: any) => c),
-      buffs: [],
-      isDead: false
-    };
-
-    // Initial Battle State
     const seed = Date.now();
     const initialState: BattleState = {
       tick: 0,
       turn: 1,
-      units: [playerUnit, enemyUnit],
+      units: [...playerUnits, ...enemyUnits],
       log: [],
       isOver: false,
       winner: null,
       rngSeed: seed
     };
-    
-    // Save Replay
+
     const replayState = JSON.parse(JSON.stringify(initialState));
     useReplayStore.getState().addReplay({
         timestamp: Date.now(),
@@ -410,7 +407,7 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
         stageIndex: currentStageIndex,
         seed: seed,
         initialState: replayState,
-        enemyName: enemyDef.name
+        enemyName: enemyUnits.map((u) => u.name).join(' + ')
     });
 
     const loop = new BattleLoop(initialState, new RNG(seed));
@@ -435,23 +432,21 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
     // Check for Battle End Trigger (Just happened)
     if (newState.isOver && !state.isOver) {
       if (newState.winner === 'player') {
-        // Battle Won - Process Drops
-        const enemyUnit = newState.units.find(u => u.team === 'enemy');
-        if (enemyUnit) {
-            // Find definition to get drop table
-            // We need to look up by ID. Assuming enemyUnit.id is the def ID (it is set to enemyDef.id above)
-            const enemyDef = (enemiesData as any).definitions[enemyUnit.id];
+        // Battle Won - Process Drops for all enemy units.
+        const enemyUnits = newState.units.filter(u => u.team === 'enemy');
+        enemyUnits.forEach((enemyUnit) => {
+            const baseEnemyId = enemyUnit.id.replace(/_\d+$/, '');
+            const enemyDef = (enemiesData as any).definitions[baseEnemyId];
             if (enemyDef && enemyDef.dropTable) {
                 const table = enemyDef.dropTable;
                 if (Math.random() < table.chance) {
-                    // Drop!
                     const count = Math.floor(Math.random() * (table.max - table.min + 1)) + table.min;
                     const newDrops: string[] = [];
                     for(let i=0; i<count; i++) {
                         const item = table.pool[Math.floor(Math.random() * table.pool.length)];
                         newDrops.push(item);
                     }
-                    
+
                     if (newDrops.length > 0) {
                         const droppedTokens = newDrops.filter((id) => tokenIds.has(id));
                         const droppedModifiers = newDrops.filter((id) => !tokenIds.has(id));
@@ -461,21 +456,18 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
                         });
 
                         if (droppedModifiers.length > 0) {
-                        set(state => ({
-                            collectedLoot: {
-                                ...state.collectedLoot,
-                                modifiers: [...state.collectedLoot.modifiers, ...droppedModifiers]
-                            }
-                        }));
+                          set(state => ({
+                              collectedLoot: {
+                                  ...state.collectedLoot,
+                                  modifiers: [...state.collectedLoot.modifiers, ...droppedModifiers]
+                              }
+                          }));
                         }
-                        // We could log this drop in battle log too if we want
-                         // But loop.log is internal.
-                         // For now, console log.
-                         console.log("Drops:", newDrops);
+                        console.log('Drops:', enemyUnit.name, newDrops);
                     }
                 }
             }
-        }
+        });
         
         // Auto Advance to Next Stage
         const { isLooping, isBossStage, isReplayMode } = get();
@@ -511,6 +503,6 @@ export const useBattleStore = create<BattleStore>((set, get) => ({
       const playerStore = usePlayerStore.getState();
       collectedLoot.modifiers.forEach(modId => playerStore.addModifier(modId));
       
-      set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false });
+      set({ state: null, loop: null, currentDungeonId: null, isReplayMode: false, activeDecks: [] });
   }
 }));

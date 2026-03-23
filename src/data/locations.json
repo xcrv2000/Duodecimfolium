@@ -1,0 +1,53 @@
+[
+  {
+    "id": "A",
+    "name": "初心剑馆",
+    "defaultLabel": "初心剑馆",
+    "mapPosition": { "x": 18, "y": 62 },
+    "dungeonIds": ["training_ground"],
+    "packIds": ["basic_swordsmanship"]
+  },
+  {
+    "id": "B",
+    "name": "魔法学院来客",
+    "defaultLabel": "魔法学院来客",
+    "mapPosition": { "x": 32, "y": 44 },
+    "dungeonIds": ["magic_academy_visitor"],
+    "packIds": ["sword_and_magic"]
+  },
+  {
+    "id": "C",
+    "name": "猎人小屋",
+    "defaultLabel": "猎人小屋",
+    "mapPosition": { "x": 49, "y": 34 },
+    "dungeonIds": ["hunter_hut"],
+    "packIds": ["pack_4_ranger_101"]
+  },
+  {
+    "id": "D",
+    "name": "未修缮的祭坛",
+    "defaultLabel": "未修缮的祭坛",
+    "mapPosition": { "x": 63, "y": 56 },
+    "dungeonIds": ["unrepaired_altar"],
+    "packIds": ["pack_4_faith_origin"]
+  },
+  {
+    "id": "E",
+    "name": "综合试炼区",
+    "defaultLabel": "训练场",
+    "mapPosition": { "x": 79, "y": 40 },
+    "dungeonIds": [
+      "sandbox_training",
+      "fiery_duelist",
+      "variable_gear_start",
+      "dung_poop_zone"
+    ],
+    "packIds": [
+      "pack_3_lakshir_ritual",
+      "pack_4_variable_gear",
+      "pack_5_trick_of_god",
+      "pack_4_dice_magic",
+      "pack_4_cannot_start"
+    ]
+  }
+]

@@ -102,5 +102,44 @@
       { "type": "mob", "enemyPoolId": "poop_zone_mob" },
       { "type": "elite", "enemyPoolId": "poop_zone_elite" }
     ]
+  },
+  {
+    "id": "hunter_hut",
+    "name": "猎人小屋",
+    "description": "猎犬与猎鹰在林间执行追猎协同。",
+    "unlockRequirementId": "magic_academy_visitor",
+    "teamSize": 3,
+    "unlocksPackId": "pack_4_ranger_101",
+    "goldRewardMin": 10,
+    "goldRewardMax": 10,
+    "stages": [
+      {
+        "type": "mob",
+        "enemyPoolId": "hunter_hut_hound",
+        "enemyIds": ["hunter_hound", "hunter_hound", "hunter_hound"],
+        "enemyCountMin": 3,
+        "enemyCountMax": 3
+      },
+      {
+        "type": "boss",
+        "enemyPoolId": "hunter_hut_boss",
+        "enemyIds": ["hunter_hawk", "hunter_master"],
+        "enemyCountMin": 2,
+        "enemyCountMax": 2
+      }
+    ]
+  },
+  {
+    "id": "unrepaired_altar",
+    "name": "未修缮的祭坛",
+    "description": "石像化圣女在祭坛中维持庇护残响。",
+    "unlockRequirementId": "magic_academy_visitor",
+    "teamSize": 1,
+    "unlocksPackId": "pack_4_faith_origin",
+    "goldRewardMin": 10,
+    "goldRewardMax": 10,
+    "stages": [
+      { "type": "boss", "enemyPoolId": "unrepaired_altar_boss" }
+    ]
   }
 ]

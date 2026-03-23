@@ -148,6 +148,8 @@ export class BattleLoop {
 
     this.processTick(this.state.tick);
 
+    this.applyTickEndEffects();
+
     this.state.tick++;
     if (this.state.tick > 12) {
       this.endTurn();
@@ -169,6 +171,19 @@ export class BattleLoop {
       const target = enemies[Math.floor(this.rng.next() * enemies.length)];
       this.log(source, target, `暴风雨触发。`, 'info');
       this.dealDamage(source, target, stormStacks, 'physical', ['穿甲']);
+    });
+  }
+
+  private applyTickEndEffects(): void {
+    // v0.4.0: 庇佑在每个tick结束时回复等同层数生命。
+    this.state.units.forEach(unit => {
+      if (unit.isDead) return;
+      const blessingLevel = unit.buffs
+        .filter(b => b.id === 'blessing')
+        .reduce((sum, buff) => sum + buff.level, 0);
+      if (blessingLevel > 0) {
+        this.heal(unit, unit, blessingLevel);
+      }
     });
   }
 
@@ -496,9 +511,18 @@ export class BattleLoop {
           card.buffs = []; // Clear CardInstanceBuffs (清除本回合临时buff)
           this.recalculateCardSpeed(unit, card); // 重新计算生效刻，应用仍然存活的UnitBuff
       });
+
+      // v0.4.0: 回合结束离场召唤物（例如猎鹰）。
+      if (!unit.isDead && unit.isSummon && unit.leavesAtTurnEnd) {
+        unit.isDead = true;
+        unit.buffs = [];
+        unit.cards = [];
+        this.log(unit, null, `${unit.name} 在回合结束时离场。`, 'info');
+      }
     });
 
     this.log(null, null, "--- 回合结束 ---", 'info');
+    this.log(null, null, '', 'info');
   }
 
   private startTurn(): void {
@@ -690,6 +714,9 @@ export class BattleLoop {
         
         // 4. Loop continues to re-evaluate
     }
+
+    // v0.4.0: 每个 tick 结算后追加一个空行，便于阅读战斗日志分段。
+    this.log(null, null, '', 'info');
   }
 
   private executeCard(source: BattleUnit, card: CardInstance): void {
@@ -698,6 +725,7 @@ export class BattleLoop {
 
     // Find targets
     const targets = this.findTargets(source, card);
+    const primaryTarget = targets[0] || null;
     
     // Execute Script
     const script = CardScripts[card.factory.scriptId];
@@ -751,6 +779,10 @@ export class BattleLoop {
           }
 
             this.applyPerCardPlayEffects(source, card);
+
+            if (primaryTarget && card.tagsRuntime?.includes('攻击') && card.tagsRuntime?.includes('物理')) {
+              this.triggerTrackingFollowups(source, primaryTarget);
+            }
       } catch (e) {
           console.error(`Error executing script ${card.factory.scriptId}`, e);
           this.log(source, null, `执行卡牌 ${card.factory.name} 失败: ${e}`, 'info');
@@ -763,6 +795,16 @@ export class BattleLoop {
 
     // Check Deaths
     this.checkDeaths();
+  }
+
+  private triggerTrackingFollowups(source: BattleUnit, primaryTarget: BattleUnit): void {
+    const hawks = this.state.units.filter(
+      (u) => u.team === source.team && !u.isDead && u.name === '猎鹰' && u.buffs.some((b) => b.id === 'tracking')
+    );
+    hawks.forEach((hawk) => {
+      this.log(hawk, primaryTarget, `追猎触发：${hawk.name} 追加扑击。`, 'buff');
+      this.dealDamage(hawk, primaryTarget, 4, 'physical');
+    });
   }
 
   private applyPerCardPlayEffects(source: BattleUnit, playedCard: CardInstance): void {
@@ -801,32 +843,80 @@ export class BattleLoop {
     const isDefense = card.tagsRuntime?.includes('防御');
     const isAllOut = card.tagsRuntime?.includes('全力');
     const isAttack = card.tagsRuntime?.includes('攻击');
-    
+
+    if (isAttack) {
+      const confusion = source.buffs.find(b => b.id === 'confused_targeting');
+      if (confusion) {
+        this.removeBuff(source, 'confused_targeting');
+        const randomPool = this.state.units.filter(u => !u.isDead);
+        if (randomPool.length === 0) return [];
+        const randomTarget = randomPool[Math.floor(this.rng.next() * randomPool.length)];
+        this.log(source, randomTarget, `${source.name} 受到扰乱影响，攻击目标发生偏移。`, 'buff');
+        return [randomTarget];
+      }
+    }
+
     if (isSupport || isDefense || (isAllOut && !isAttack)) {
         return [source];
     }
-    
+
     const enemies = this.state.units.filter(u => u.team !== source.team && !u.isDead);
     if (enemies.length === 0) return [];
-    
-    const target = enemies[Math.floor(this.rng.next() * enemies.length)];
+
+    // v0.4.0: 若随机目标池中存在【标记】，优先从带标记目标中随机。
+    const markedEnemies = enemies.filter(u => u.buffs.some(b => b.id === 'mark'));
+    const pool = markedEnemies.length > 0 ? markedEnemies : enemies;
+    const target = pool[Math.floor(this.rng.next() * pool.length)];
     return [target];
   }
 
   private checkDeaths(): void {
     let teamAlive = { player: false, enemy: false };
+    let teamNonSummonAlive = { player: false, enemy: false };
 
     this.state.units.forEach(unit => {
-      if (unit.hp <= 0) {
+      if (unit.hp <= 0 && !unit.isDead) {
         unit.hp = 0;
         unit.isDead = true;
+        // v0.4.0: 角色死亡时立即清空buff并卸载其卡实例。
+        unit.buffs = [];
+        unit.cards = [];
         this.log(unit, null, `${unit.name} 被击败了!`, 'death');
       }
       if (!unit.isDead) {
         if (unit.team === 'player') teamAlive.player = true;
         if (unit.team === 'enemy') teamAlive.enemy = true;
+        if (!unit.isSummon) {
+          if (unit.team === 'player') teamNonSummonAlive.player = true;
+          if (unit.team === 'enemy') teamNonSummonAlive.enemy = true;
+        }
       }
     });
+
+    // v0.4.0: 如果某队仅剩召唤物，也视为该队失败（召唤物逃跑）。
+    if (teamAlive.player && !teamNonSummonAlive.player) {
+      this.state.units.forEach((unit) => {
+        if (unit.team === 'player' && unit.isSummon && !unit.isDead) {
+          unit.isDead = true;
+          unit.buffs = [];
+          unit.cards = [];
+          this.log(unit, null, `${unit.name} 失去召唤者后逃离战场。`, 'info');
+        }
+      });
+      teamAlive.player = false;
+    }
+
+    if (teamAlive.enemy && !teamNonSummonAlive.enemy) {
+      this.state.units.forEach((unit) => {
+        if (unit.team === 'enemy' && unit.isSummon && !unit.isDead) {
+          unit.isDead = true;
+          unit.buffs = [];
+          unit.cards = [];
+          this.log(unit, null, `${unit.name} 失去召唤者后逃离战场。`, 'info');
+        }
+      });
+      teamAlive.enemy = false;
+    }
 
     if (!teamAlive.player) {
       this.state.isOver = true;
@@ -1005,6 +1095,185 @@ export class BattleLoop {
     } else if (delta > 0) {
       this.log(unit, unit, `${unit.name} recovers ${delta} HP`, 'buff', delta);
     }
+  }
+
+  public heal(source: BattleUnit, target: BattleUnit, amount: number): void {
+    if (target.isDead || amount <= 0) return;
+    const before = target.hp;
+    target.hp = Math.min(target.maxHp, target.hp + amount);
+    const healed = target.hp - before;
+    if (healed > 0) {
+      this.log(source, target, `${target.name} 回复了 ${healed} 点生命!`, 'heal', healed);
+
+      // v0.4.0: 光之惩戒 - 每次回复生命时，对所有敌方造成等量光魔法伤害。
+      const hasLightRetribution = target.buffs.some(b => b.id === 'light_retribution');
+      if (hasLightRetribution) {
+        const enemies = this.state.units.filter(u => u.team !== target.team && !u.isDead);
+        enemies.forEach((enemy) => {
+          this.dealDamage(target, enemy, healed, 'magical', ['光', '魔法']);
+        });
+      }
+    }
+  }
+
+  public addTokenCardToUnit(target: BattleUnit, cardId: string, baseSpeed10: number): void {
+    const TOKEN_REGISTRY: Record<string, { name: string; description: string; effectDescription: string; tags: string[] }> = {
+      'hound_bite_token': {
+        name: '撕咬',
+        description: '猎犬的衍生攻击。',
+        effectDescription: '对随机敌方单位造成6点物理伤害。',
+        tags: ['攻击', '物理', '衍生']
+      },
+      'hawk_swoop_token': {
+        name: '扑击',
+        description: '猎鹰的衍生攻击。',
+        effectDescription: '对随机敌方单位造成6点物理伤害。',
+        tags: ['攻击', '物理', '衍生']
+      },
+      'full_power_bite_token': {
+        name: '全力扑咬',
+        description: '猎犬的重击衍生攻击。',
+        effectDescription: '对随机敌方单位造成8点物理伤害。',
+        tags: ['攻击', '物理', '全力', '衍生']
+      },
+      'disrupt_token': {
+        name: '扰乱',
+        description: '让敌方下一次攻击发生目标偏转。',
+        effectDescription: '使目标下一次攻击随机指定全场目标。',
+        tags: ['全力', '衍生']
+      }
+    };
+
+    const tokenMetadata = TOKEN_REGISTRY[cardId] || {
+      name: cardId,
+      description: 'Generated Token',
+      effectDescription: 'Token Effect',
+      tags: ['衍生']
+    };
+
+    const newCard: CardInstance = {
+      instanceId: `${target.id}_${cardId}_${Date.now()}_${this.rng.next()}`,
+      factory: {
+        id: cardId,
+        name: tokenMetadata.name,
+        description: tokenMetadata.description,
+        effectDescription: tokenMetadata.effectDescription,
+        packId: 'token',
+        rarity: 0,
+        speed: baseSpeed10 / 10,
+        scriptId: cardId,
+        tags: tokenMetadata.tags
+      },
+      baseSpeed10,
+      currentSpeed10: baseSpeed10,
+      deckSpeedPenalty: 0,
+      permanentSpeedModifier: 0,
+      ownerId: target.id,
+      tagsRuntime: [...tokenMetadata.tags],
+      modifiers: [],
+      factoryBuffs: [],
+      buffs: []
+    };
+
+    target.cards.push(newCard);
+    this.recalculateCardSpeed(target, newCard);
+    this.log(target, null, `${target.name} 获得衍生卡 ${newCard.factory.name}。`, 'info');
+  }
+
+  public injectCardFromFactory(target: BattleUnit, factory: CardInstance['factory']): void {
+    const countById = target.cards.filter(c => c.factory.id === factory.id).length + 1;
+    const penalty = countById === 2 ? 9 : countById >= 3 ? 28 : 0;
+    const baseSpeed10 = factory.speed !== null ? Math.round((factory.speed || 0) * 10) : null;
+
+    const newCard: CardInstance = {
+      instanceId: `${target.id}_${factory.id}_${Date.now()}_${this.rng.next()}`,
+      factory,
+      baseSpeed10,
+      currentSpeed10: baseSpeed10,
+      deckSpeedPenalty: penalty,
+      permanentSpeedModifier: 0,
+      ownerId: target.id,
+      tagsRuntime: [...(factory.tags || [])],
+      modifiers: [],
+      factoryBuffs: [],
+      buffs: []
+    };
+
+    target.cards.push(newCard);
+    this.recalculateCardSpeed(target, newCard);
+    this.log(target, null, `${target.name} 重新获得卡牌 ${newCard.factory.name}。`, 'info');
+  }
+
+  public summonUnit(source: BattleUnit, config: {
+    id: string;
+    name: string;
+    hp: number;
+    cardIds: string[];
+    leavesAtTurnEnd?: boolean;
+  }): BattleUnit | null {
+    const unitId = `${config.id}_${Date.now()}_${Math.floor(this.rng.next() * 100000)}`;
+    const cardCounts: Record<string, number> = {};
+
+    const unitCards = config.cardIds.map((cardId, idx) => ({ cardId, idx }));
+
+    // 从当前战斗中可见的卡定义池构建factory引用：优先复用已有单位卡定义，再兜底按ID构造最小卡。
+    const knownFactories = new Map<string, any>();
+    this.state.units.forEach((u) => {
+      u.cards.forEach((c) => knownFactories.set(c.factory.id, c.factory));
+    });
+
+    const cards = unitCards.map(({ cardId, idx }) => {
+      const factory = knownFactories.get(cardId) || {
+        id: cardId,
+        name: cardId,
+        description: 'Summoned card',
+        effectDescription: '',
+        packId: 'token',
+        rarity: 0,
+        speed: 8,
+        scriptId: cardId,
+        tags: ['衍生']
+      };
+
+      const count = (cardCounts[cardId] || 0) + 1;
+      cardCounts[cardId] = count;
+      const penalty = count === 2 ? 9 : count >= 3 ? 28 : 0;
+      const baseSpeed10 = factory.speed !== null ? Math.round((factory.speed || 0) * 10) : null;
+
+      return {
+        factory,
+        instanceId: `${unitId}_card_${idx}`,
+        ownerId: unitId,
+        baseSpeed10,
+        currentSpeed10: null,
+        deckSpeedPenalty: penalty,
+        permanentSpeedModifier: 0,
+        tagsRuntime: [...(factory.tags || [])],
+        modifiers: [],
+        buffs: [],
+        factoryBuffs: []
+      } as CardInstance;
+    });
+
+    const summoned: BattleUnit = {
+      id: unitId,
+      name: config.name,
+      hp: config.hp,
+      maxHp: config.hp,
+      initialDeckSize: cards.length,
+      team: source.team,
+      cards,
+      buffs: [],
+      isDead: false,
+      isSummon: true,
+      summonOwnerId: source.id,
+      leavesAtTurnEnd: !!config.leavesAtTurnEnd
+    };
+
+    this.state.units.push(summoned);
+    summoned.cards.forEach((card) => this.recalculateCardSpeed(summoned, card));
+    this.log(source, summoned, `${source.name} 召唤了 ${summoned.name}。`, 'buff');
+    return summoned;
   }
 
   public addArmor(unit: BattleUnit, amount: number): void {

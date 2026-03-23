@@ -1011,5 +1011,372 @@ export const CardScripts: Record<string, CardScript> = {
 
   overload_cargo: (_loop, _source, _targets) => {
     // Buffs applied in battle initialization
+  },
+
+  hound_whistle_fast: (loop, source, _targets) => {
+    const hasAliveHound = loop.getAllUnits().some(u => u.team === source.team && !u.isDead && u.name === '猎犬');
+    if (hasAliveHound) return;
+    const summon = loop.summonUnit(source, {
+      id: 'summon_hound',
+      name: '猎犬',
+      hp: 40,
+      cardIds: []
+    });
+    if (summon) {
+      loop.addTokenCardToUnit(summon, 'hound_bite_token', 40);
+    }
+  },
+
+  hound_whistle: (loop, source, _targets) => {
+    const summon = loop.summonUnit(source, {
+      id: 'summon_hound',
+      name: '猎犬',
+      hp: 40,
+      cardIds: []
+    });
+    if (summon) {
+      loop.addTokenCardToUnit(summon, 'hound_bite_token', 40);
+    }
+  },
+
+  hawk_whistle: (loop, source, _targets) => {
+    const summon = loop.summonUnit(source, {
+      id: 'summon_hawk',
+      name: '猎鹰',
+      hp: 30,
+      cardIds: [],
+      leavesAtTurnEnd: true
+    });
+    if (summon) {
+      loop.addTokenCardToUnit(summon, 'hawk_swoop_token', 40);
+    }
+  },
+
+  hound_bite_token: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 6, 'physical');
+  },
+
+  hawk_swoop_token: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 6, 'physical');
+  },
+
+  coordinated_pounce: (loop, source, _targets) => {
+    const hounds = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead && u.name === '猎犬');
+    hounds.forEach((hound) => {
+      loop.addTokenCardToUnit(hound, 'full_power_bite_token', 70);
+    });
+  },
+
+  full_power_bite_token: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 8, 'physical');
+  },
+
+  guard_front: (loop, source, _targets) => {
+    const hounds = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead && u.name === '猎犬');
+    hounds.forEach((hound) => {
+      const markBuff: UnitBuff = {
+        id: 'mark',
+        name: '标记',
+        description: '随机指定目标时优先成为合法目标。',
+        duration: 1,
+        stackRule: 'nonStackable',
+        level: 1,
+        type: 'debuff'
+      };
+      loop.addUnitBuff(hound, markBuff);
+    });
+  },
+
+  inspire_summon: (loop, source, _targets) => {
+    const summons = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead && u.isSummon);
+    if (summons.length === 0) return;
+    const target = summons[Math.floor(Math.random() * summons.length)];
+    const strengthBuff: UnitBuff = {
+      id: 'strength',
+      name: '力量',
+      description: '造成物理伤害时额外造成2点伤害。',
+      duration: -1,
+      stackRule: 'stackable',
+      level: 2,
+      type: 'buff',
+      onAttack: (_unit, _t, damage) => damage + 2
+    };
+    loop.addUnitBuff(target, strengthBuff);
+  },
+
+  care_summon: (loop, source, _targets) => {
+    const summons = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead && u.isSummon);
+    if (summons.length === 0) return;
+    const target = [...summons].sort((a, b) => a.hp - b.hp)[0];
+    loop.heal(source, target, 12);
+  },
+
+  blessing_prayer: (loop, source, _targets) => {
+    const allies = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead);
+    allies.forEach((ally) => {
+      loop.addUnitBuff(ally, {
+        id: 'blessing',
+        name: '庇佑',
+        description: '每个tick结束时回复生命。',
+        duration: 1,
+        stackRule: 'stackable',
+        level: 1,
+        type: 'buff'
+      });
+    });
+  },
+
+  blessing_infusion: (loop, source, _targets) => {
+    const allies = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead);
+    if (allies.length === 0) return;
+    const target = allies[Math.floor(Math.random() * allies.length)];
+    loop.addUnitBuff(target, {
+      id: 'blessing',
+      name: '庇佑',
+      description: '每个tick结束时回复生命。',
+      duration: 1,
+      stackRule: 'stackable',
+      level: 3,
+      type: 'buff'
+    });
+  },
+
+  blessing_accept: (loop, source, _targets) => {
+    loop.addUnitBuff(source, {
+      id: 'blessing',
+      name: '庇佑',
+      description: '每个tick结束时回复生命。',
+      duration: 1,
+      stackRule: 'stackable',
+      level: 4,
+      type: 'buff'
+    });
+  },
+
+  blessing_stay: (loop, source, _targets) => {
+    const stayBuff: UnitBuff = {
+      id: 'blessing_stay_effect',
+      name: '庇佑驻留',
+      description: '本回合结束时，庇佑保留一半。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff',
+      onTurnEnd: (unit) => {
+        const blessing = unit.buffs.find(b => b.id === 'blessing');
+        if (!blessing) return;
+        blessing.level = Math.floor(blessing.level / 2);
+        if (blessing.level > 0) {
+          blessing.duration = 2;
+        }
+      }
+    };
+    loop.addUnitBuff(source, stayBuff);
+  },
+
+  tracking_order: (loop, source, _targets) => {
+    const hawks = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead && u.name === '猎鹰');
+    hawks.forEach((hawk) => {
+      const buff: UnitBuff = {
+        id: 'tracking',
+        name: '追猎',
+        description: '召唤者使用物理攻击后，对相同目标造成4点伤害。',
+        duration: 1,
+        stackRule: 'nonStackable',
+        level: 1,
+        type: 'buff'
+      };
+      loop.addUnitBuff(hawk, buff);
+    });
+  },
+
+  rally_hunt: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 4, 'physical');
+    if (target.isDead) return;
+
+    const summons = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead && u.isSummon);
+    summons.forEach((unit) => {
+      loop.dealDamage(unit, target, 6, 'physical');
+    });
+  },
+
+  mark_shot: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    loop.dealDamage(source, target, 3, 'physical');
+    loop.addUnitBuff(target, {
+      id: 'mark',
+      name: '标记',
+      description: '随机指定目标时优先成为合法目标。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'debuff'
+    });
+  },
+
+  mark_shot_sweep: (loop, source, _targets) => {
+    const enemies = loop.getAllUnits().filter(u => u.team !== source.team && !u.isDead);
+    if (enemies.length === 0) return;
+    const target = [...enemies].sort((a, b) => a.hp - b.hp)[0];
+    loop.dealDamage(source, target, 2, 'physical');
+    loop.addUnitBuff(target, {
+      id: 'mark',
+      name: '标记',
+      description: '随机指定目标时优先成为合法目标。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'debuff'
+    });
+  },
+
+  mark_shot_break: (loop, source, _targets) => {
+    const enemies = loop.getAllUnits().filter(u => u.team !== source.team && !u.isDead);
+    if (enemies.length === 0) return;
+    const target = [...enemies].sort((a, b) => b.hp - a.hp)[0];
+    loop.dealDamage(source, target, 5, 'physical');
+    loop.addUnitBuff(target, {
+      id: 'mark',
+      name: '标记',
+      description: '随机指定目标时优先成为合法目标。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'debuff'
+    });
+  },
+
+  glimmer_heal: (loop, source, _targets) => {
+    const allies = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead);
+    if (allies.length === 0) return;
+    const target = [...allies].sort((a, b) => a.hp - b.hp)[0];
+    loop.heal(source, target, 10);
+  },
+
+  holy_heal: (loop, source, _targets) => {
+    const allies = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead);
+    if (allies.length === 0) return;
+    const target = [...allies].sort((a, b) => a.hp - b.hp)[0];
+    loop.heal(source, target, 18);
+  },
+
+  radiant_touch: (loop, source, _targets) => {
+    const allies = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead);
+    const enemies = loop.getAllUnits().filter(u => u.team !== source.team && !u.isDead);
+    if (allies.length > 0) {
+      const ally = allies[Math.floor(Math.random() * allies.length)];
+      loop.heal(source, ally, 6);
+    }
+    if (enemies.length > 0) {
+      const enemy = enemies[Math.floor(Math.random() * enemies.length)];
+      loop.dealDamage(source, enemy, 6, 'magical', ['光', '魔法']);
+    }
+  },
+
+  holy_aoe_heal: (loop, source, _targets) => {
+    const allies = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead);
+    allies.forEach((ally) => loop.heal(source, ally, 12));
+  },
+
+  flow_armor: (loop, source, _targets) => {
+    const buff: UnitBuff = {
+      id: 'flow_armor_effect',
+      name: '流光铠',
+      description: '本回合受到伤害-1。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff',
+      onReceiveDamage: (_unit, damageInfo) => Math.max(0, damageInfo.amount - 1)
+    };
+    loop.addUnitBuff(source, buff);
+  },
+
+  light_retribution: (loop, source, _targets) => {
+    const buff: UnitBuff = {
+      id: 'light_retribution',
+      name: '光之惩戒',
+      description: '每次回复生命时，对所有敌方造成等量光魔法伤害。',
+      duration: -1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'buff'
+    };
+    loop.addUnitBuff(source, buff);
+  },
+
+  light_departure: (loop, source, _targets) => {
+    let sacrificed = 0;
+    if (source.hp > 60) {
+      sacrificed = source.hp - 60;
+      loop.directHpChange(source, -sacrificed);
+    }
+
+    const enemies = loop.getAllUnits().filter(u => u.team !== source.team && !u.isDead);
+    if (enemies.length === 0 || sacrificed <= 0) return;
+    const target = [...enemies].sort((a, b) => b.hp - a.hp)[0];
+    target.maxHp = Math.max(1, target.maxHp - sacrificed);
+    target.hp = Math.min(target.hp, target.maxHp);
+  },
+
+  disrupt_order: (loop, source, _targets) => {
+    const hawks = loop.getAllUnits().filter(u => u.team === source.team && !u.isDead && u.name === '猎鹰');
+    hawks.forEach((hawk) => {
+      loop.addTokenCardToUnit(hawk, 'disrupt_token', 40);
+    });
+  },
+
+  disrupt_token: (loop, source, targets) => {
+    const target = targets[0];
+    if (!target) return;
+    const debuff: UnitBuff = {
+      id: 'confused_targeting',
+      name: '扰乱',
+      description: '下一次攻击随机指定全场目标。',
+      duration: 1,
+      stackRule: 'nonStackable',
+      level: 1,
+      type: 'debuff'
+    };
+    loop.addUnitBuff(target, debuff);
+  },
+
+  hibernate: (loop, source, _targets) => {
+    // 【休眠】的效果：
+    // 1. 找到时间轴上的下一张卡实例（该角色即将执行的卡）
+    // 2. 删除下一张卡的实例（停用它）
+    // 3. 删除【休眠】卡的实例
+    // 
+    // 结果：下一张卡和休眠卡都从时间轴上消失，永远不会再执行
+    // （因为卡实例一旦删除就不会重新生成）
+
+    const next = loop.findNextCardOnTimeline(source);
+    if (!next) {
+      loop.log(source, null, `【休眠】没有找到目标卡，效果失效。`, 'info');
+      return;
+    }
+
+    // 删除目标卡的卡实例
+    const targetCardName = next.factory.name;
+    const targetIdx = source.cards.findIndex(c => c.instanceId === next.instanceId);
+    if (targetIdx !== -1) {
+      source.cards.splice(targetIdx, 1);
+      loop.log(source, null, `【休眠】停用了 ${targetCardName}。`, 'buff');
+    }
+
+    // 删除【休眠】卡的卡实例（自己）
+    const hibernateIdx = source.cards.findIndex(c => c.factory.scriptId === 'hibernate');
+    if (hibernateIdx !== -1) {
+      source.cards.splice(hibernateIdx, 1);
+    }
   }
 };

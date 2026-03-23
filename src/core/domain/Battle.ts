@@ -20,6 +20,9 @@ export interface BattleUnit {
   cards: CardInstance[];
   buffs: UnitBuff[];
   isDead: boolean;
+  isSummon?: boolean;
+  summonOwnerId?: string;
+  leavesAtTurnEnd?: boolean;
 }
 
 export interface BaseBuff {

@@ -14,6 +14,9 @@ export interface Dungeon {
 export interface DungeonStage {
   type: 'mob' | 'elite' | 'boss';
   enemyPoolId: string; // 敌人池ID
+  enemyCountMin?: number; // 同一场战斗敌人最小数量
+  enemyCountMax?: number; // 同一场战斗敌人最大数量
+  enemyIds?: string[]; // 显式指定同场敌人组成（优先于enemyPoolId）
 }
 
 export interface Enemy {

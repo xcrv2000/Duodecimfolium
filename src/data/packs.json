@@ -38,5 +38,31 @@
     "requiredTokenId": "blackhand_token",
     "requiredTokenCount": 1,
     "isTemporary": true
+  },
+  {
+    "id": "pack_4_ranger_101",
+    "name": "巡林101",
+    "description": "围绕召唤猎犬与猎鹰的协同追猎卡组。",
+    "price": 10
+  },
+  {
+    "id": "pack_4_faith_origin",
+    "name": "信仰萌发之地",
+    "description": "围绕治疗、持续恢复与治疗转伤的持久战卡组。",
+    "price": 10
+  },
+  {
+    "id": "pack_4_dice_magic",
+    "name": "骰子魔术",
+    "description": "波动数值与随机分支并存的技巧集合。",
+    "designer": "木头",
+    "price": 10
+  },
+  {
+    "id": "pack_4_cannot_start",
+    "name": "我启不动",
+    "description": "高防御与规则改写倾向的实验卡组。",
+    "designer": "橘猫",
+    "price": 10
   }
 ]

@@ -16,7 +16,7 @@ const dungeons = dungeonsData as Dungeon[];
 const tokenNameMap = Object.fromEntries((tokensData as Array<{ id: string; name: string }>).map((t) => [t.id, t.name]));
 
 const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
-  const { gold, unlockedPacks, addGold, addCards, tokens, removeToken, markPackOpened } = usePlayerStore();
+  const { gold, unlockedPacks, addGold, addCards, tokens, removeToken, addToken, markPackOpened } = usePlayerStore();
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
   const [openingPack, setOpeningPack] = useState<any[] | null>(null);
   const [revealedIndices, setRevealedIndices] = useState<number[]>([]);
@@ -63,6 +63,15 @@ const GachaView: React.FC<{ onNavigate: (tab: any) => void }> = () => {
     // Open Pack Logic
     // 1. Filter cards in this pack
     const packCards = cards.filter(c => c.packId === packId);
+    if (packCards.length === 0) {
+      alert(`卡包 ${pack.name} 暂无可抽取卡牌，请等待后续更新。`);
+      addGold(finalCost);
+      if (pack.requiredTokenId) {
+        const requiredCount = (pack.requiredTokenCount || 1) * multiplier;
+        addToken(pack.requiredTokenId, requiredCount);
+      }
+      return;
+    }
     
     // 2. Create weighted pool based on rarity
     const pool: Card[] = [];
