@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { usePlayerStore } from '../../stores/playerStore';
 import { useBattleStore, CustomUnitConfig } from '../../stores/battleStore';
 import { useReplayStore } from '../../stores/replayStore';
@@ -27,6 +27,10 @@ const MAP_IMAGE_PATH = '/reference/docs/%E5%9C%B0%E5%9B%BE.png';
 const BUTTON_IMAGE_PATH = '/reference/docs/button.png';
 const BUTTON_PRESSED_IMAGE_PATH = '/reference/docs/button-pressed.png';
 
+const DEFAULT_MAP_ZOOM = 1.2;
+const MIN_MAP_ZOOM = 1;
+const MAX_MAP_ZOOM = 2.5;
+
 const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigate }) => {
   const unlockedDungeons = usePlayerStore(state => state.unlockedDungeons);
   const clearedDungeons = usePlayerStore(state => state.clearedDungeons);
@@ -46,6 +50,12 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
     const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null);
     const [hoveredLocationId, setHoveredLocationId] = useState<string | null>(null);
     const [selectedDeckIndices, setSelectedDeckIndices] = useState<number[]>([]);
+    const [mapZoom, setMapZoom] = useState(DEFAULT_MAP_ZOOM);
+    const [mapOffset, setMapOffset] = useState({ x: 0, y: 0 });
+    const [isMapDragging, setIsMapDragging] = useState(false);
+    const mapViewportRef = useRef<HTMLDivElement | null>(null);
+    const dragStartRef = useRef<{ pointerX: number; pointerY: number; offsetX: number; offsetY: number } | null>(null);
+    const dragMovedRef = useRef(false);
 
     useEffect(() => {
         if (!selectedDungeonId || selectedDungeonId === 'sandbox_training') return;
@@ -295,6 +305,113 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
 
       startCustomBattle(playerConfigs, enemyConfigs);
       onNavigate('battle');
+  };
+
+  const clampMapOffset = (offset: { x: number; y: number }, zoom: number) => {
+      const viewport = mapViewportRef.current;
+      if (!viewport) return offset;
+
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      const scaledWidth = width * zoom;
+      const scaledHeight = height * zoom;
+
+      const minX = Math.min(0, width - scaledWidth);
+      const minY = Math.min(0, height - scaledHeight);
+
+      return {
+          x: Math.min(0, Math.max(minX, offset.x)),
+          y: Math.min(0, Math.max(minY, offset.y))
+      };
+  };
+
+  const getCenteredOffset = (zoom: number) => {
+      const viewport = mapViewportRef.current;
+      if (!viewport) return { x: 0, y: 0 };
+
+      const width = viewport.clientWidth;
+      const height = viewport.clientHeight;
+      return {
+          x: (width - width * zoom) / 2,
+          y: (height - height * zoom) / 2
+      };
+  };
+
+  useEffect(() => {
+      const viewport = mapViewportRef.current;
+      if (!viewport) return;
+      setMapOffset(clampMapOffset(getCenteredOffset(DEFAULT_MAP_ZOOM), DEFAULT_MAP_ZOOM));
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+      const handleResize = () => {
+          setMapOffset((prev) => clampMapOffset(prev, mapZoom));
+      };
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapZoom]);
+
+  const handleMapWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      const viewport = mapViewportRef.current;
+      if (!viewport) return;
+
+      const rect = viewport.getBoundingClientRect();
+      const pointerX = e.clientX - rect.left;
+      const pointerY = e.clientY - rect.top;
+      const zoomDelta = e.deltaY < 0 ? 1.1 : 0.9;
+      const nextZoom = Math.min(MAX_MAP_ZOOM, Math.max(MIN_MAP_ZOOM, mapZoom * zoomDelta));
+
+      if (nextZoom === mapZoom) return;
+
+      const worldX = (pointerX - mapOffset.x) / mapZoom;
+      const worldY = (pointerY - mapOffset.y) / mapZoom;
+      const nextOffsetX = pointerX - worldX * nextZoom;
+      const nextOffsetY = pointerY - worldY * nextZoom;
+
+      setMapZoom(nextZoom);
+      setMapOffset(clampMapOffset({ x: nextOffsetX, y: nextOffsetY }, nextZoom));
+  };
+
+  const handleMapMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (e.button !== 0) return;
+      dragStartRef.current = {
+          pointerX: e.clientX,
+          pointerY: e.clientY,
+          offsetX: mapOffset.x,
+          offsetY: mapOffset.y
+      };
+      dragMovedRef.current = false;
+      setIsMapDragging(true);
+  };
+
+  const handleMapMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!dragStartRef.current) return;
+      const deltaX = e.clientX - dragStartRef.current.pointerX;
+      const deltaY = e.clientY - dragStartRef.current.pointerY;
+
+      if (Math.abs(deltaX) > 2 || Math.abs(deltaY) > 2) {
+          dragMovedRef.current = true;
+      }
+
+      setMapOffset(clampMapOffset({
+          x: dragStartRef.current.offsetX + deltaX,
+          y: dragStartRef.current.offsetY + deltaY
+      }, mapZoom));
+  };
+
+  const stopMapDragging = () => {
+      dragStartRef.current = null;
+      setIsMapDragging(false);
+  };
+
+  const handleMapDoubleClick = () => {
+      const resetOffset = clampMapOffset(getCenteredOffset(DEFAULT_MAP_ZOOM), DEFAULT_MAP_ZOOM);
+      setMapZoom(DEFAULT_MAP_ZOOM);
+      setMapOffset(resetOffset);
+      dragMovedRef.current = false;
   };
 
   // Replay List View
@@ -573,8 +690,8 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
             }
     }
 
-  return (
-    <div className="p-4 sm:p-6 md:p-8 max-w-5xl mx-auto relative">
+    return (
+        <div className="p-4 sm:p-6 md:p-8 max-w-6xl mx-auto relative">
       {/* Sandbox Modal */}
       {sandboxConfig.isOpen && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
@@ -739,10 +856,25 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
           </button>
       </div>
 
-            <div className="relative rounded-xl border border-slate-700 bg-slate-900 overflow-hidden min-h-[520px]">
-                <img src={MAP_IMAGE_PATH} alt="世界地图" className="w-full h-[520px] object-cover opacity-90" />
+            <div
+                ref={mapViewportRef}
+                className={`relative rounded-xl border border-slate-700 bg-slate-900 overflow-hidden h-[560px] sm:h-[640px] select-none ${isMapDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                onWheel={handleMapWheel}
+                onMouseDown={handleMapMouseDown}
+                onMouseMove={handleMapMouseMove}
+                onMouseUp={stopMapDragging}
+                onMouseLeave={stopMapDragging}
+                onDoubleClick={handleMapDoubleClick}
+            >
+                <div
+                    className="absolute inset-0"
+                    style={{
+                        transform: `translate(${mapOffset.x}px, ${mapOffset.y}px) scale(${mapZoom})`,
+                        transformOrigin: '0 0'
+                    }}
+                >
+                    <img src={MAP_IMAGE_PATH} alt="世界地图" className="w-full h-full object-cover opacity-90 pointer-events-none" draggable={false} />
 
-                <div className="absolute inset-0">
                     {locations.map((location) => {
                         const locationDungeons = location.dungeonIds
                             .map((id) => dungeons.find((d) => d.id === id))
@@ -770,26 +902,34 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                             <div
                                 key={location.id}
                                 className="absolute"
-                                style={{ left: `${location.mapPosition.x}%`, top: `${location.mapPosition.y}%`, transform: 'translate(-50%, -50%)' }}
+                                style={{ left: `${location.mapPosition.x}%`, top: `${location.mapPosition.y}%` }}
                             >
-                                <button
-                                    onMouseEnter={() => setHoveredLocationId(location.id)}
-                                    onMouseLeave={() => setHoveredLocationId((curr) => (curr === location.id ? null : curr))}
-                                    onClick={() => setSelectedLocationId(location.id)}
-                                    title={tooltipText}
-                                    className="w-16 h-16 bg-contain bg-center bg-no-repeat hover:scale-105 transition-transform"
-                                    style={{ backgroundImage: `url(${isPressed ? BUTTON_PRESSED_IMAGE_PATH : BUTTON_IMAGE_PATH})` }}
-                                    aria-label={`地点 ${location.name}`}
-                                />
-                                <div className="text-center text-white text-sm font-bold mt-1 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{location.defaultLabel}</div>
+                                <div
+                                    className="-translate-x-1/2 -translate-y-1/2"
+                                    style={{ transform: `translate(-50%, -50%) scale(${1 / mapZoom})`, transformOrigin: 'center center' }}
+                                >
+                                    <button
+                                        onMouseEnter={() => setHoveredLocationId(location.id)}
+                                        onMouseLeave={() => setHoveredLocationId((curr) => (curr === location.id ? null : curr))}
+                                        onClick={() => {
+                                            if (dragMovedRef.current) return;
+                                            setSelectedLocationId(location.id);
+                                        }}
+                                        title={tooltipText}
+                                        className="w-11 h-11 bg-contain bg-center bg-no-repeat hover:scale-105 transition-transform"
+                                        style={{ backgroundImage: `url(${isPressed ? BUTTON_PRESSED_IMAGE_PATH : BUTTON_IMAGE_PATH})` }}
+                                        aria-label={`地点 ${location.name}`}
+                                    />
+                                    <div className="mt-1 text-center text-white text-sm font-bold leading-tight whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{location.defaultLabel}</div>
 
-                                {hoveredLocationId === location.id && (
-                                    <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-slate-900/95 border border-slate-600 rounded p-3 z-20 shadow-xl">
-                                        <div className="text-emerald-400 font-bold mb-1">{location.name}</div>
-                                        <div className="text-xs text-slate-300">地牢：{locationDungeons.map((d) => d.name).join('、') || '无'}</div>
-                                        <div className="text-xs text-slate-300 mt-1">卡包：{locationPacks.map((p) => p.name).join('、') || '无'}</div>
-                                    </div>
-                                )}
+                                    {hoveredLocationId === location.id && (
+                                        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-slate-900/95 border border-slate-600 rounded p-3 z-20 shadow-xl">
+                                            <div className="text-emerald-400 font-bold mb-1">{location.name}</div>
+                                            <div className="text-xs text-slate-300">地牢：{locationDungeons.map((d) => d.name).join('、') || '无'}</div>
+                                            <div className="text-xs text-slate-300 mt-1">卡包：{locationPacks.map((p) => p.name).join('、') || '无'}</div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         );
                     })}
