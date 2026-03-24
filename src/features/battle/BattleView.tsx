@@ -22,6 +22,7 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
   const currentDungeon = currentDungeonId ? dungeons.find(d => d.id === currentDungeonId) : null;
   const totalBattles = currentDungeon?.stages?.length ?? 0;
   const currentBattle = totalBattles > 0 ? Math.min(currentStageIndex, totalBattles) : 0;
+  const stagePrefix = totalBattles > 0 ? `Stage ${currentBattle}/${totalBattles} | ` : '';
   
   // Local state for result overlay visibility
   const [isResultOverlayVisible, setIsResultOverlayVisible] = useState(false);
@@ -80,8 +81,7 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
           )}
         </div>
         <div className="text-sm sm:text-xl font-bold">
-          Turn: {state.turn} | Tick: {state.tick}/12
-          {totalBattles > 0 ? ` (${currentBattle}/${totalBattles})` : ''}
+          {stagePrefix}Turn: {state.turn} | Tick: {state.tick}/12
         </div>
         <button
           onClick={() => {
