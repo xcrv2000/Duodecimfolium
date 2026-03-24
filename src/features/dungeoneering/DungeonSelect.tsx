@@ -858,7 +858,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
 
             <div
                 ref={mapViewportRef}
-                className={`relative rounded-xl border border-slate-700 bg-slate-900 overflow-hidden h-[560px] sm:h-[640px] select-none ${isMapDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+                className={`relative w-full aspect-[3/2] rounded-xl border border-slate-700 bg-slate-900 overflow-hidden select-none ${isMapDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
                 onWheel={handleMapWheel}
                 onMouseDown={handleMapMouseDown}
                 onMouseMove={handleMapMouseMove}
@@ -866,6 +866,12 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                 onMouseLeave={stopMapDragging}
                 onDoubleClick={handleMapDoubleClick}
             >
+                <div className="absolute right-3 top-3 z-30 rounded-md border border-slate-600/80 bg-slate-950/70 px-3 py-2 text-xs text-slate-200 pointer-events-none">
+                    <div>滚轮：缩放地图</div>
+                    <div>左键拖拽：平移地图</div>
+                    <div>双击：复位视图</div>
+                </div>
+
                 <div
                     className="absolute inset-0"
                     style={{
@@ -873,7 +879,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                         transformOrigin: '0 0'
                     }}
                 >
-                    <img src={MAP_IMAGE_PATH} alt="世界地图" className="w-full h-full object-cover opacity-90 pointer-events-none" draggable={false} />
+                    <img src={MAP_IMAGE_PATH} alt="世界地图" className="w-full h-full object-fill opacity-90 pointer-events-none" draggable={false} />
 
                     {locations.map((location) => {
                         const locationDungeons = location.dungeonIds
@@ -920,10 +926,10 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                         style={{ backgroundImage: `url(${isPressed ? BUTTON_PRESSED_IMAGE_PATH : BUTTON_IMAGE_PATH})` }}
                                         aria-label={`地点 ${location.name}`}
                                     />
-                                    <div className="mt-1 text-center text-white text-sm font-bold leading-tight whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]">{location.defaultLabel}</div>
+                                    <div className="mt-1 text-center text-white text-sm font-bold leading-tight whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] pointer-events-none">{location.defaultLabel}</div>
 
                                     {hoveredLocationId === location.id && (
-                                        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-slate-900/95 border border-slate-600 rounded p-3 z-20 shadow-xl">
+                                        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-slate-900/95 border border-slate-600 rounded p-3 z-20 shadow-xl pointer-events-none">
                                             <div className="text-emerald-400 font-bold mb-1">{location.name}</div>
                                             <div className="text-xs text-slate-300">地牢：{locationDungeons.map((d) => d.name).join('、') || '无'}</div>
                                             <div className="text-xs text-slate-300 mt-1">卡包：{locationPacks.map((p) => p.name).join('、') || '无'}</div>
