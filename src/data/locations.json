@@ -3,7 +3,7 @@
     "id": "A",
     "name": "初心剑馆",
     "defaultLabel": "初心剑馆",
-    "mapPosition": { "x": 52.6, "y": 60 },
+    "mapPosition": { "x": 52.6, "y": 58 },
     "dungeonIds": ["training_ground"],
     "packIds": ["basic_swordsmanship"]
   },
@@ -11,7 +11,7 @@
     "id": "B",
     "name": "魔法学院来客",
     "defaultLabel": "魔法学院来客",
-    "mapPosition": { "x": 51, "y": 49 },
+    "mapPosition": { "x": 49, "y": 49 },
     "dungeonIds": ["magic_academy_visitor"],
     "packIds": ["sword_and_magic"]
   },
@@ -19,7 +19,7 @@
     "id": "C",
     "name": "猎人小屋",
     "defaultLabel": "猎人小屋",
-    "mapPosition": { "x": 55.0, "y": 41.3 },
+    "mapPosition": { "x": 53.0, "y": 41.3 },
     "dungeonIds": ["hunter_hut"],
     "packIds": ["pack_4_ranger_101"]
   },
@@ -35,7 +35,7 @@
     "id": "E",
     "name": "综合试炼区",
     "defaultLabel": "训练场",
-    "mapPosition": { "x": 55.4, "y": 67 },
+    "mapPosition": { "x": 55.4, "y": 66 },
     "dungeonIds": [
       "sandbox_training",
       "fiery_duelist",
