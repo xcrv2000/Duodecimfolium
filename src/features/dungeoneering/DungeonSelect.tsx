@@ -911,7 +911,7 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                 style={{ left: `${location.mapPosition.x}%`, top: `${location.mapPosition.y}%` }}
                             >
                                 <div
-                                    className="-translate-x-1/2 -translate-y-1/2"
+                                    className="relative w-11 h-11 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
                                     style={{ transform: `translate(-50%, -50%) scale(${1 / mapZoom})`, transformOrigin: 'center center' }}
                                 >
                                     <button
@@ -922,14 +922,14 @@ const DungeonSelect: React.FC<{ onNavigate: (tab: any) => void }> = ({ onNavigat
                                             setSelectedLocationId(location.id);
                                         }}
                                         title={tooltipText}
-                                        className="w-11 h-11 bg-contain bg-center bg-no-repeat hover:scale-105 transition-transform"
+                                        className="w-11 h-11 bg-contain bg-center bg-no-repeat hover:scale-105 transition-transform pointer-events-auto"
                                         style={{ backgroundImage: `url(${isPressed ? BUTTON_PRESSED_IMAGE_PATH : BUTTON_IMAGE_PATH})` }}
                                         aria-label={`地点 ${location.name}`}
                                     />
-                                    <div className="mt-1 text-center text-white text-sm font-bold leading-tight whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] pointer-events-none">{location.defaultLabel}</div>
+                                    <div className="absolute left-1/2 top-full mt-1 -translate-x-1/2 text-center text-white text-sm font-bold leading-tight whitespace-nowrap drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] pointer-events-none">{location.defaultLabel}</div>
 
                                     {hoveredLocationId === location.id && (
-                                        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 bg-slate-900/95 border border-slate-600 rounded p-3 z-20 shadow-xl pointer-events-none">
+                                        <div className="absolute left-1/2 top-full mt-2 -translate-x-1/2 w-72 bg-slate-900/95 border border-slate-600 rounded p-3 z-20 shadow-xl pointer-events-none">
                                             <div className="text-emerald-400 font-bold mb-1">{location.name}</div>
                                             <div className="text-xs text-slate-300">地牢：{locationDungeons.map((d) => d.name).join('、') || '无'}</div>
                                             <div className="text-xs text-slate-300 mt-1">卡包：{locationPacks.map((p) => p.name).join('、') || '无'}</div>

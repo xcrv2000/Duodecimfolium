@@ -19,7 +19,7 @@
     "id": "C",
     "name": "猎人小屋",
     "defaultLabel": "猎人小屋",
-    "mapPosition": { "x": 56.0, "y": 41.3 },
+    "mapPosition": { "x": 55.0, "y": 41.3 },
     "dungeonIds": ["hunter_hut"],
     "packIds": ["pack_4_ranger_101"]
   },
@@ -27,7 +27,7 @@
     "id": "D",
     "name": "未修缮的祭坛",
     "defaultLabel": "未修缮的祭坛",
-    "mapPosition": { "x": 62, "y": 50 },
+    "mapPosition": { "x": 58, "y": 50 },
     "dungeonIds": ["unrepaired_altar"],
     "packIds": ["pack_4_faith_origin"]
   },
