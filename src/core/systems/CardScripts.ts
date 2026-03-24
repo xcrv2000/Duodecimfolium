@@ -561,7 +561,10 @@ export const CardScripts: Record<string, CardScript> = {
       level: 1,
       type: 'debuff',
       onTurnEnd: (unit, _battle) => {
-        loop.directHpChange(unit, -1);
+        const scorchLevel = unit.buffs.find((b) => b.id === 'scorch')?.level ?? 0;
+        if (scorchLevel > 0) {
+          loop.directHpChange(unit, -scorchLevel);
+        }
       }
     };
     loop.addUnitBuff(target, scorchBuff);
@@ -580,7 +583,10 @@ export const CardScripts: Record<string, CardScript> = {
       level: 3,
       type: 'debuff',
       onTurnEnd: (unit, _battle) => {
-        loop.directHpChange(unit, -3);
+        const scorchLevel = unit.buffs.find((b) => b.id === 'scorch')?.level ?? 0;
+        if (scorchLevel > 0) {
+          loop.directHpChange(unit, -scorchLevel);
+        }
       }
     };
     loop.addUnitBuff(target, scorchBuff);

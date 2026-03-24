@@ -963,7 +963,9 @@ export class BattleLoop {
     this.state.log.push({
       tick: this.state.tick,
       sourceUnitId: source?.id || 'system',
+      sourceUnitName: source?.name,
       targetUnitId: target?.id,
+      targetUnitName: target?.name,
       cardName,
       message,
       type,

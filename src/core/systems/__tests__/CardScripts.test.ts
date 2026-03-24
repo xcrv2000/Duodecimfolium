@@ -447,6 +447,21 @@ describe('CardScripts', () => {
       expect(playerUnit.hp).toBe(70);
       expect(playerUnit.buffs.find((b) => b.id === 'curiosity_guard')).toBeDefined();
     });
+
+    it('灼烧应按层数在回合结束结算伤害', () => {
+      const hpBefore = enemyUnit.hp;
+
+      CardScripts.flame_arrow(battleLoop, playerUnit, [enemyUnit]);
+      CardScripts.flame_arrow_ring(battleLoop, playerUnit, [enemyUnit]);
+
+      const scorch = enemyUnit.buffs.find((b) => b.id === 'scorch');
+      expect(scorch?.level).toBe(4);
+
+      battleLoop.endTurn();
+
+      // 直伤 3 + 6，回合结束灼烧 4
+      expect(enemyUnit.hp).toBe(hpBefore - 13);
+    });
   });
 
   describe('卡脚本不应该崩溃', () => {

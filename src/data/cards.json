@@ -378,7 +378,7 @@
     "id": "conch_shell",
     "name": "海螺壳",
     "description": "从一个蓝色的机器人身上偷的……",
-    "effectDescription": "下次收到的伤害变为0",
+    "effectDescription": "下次受到的伤害变为0",
     "packId": "pack_3_lakshir_ritual",
     "rarity": 6,
     "speed": 8,

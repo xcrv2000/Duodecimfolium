@@ -123,9 +123,17 @@ const BattleView: React.FC<{ onReturnToTown?: () => void }> = ({ onReturnToTown 
               return <div key={i} className="h-3" />;
             }
 
+            const sourceLabel = entry.sourceUnitName || (entry.sourceUnitId !== 'system' ? entry.sourceUnitId : '系统');
+            const targetLabel = entry.targetUnitName || entry.targetUnitId || null;
+            const actorPrefix = entry.sourceUnitId === 'system'
+              ? `[系统]`
+              : targetLabel
+                ? `[${sourceLabel} -> ${targetLabel}]`
+                : `[${sourceLabel}]`;
+
             return (
               <div key={i} className={`mb-1 ${entry.type === 'attack' ? 'text-red-400' : entry.type === 'death' ? 'text-purple-500 font-bold' : 'text-slate-300'}`}>
-                [{entry.tick}] {entry.message}
+                [{entry.tick}] {actorPrefix} {entry.message}
               </div>
             );
           })}

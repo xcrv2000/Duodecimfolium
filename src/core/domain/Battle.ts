@@ -83,7 +83,9 @@ export interface BattleState {
 export interface BattleLogEntry {
   tick: number;
   sourceUnitId: string;
+  sourceUnitName?: string;
   targetUnitId?: string;
+  targetUnitName?: string;
   cardName?: string;
   message: string;
   type: 'info' | 'attack' | 'heal' | 'buff' | 'death';

@@ -4,6 +4,7 @@ import { Card, CardInstance } from '../../core/domain/Card';
 import { getCardRarityBorderClass } from '../../utils/cardUtils';
 import cardsData from '../../data/cards.json';
 import buffsData from '../../data/buffs.json';
+import packsData from '../../data/packs.json';
 
 interface CardDisplayProps {
   card: Card | CardInstance;
@@ -27,7 +28,9 @@ type TooltipPayload = TooltipContent & { x: number; y: number };
 
 const allCards = cardsData as Card[];
 const allBuffs = buffsData as Array<{ name: string; description: string }>;
+const allPacks = packsData as Array<{ id: string; name: string }>;
 const buffByName = new Map(allBuffs.map((b) => [b.name, b]));
+const packNameById = new Map(allPacks.map((p) => [p.id, p.name]));
 const keywordDescriptions: Record<string, string> = {
   全力: '该卡会占据所在的完整的tick。'
 };
@@ -70,10 +73,12 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
   const getTags = (c: Card | CardInstance) => (isInstance(c) ? c.tagsRuntime || c.factory.tags : c.tags);
   const getMaxCopies = (c: Card | CardInstance) => (isInstance(c) ? c.factory.maxCopies : c.maxCopies);
   const getDesigner = (c: Card | CardInstance) => (isInstance(c) ? c.factory.designer : c.designer);
+  const getPackId = (c: Card | CardInstance) => (isInstance(c) ? c.factory.packId : c.packId);
 
   const descriptionText = getDescription(card) || '';
   const effectText = getEffectDescription(card) || '';
   const maxCopies = getMaxCopies(card) ?? 3;
+  const packName = packNameById.get(getPackId(card)) || getPackId(card) || '';
   const isLongTextCard = `${descriptionText} ${effectText}`.length > 70;
   const effectPreview = effectText.length > 28 ? `${effectText.slice(0, 28)}...` : effectText;
 
@@ -287,8 +292,11 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
           )}
         </div>
 
-        {getDesigner(card) && (
-          <div className="mt-1 text-right text-[9px] text-slate-500">设计师: {getDesigner(card)}</div>
+        {(packName || getDesigner(card)) && (
+          <div className="mt-1 flex items-end justify-between gap-2 text-[9px]">
+            <div className="text-slate-500 truncate">{packName}</div>
+            {getDesigner(card) && <div className="text-slate-500 text-right">设计师: {getDesigner(card)}</div>}
+          </div>
         )}
       </div>
 
