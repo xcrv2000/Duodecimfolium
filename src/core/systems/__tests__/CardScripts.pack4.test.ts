@@ -161,8 +161,8 @@ describe('CardScripts pack4', () => {
     const summonA: BattleUnit = {
       id: 'summon_a',
       name: '猎犬',
-      hp: 40,
-      maxHp: 40,
+      hp: 1,
+      maxHp: 1,
       initialDeckSize: 1,
       team: 'player',
       cards: [],
@@ -174,8 +174,8 @@ describe('CardScripts pack4', () => {
     const summonB: BattleUnit = {
       id: 'summon_b',
       name: '猎鹰',
-      hp: 30,
-      maxHp: 30,
+      hp: 1,
+      maxHp: 1,
       initialDeckSize: 1,
       team: 'player',
       cards: [],

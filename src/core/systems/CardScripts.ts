@@ -1025,7 +1025,7 @@ export const CardScripts: Record<string, CardScript> = {
     const summon = loop.summonUnit(source, {
       id: 'summon_hound',
       name: '猎犬',
-      hp: 40,
+      hp: 1,
       cardIds: []
     });
     if (summon) {
@@ -1037,7 +1037,7 @@ export const CardScripts: Record<string, CardScript> = {
     const summon = loop.summonUnit(source, {
       id: 'summon_hound',
       name: '猎犬',
-      hp: 40,
+      hp: 1,
       cardIds: []
     });
     if (summon) {
@@ -1049,7 +1049,7 @@ export const CardScripts: Record<string, CardScript> = {
     const summon = loop.summonUnit(source, {
       id: 'summon_hawk',
       name: '猎鹰',
-      hp: 30,
+      hp: 1,
       cardIds: [],
       leavesAtTurnEnd: true
     });

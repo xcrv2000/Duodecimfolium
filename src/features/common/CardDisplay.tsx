@@ -112,16 +112,14 @@ const CardDisplay: React.FC<CardDisplayProps> = ({
       return { type: 'text', keyword: rawKeyword, text };
     }
 
-    const derivedCard =
-      allCards.find((c) => c.name === compactKeyword) ||
-      allCards.find((c) => c.tags?.includes('衍生') && c.name.includes(compactKeyword));
-    if (derivedCard) {
-      return { type: 'card', keyword: rawKeyword, card: derivedCard };
-    }
-
     const common = keywordDescriptions[compactKeyword];
     if (common) {
       return { type: 'text', keyword: rawKeyword, text: common };
+    }
+
+    const derivedCard = allCards.find((c) => c.name === compactKeyword);
+    if (derivedCard) {
+      return { type: 'card', keyword: rawKeyword, card: derivedCard };
     }
 
     return { type: 'text', keyword: rawKeyword, text: '暂无词条解释。' };

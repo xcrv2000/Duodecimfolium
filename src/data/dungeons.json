@@ -123,9 +123,9 @@
       {
         "type": "boss",
         "enemyPoolId": "hunter_hut_boss",
-        "enemyIds": ["hunter_hawk", "hunter_master"],
-        "enemyCountMin": 2,
-        "enemyCountMax": 2
+        "enemyIds": ["hunter_hound", "hunter_hawk", "hunter_master", "hunter_master"],
+        "enemyCountMin": 4,
+        "enemyCountMax": 4
       }
     ]
   },

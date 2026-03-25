@@ -326,15 +326,15 @@
     "hunter_hound": {
       "id": "hunter_hound",
       "name": "猎犬",
-      "hpMin": 20,
-      "hpMax": 20,
+      "hpMin": 1,
+      "hpMax": 1,
       "deck": ["thrust", "stab", "slash", "flick"]
     },
     "hunter_hawk": {
       "id": "hunter_hawk",
       "name": "猎鹰",
-      "hpMin": 15,
-      "hpMax": 15,
+      "hpMin": 1,
+      "hpMax": 1,
       "deck": ["flick", "thrust", "thrust", "slash"]
     },
     "hunter_master": {
