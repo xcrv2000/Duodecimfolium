@@ -2,19 +2,19 @@
   {
     "id": "basic_swordsmanship",
     "name": "基础剑术",
-    "description": "包含基础的物理攻击和防御手段。",
+    "description": "没有剑廿三。",
     "price": 10
   },
   {
     "id": "sword_and_magic",
     "name": "剑与魔法",
-    "description": "融合了物理与魔法的技巧，包含多种属性攻击与状态控制。",
+    "description": "还是没有剑廿三。",
     "price": 10
   },
   {
     "id": "pack_3_lakshir_ritual",
     "name": "拉克希尔之仪",
-    "description": "烈焰与黑影纠缠的仪式。",
+    "description": "决斗！",
     "price": 10,
     "requiredTokenId": "duelist_proof",
     "requiredTokenCount": 1
@@ -42,26 +42,26 @@
   {
     "id": "pack_4_ranger_101",
     "name": "巡林101",
-    "description": "围绕召唤猎犬与猎鹰的协同追猎卡组。",
+    "description": "又叫《哎呀让我看看我的电脑能带的动多少实体，什么你说这些不是实体 ？》",
     "price": 10
   },
   {
     "id": "pack_4_faith_origin",
     "name": "信仰萌发之地",
-    "description": "围绕治疗、持续恢复与治疗转伤的持久战卡组。",
+    "description": "对着石像发呆了十分钟的奖励",
     "price": 10
   },
   {
     "id": "pack_4_dice_magic",
     "name": "骰子魔术",
-    "description": "波动数值与随机分支并存的技巧集合。",
+    "description": "d20=20！",
     "designer": "木头",
     "price": 10
   },
   {
     "id": "pack_4_cannot_start",
     "name": "我启不动",
-    "description": "高防御与规则改写倾向的实验卡组。",
+    "description": "我，我启，我启不动（重放3）",
     "designer": "橘猫",
     "price": 10
   }

@@ -819,7 +819,7 @@
   {
     "id": "hound_whistle_fast",
     "name": "猎犬口哨·急促",
-    "description": "召唤猎犬并快速加入追猎循环。",
+    "description": "救救救救救！",
     "effectDescription": "若场上没有猎犬，召唤猎犬，并为其卡组增加一张【撕咬】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -830,7 +830,7 @@
   {
     "id": "hound_whistle",
     "name": "猎犬口哨",
-    "description": "召来猎犬伙伴。",
+    "description": "救命啊！",
     "effectDescription": "召唤一只猎犬，并为其卡组增加一张【撕咬】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -841,7 +841,7 @@
   {
     "id": "hawk_whistle",
     "name": "猎鹰口哨",
-    "description": "召来猎鹰进行快速扑击。",
+    "description": "一支穿云箭！",
     "effectDescription": "召唤一只猎鹰，并为其卡组增加一张【扑击】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -874,7 +874,7 @@
   {
     "id": "coordinated_pounce",
     "name": "协同扑杀",
-    "description": "让猎犬集中突袭。",
+    "description": "给我上！",
     "effectDescription": "为自己的所有猎犬添加一张【全力扑咬】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -896,7 +896,7 @@
   {
     "id": "guard_front",
     "name": "护至身前",
-    "description": "猎犬主动吸引火力。",
+    "description": "眉头一皱",
     "effectDescription": "为自己的所有猎犬添加一层【标记】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -907,7 +907,7 @@
   {
     "id": "inspire_summon",
     "name": "激励",
-    "description": "强化召唤物火力。",
+    "description": "【卡图是一把冒火的剑】",
     "effectDescription": "随机友方召唤物获得2点力量。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -918,7 +918,7 @@
   {
     "id": "care_summon",
     "name": "关怀",
-    "description": "治疗受伤的召唤物。",
+    "description": "不能奶队友",
     "effectDescription": "血量最低的友方召唤物恢复12点生命值。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -929,7 +929,7 @@
   {
     "id": "blessing_prayer",
     "name": "庇佑之祷言",
-    "description": "向友方播撒持续恢复。",
+    "description": "擅长预防季节性流感",
     "effectDescription": "所有友方单位获得1层【庇佑】。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -940,7 +940,7 @@
   {
     "id": "blessing_infusion",
     "name": "庇佑之灌注",
-    "description": "将大量庇佑注入单体。",
+    "description": "擅长治疗小擦伤",
     "effectDescription": "随机友方目标获得3层【庇佑】。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -951,7 +951,7 @@
   {
     "id": "blessing_accept",
     "name": "庇佑之承纳",
-    "description": "自我承接庇佑。",
+    "description": "擅长表演苦肉计",
     "effectDescription": "自己获得4层【庇佑】。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -962,7 +962,7 @@
   {
     "id": "blessing_stay",
     "name": "庇佑之驻留",
-    "description": "让本回合庇佑在回合末保留一半。",
+    "description": "擅长治疗石头",
     "effectDescription": "本回合结束时，你的庇佑保留其等级一半（向下取整）。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -973,7 +973,7 @@
   {
     "id": "tracking_order",
     "name": "追猎指令",
-    "description": "所有猎鹰进入追猎状态。",
+    "description": "一起上！",
     "effectDescription": "所有猎鹰获得一层【追猎】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -984,7 +984,7 @@
   {
     "id": "rally_hunt",
     "name": "号召",
-    "description": "先行号召后集火扑杀。",
+    "description": "集火！",
     "effectDescription": "对随机敌方单位造成4点伤害。你的每个召唤物随后对该目标造成6点物理伤害。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -995,7 +995,7 @@
   {
     "id": "mark_shot",
     "name": "标记射击",
-    "description": "常规标记射击。",
+    "description": "先打那个！",
     "effectDescription": "造成3点物理伤害，并施加1层【标记】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -1006,7 +1006,7 @@
   {
     "id": "mark_shot_sweep",
     "name": "标记射击·清扫",
-    "description": "优先清扫残血目标。",
+    "description": "对对对，先把残血的清了",
     "effectDescription": "对血量最低的敌方单位造成2点物理伤害，并施加【标记】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -1017,7 +1017,7 @@
   {
     "id": "mark_shot_break",
     "name": "标记射击·攻坚",
-    "description": "优先攻坚高血量目标。",
+    "description": "别管小怪了，集火boss！",
     "effectDescription": "对血量最高的敌方单位造成5点物理伤害，并施加【标记】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -1028,7 +1028,7 @@
   {
     "id": "glimmer_heal",
     "name": "微光疗愈",
-    "description": "对受伤友方进行基础治疗。",
+    "description": "圣光与你同在",
     "effectDescription": "对血量最低的友方单位造成10点治疗。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -1039,7 +1039,7 @@
   {
     "id": "holy_heal",
     "name": "圣光疗愈",
-    "description": "强化单体治疗。",
+    "description": "圣光也与你同在",
     "effectDescription": "对血量最低的友方单位造成18点治疗。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -1050,7 +1050,7 @@
   {
     "id": "radiant_touch",
     "name": "光辉触及",
-    "description": "同时触及友军与敌军。",
+    "description": "圣光看着呢，你去哪？",
     "effectDescription": "对随机友方单位造成6点治疗，对随机敌方单位造成6点伤害。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -1061,7 +1061,7 @@
   {
     "id": "holy_aoe_heal",
     "name": "圣光普照",
-    "description": "群体治疗法术。",
+    "description": "圣光有点强了，有防晒霜吗？",
     "effectDescription": "对所有友方单位造成12点治疗。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -1072,7 +1072,7 @@
   {
     "id": "flow_armor",
     "name": "流光铠",
-    "description": "本回合内减伤护持。",
+    "description": "【防晒霜】",
     "effectDescription": "在本回合接下来的时间中，你受到的伤害-1。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -1083,7 +1083,7 @@
   {
     "id": "light_retribution",
     "name": "光之惩戒",
-    "description": "将治疗转化为全体伤害。",
+    "description": "看，我的光头会反光！",
     "effectDescription": "获得1层【光之惩戒】。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -1094,7 +1094,7 @@
   {
     "id": "light_departure",
     "name": "光之背离",
-    "description": "以自身生命上限变化换取压制。",
+    "description": "我宣判戴墨镜有罪",
     "effectDescription": "若你的hp大于60，则流失至60。然后使血量最高的敌方单位失去等量血量上限。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
@@ -1105,7 +1105,7 @@
   {
     "id": "disrupt_order",
     "name": "扰乱指令",
-    "description": "让猎鹰带入扰乱攻击。",
+    "description": "欸打不着我",
     "effectDescription": "为自己的所有猎鹰增加一张【扰乱】。",
     "packId": "pack_4_ranger_101",
     "rarity": 6,
@@ -1127,7 +1127,7 @@
   {
     "id": "hibernate",
     "name": "休眠",
-    "description": "暂时移除下一张将发动的卡，并让其下回合回归。",
+    "description": "写的时候修了一堆bug。还有问题记得叫我",
     "effectDescription": "你的下一张将要发动的卡在本回合中移出时间轴，休眠自身从卡组删除。",
     "packId": "pack_4_faith_origin",
     "rarity": 6,
